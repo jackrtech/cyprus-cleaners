@@ -79,10 +79,15 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
               <span className="bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2.5 py-0.5 text-[12px] font-medium">{cleaner.city}</span>
             </div>
             <div className="flex gap-4 items-center flex-wrap text-[13px] text-[#6B8886] mb-3">
-              <span className="flex items-center gap-1.5">
+              <button
+                onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+                className="flex items-center gap-1.5 hover:opacity-70 transition-opacity cursor-pointer group"
+              >
                 <StarRow rating={cleaner.avg_rating} />
-                <span>{cleaner.avg_rating} · {cleaner.review_count} reviews</span>
-              </span>
+                <span className="group-hover:text-[#19706A] transition-colors group-hover:underline underline-offset-2">
+                  {cleaner.avg_rating} · {cleaner.review_count} reviews
+                </span>
+              </button>
               <span>·</span>
               <span>{cleaner.total_jobs_count} jobs completed</span>
               <span>·</span>
@@ -106,7 +111,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
             </p>
             {introHref ? (
               <Link href={introHref} className="btn-primary rounded-full px-6 py-3 text-[14px] whitespace-nowrap">
-                {t('sendIntro')} →
+                {t('messageBtn', { name: firstName })} →
               </Link>
             ) : (
               <button disabled className="btn-primary rounded-full px-6 py-3 text-[14px] opacity-40 cursor-not-allowed whitespace-nowrap">
@@ -127,27 +132,8 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
             <p className="text-[14px] text-[#6B8886] leading-relaxed">{cleaner.bio}</p>
           </div>
 
-          {/* Stats */}
-          <div className="bg-white border border-[#E0EDEC] rounded-[16px] p-6 mb-4">
-            <h2 className="text-[15px] font-medium text-[#0D1F1E] mb-4">{t('stats')}</h2>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { value: cleaner.total_jobs_count, label: t('jobsDone') },
-                { value: `${cleaner.avg_rating} ★`, label: t('avgRating'), colored: true },
-                { value: cleaner.review_count, label: t('reviews') },
-              ].map((stat, i) => (
-                <div key={i} className="bg-[#F7FAF9] rounded-[10px] p-4 text-center">
-                  <p className={`text-[22px] font-medium ${stat.colored ? 'text-[#19706A]' : 'text-[#0D1F1E]'}`}>
-                    {stat.value}
-                  </p>
-                  <p className="text-[11px] text-[#6B8886] mt-1">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Reviews */}
-          <div className="bg-white border border-[#E0EDEC] rounded-[16px] p-6">
+          <div id="reviews" className="bg-white border border-[#E0EDEC] rounded-[16px] p-6">
             <h2 className="text-[15px] font-medium text-[#0D1F1E] mb-1">
               {t('reviews')} ({cleaner.review_count})
             </h2>
@@ -175,10 +161,13 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
               <span className="text-[28px] font-medium text-[#0D1F1E]">€{cleaner.hourly_rate_eur}</span>
               <span className="text-[14px] text-[#6B8886]">/hr</span>
             </div>
-            <div className="flex items-center gap-1.5 text-[13px] text-[#6B8886] mb-5">
+            <button
+              onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+              className="flex items-center gap-1.5 text-[13px] text-[#6B8886] mb-5 hover:opacity-70 transition-opacity cursor-pointer group"
+            >
               <StarRow rating={cleaner.avg_rating} />
-              <span>{cleaner.avg_rating} · {cleaner.review_count} reviews</span>
-            </div>
+              <span className="group-hover:text-[#19706A] transition-colors">{cleaner.avg_rating} · {cleaner.review_count} reviews</span>
+            </button>
 
             <div className="border-t border-[#E0EDEC] my-4" />
 
@@ -200,7 +189,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
 
             {introHref ? (
               <Link href={introHref} className="btn-primary w-full text-center rounded-full py-3 text-[14px] block">
-                {t('sendIntro')} →
+                {t('messageBtn', { name: firstName })} →
               </Link>
             ) : (
               <button disabled className="btn-primary w-full rounded-full py-3 text-[14px] opacity-40 cursor-not-allowed">
@@ -209,7 +198,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
             )}
 
             <p className="text-[11px] text-[#6B8886] text-center mt-3 leading-relaxed">
-              {t('unlockNote')}
+              {t('unlockNote', { name: firstName })}
             </p>
           </div>
         </div>

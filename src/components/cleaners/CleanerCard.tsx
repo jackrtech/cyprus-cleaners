@@ -24,7 +24,7 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
     >
       {/* Photo area */}
       <div
-        className="h-[140px] relative flex items-center justify-center"
+        className="h-[120px] relative flex items-center justify-center"
         style={{ background: cleaner.avatarColor }}
       >
         <div
