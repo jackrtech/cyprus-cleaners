@@ -3,6 +3,7 @@ import { getMessages } from 'next-intl/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
 import Providers from '@/components/layout/Providers'
+import Navbar from '@/components/Navbar'
 import '@/styles/globals.css'
 
 export const metadata: Metadata = {
@@ -36,6 +37,7 @@ export default async function RootLayout({
       </head>
       <body className="bg-surface text-teal-900 antialiased">
         <Providers session={session} messages={messages} locale={locale}>
+          <Navbar />
           {children}
         </Providers>
       </body>

@@ -1,10 +1,14 @@
 {
   "nav": {
+    "findCleaner": "Βρες καθαρίστρια",
+    "forCleaners": "Για καθαρίστριες",
+    "signIn": "Σύνδεση",
+    "getStarted": "Ξεκίνα",
+    "language": "Γλώσσα",
     "findCleaners": "Βρες καθαρίστρια",
     "howItWorks": "Πώς λειτουργεί",
     "becomeACleaner": "Γίνε καθαρίστρια",
     "about": "Σχετικά",
-    "signIn": "Σύνδεση",
     "register": "Ξεκίνα",
     "dashboard": "Πίνακας ελέγχου",
     "signOut": "Αποσύνδεση"

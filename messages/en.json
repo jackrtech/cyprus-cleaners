@@ -1,10 +1,14 @@
 {
   "nav": {
+    "findCleaner": "Find a cleaner",
+    "forCleaners": "For cleaners",
+    "signIn": "Sign in",
+    "getStarted": "Get started",
+    "language": "Language",
     "findCleaners": "Find cleaners",
     "howItWorks": "How it works",
     "becomeACleaner": "Become a cleaner",
     "about": "About",
-    "signIn": "Sign in",
     "register": "Get started",
     "dashboard": "Dashboard",
     "signOut": "Sign out"
