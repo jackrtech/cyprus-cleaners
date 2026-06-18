@@ -1,8 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
+import { Link } from '@/navigation'
 import { useState } from 'react'
 
 export default function Navbar() {
