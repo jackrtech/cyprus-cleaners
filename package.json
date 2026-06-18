@@ -11,33 +11,34 @@
     "db:reset": "supabase db reset"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.6.0",
+    "@supabase/ssr": "^0.3.0",
+    "@supabase/supabase-js": "^2.43.4",
+    "bcryptjs": "^2.4.3",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "deepl-node": "^1.27.0",
+    "lucide-react": "^0.383.0",
     "next": "14.2.0",
+    "next-auth": "^4.24.7",
+    "next-intl": "^3.14.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
-    "next-auth": "^4.24.7",
-    "@supabase/supabase-js": "^2.43.4",
-    "@supabase/ssr": "^0.3.0",
-    "next-intl": "^3.14.0",
+    "react-hook-form": "^7.52.0",
     "resend": "^3.2.0",
-    "bcryptjs": "^2.4.3",
-    "zod": "^3.23.8",
-    "clsx": "^2.1.1",
     "tailwind-merge": "^2.3.0",
-    "lucide-react": "^0.383.0",
-    "date-fns": "^3.6.0",
-    "@hookform/resolvers": "^3.6.0",
-    "react-hook-form": "^7.52.0"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "typescript": "^5.4.5",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@types/bcryptjs": "^2.4.6",
-    "tailwindcss": "^3.4.4",
     "autoprefixer": "^10.4.19",
-    "postcss": "^8.4.38",
     "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.0"
+    "eslint-config-next": "14.2.0",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.4.5"
   }
 }

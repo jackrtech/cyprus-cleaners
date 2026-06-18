@@ -1,10 +1,11 @@
 'use client'
 
 import { notFound } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { Link } from '@/navigation'
 import { MOCK_CLEANERS, MOCK_REVIEWS } from '@/lib/mockCleaners'
+import ReviewItem from '@/components/cleaners/ReviewItem'
 
 function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
   const full = Math.round(rating)
@@ -25,6 +26,7 @@ function cap(s: string) {
 
 export default function CleanerProfilePage({ params }: { params: { slug: string } }) {
   const t = useTranslations('profile')
+  const locale = useLocale()
   const { data: session } = useSession()
   const cleaner = MOCK_CLEANERS.find(c => c.slug === params.slug)
   if (!cleaner) notFound()
@@ -137,18 +139,9 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
             <h2 className="text-[15px] font-medium text-[#0D1F1E] mb-1">
               {t('reviews')} ({cleaner.review_count})
             </h2>
-            <div className="divide-y divide-[#F0F5F4]">
+            <div>
               {reviews.map(review => (
-                <div key={review.id} className="py-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[13px] font-medium text-[#0D1F1E]">{review.reviewer_name}</span>
-                    <span className="text-[11px] text-[#6B8886]">{review.date}</span>
-                  </div>
-                  <div className="my-1.5">
-                    <StarRow rating={review.rating} size={12} />
-                  </div>
-                  <p className="text-[13px] text-[#6B8886] leading-relaxed">{review.body}</p>
-                </div>
+                <ReviewItem key={review.id} review={review} locale={locale} />
               ))}
             </div>
           </div>

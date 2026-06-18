@@ -158,7 +158,9 @@
     "company": "Company",
     "weekdays": "Weekdays",
     "weekends": "Weekends",
-    "evenings": "Evenings"
+    "evenings": "Evenings",
+    "seeOriginal": "See original",
+    "seeTranslation": "See translation"
   },
   "cleaners": {
     "topRated": "Top rated",

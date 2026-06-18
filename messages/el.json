@@ -158,7 +158,9 @@
     "company": "Εταιρεία",
     "weekdays": "Καθημερινές",
     "weekends": "Σαββατοκύριακο",
-    "evenings": "Βράδια"
+    "evenings": "Βράδια",
+    "seeOriginal": "Δες πρωτότυπο",
+    "seeTranslation": "Δες μετάφραση"
   },
   "cleaners": {
     "topRated": "Κορυφαίοι",
