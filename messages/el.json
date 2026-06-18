@@ -87,6 +87,15 @@
       "thanksSub": "Βοηθά άλλους να βρουν καλές καθαρίστριες."
     }
   },
+  "cleaners": {
+    "topRated": "Κορυφαίοι",
+    "featuredTitle": "Προτεινόμενοι καθαριστές",
+    "viewAll": "Δες όλους",
+    "allCities": "Όλες οι πόλεις",
+    "verified": "Επαληθευμένος",
+    "perHour": "/ώρα",
+    "viewProfile": "Προβολή προφίλ"
+  },
   "cities": {
     "nicosia": "Λευκωσία",
     "limassol": "Λεμεσός",

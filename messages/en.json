@@ -87,6 +87,15 @@
       "thanksSub": "It helps others find great cleaners."
     }
   },
+  "cleaners": {
+    "topRated": "Top rated",
+    "featuredTitle": "Featured cleaners",
+    "viewAll": "View all cleaners",
+    "allCities": "All cities",
+    "verified": "Verified",
+    "perHour": "/hr",
+    "viewProfile": "View profile"
+  },
   "cities": {
     "nicosia": "Nicosia",
     "limassol": "Limassol",
