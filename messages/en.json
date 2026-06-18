@@ -87,6 +87,9 @@
       "thanksSub": "It helps others find great cleaners."
     }
   },
+  "common": {
+    "perHour": "/hr"
+  },
   "filters": {
     "city": "City",
     "price": "Price",
@@ -142,7 +145,7 @@
     "breadcrumbHome": "Home",
     "breadcrumbFind": "Find a cleaner",
     "hourlyRate": "Hourly rate",
-    "jobsDone": "Jobs completed",
+    "jobsDone": "{count} jobs completed",
     "avgRating": "Avg rating",
     "reviews": "Reviews",
     "about": "About {name}",
@@ -160,7 +163,10 @@
     "weekends": "Weekends",
     "evenings": "Evenings",
     "seeOriginal": "See original",
-    "seeTranslation": "See translation"
+    "seeTranslation": "See translation",
+    "verified": "Verified",
+    "reviewsCount": "{count} reviews",
+    "uniqueCustomers": "{count} unique customers"
   },
   "cleaners": {
     "topRated": "Top rated",
@@ -179,6 +185,14 @@
     "famagusta": "Famagusta",
     "paralimni": "Paralimni",
     "ayiaNapa": "Ayia Napa",
-    "protaras": "Protaras"
+    "protaras": "Protaras",
+    "Nicosia": "Nicosia",
+    "Limassol": "Limassol",
+    "Larnaca": "Larnaca",
+    "Paphos": "Paphos",
+    "Famagusta": "Famagusta",
+    "Paralimni": "Paralimni",
+    "Ayia Napa": "Ayia Napa",
+    "Protaras": "Protaras"
   }
 }

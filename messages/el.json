@@ -87,6 +87,9 @@
       "thanksSub": "Βοηθά άλλους να βρουν καλές καθαρίστριες."
     }
   },
+  "common": {
+    "perHour": "/ώρα"
+  },
   "filters": {
     "city": "Πόλη",
     "price": "Τιμή",
@@ -142,7 +145,7 @@
     "breadcrumbHome": "Αρχική",
     "breadcrumbFind": "Βρες καθαριστή",
     "hourlyRate": "Ωριαία αμοιβή",
-    "jobsDone": "Ολοκληρωμένες δουλειές",
+    "jobsDone": "{count} εργασίες",
     "avgRating": "Μέση βαθμολογία",
     "reviews": "Κριτικές",
     "about": "Σχετικά με {name}",
@@ -160,14 +163,24 @@
     "weekends": "Σαββατοκύριακο",
     "evenings": "Βράδια",
     "seeOriginal": "Δες πρωτότυπο",
-    "seeTranslation": "Δες μετάφραση"
+    "seeTranslation": "Δες μετάφραση",
+    "messageBtnFemale": "Μήνυμα στην {name}",
+    "messageBtnMale": "Μήνυμα στον {name}",
+    "unlockNoteFemale": "Θα συνδεθείτε μόλις η {name} εγκρίνει το μήνυμά σας",
+    "unlockNoteMale": "Θα συνδεθείτε μόλις ο {name} εγκρίνει το μήνυμά σας",
+    "verifiedFemale": "Επαληθευμένη",
+    "verifiedMale": "Επαληθευμένος",
+    "individualFemale": "Μεμονωμένη",
+    "individualMale": "Μεμονωμένος",
+    "reviewsCount": "{count} αξιολογήσεις",
+    "uniqueCustomers": "{count} μοναδικοί πελάτες"
   },
   "cleaners": {
     "topRated": "Κορυφαίοι",
     "featuredTitle": "Προτεινόμενοι καθαριστές",
     "viewAll": "Δες όλους",
     "allCities": "Όλες οι πόλεις",
-    "verified": "Επαληθευμένος",
+    "verified": "Επαληθευμένος/η",
     "perHour": "/ώρα",
     "viewProfile": "Προβολή προφίλ"
   },
@@ -179,6 +192,14 @@
     "famagusta": "Αμμόχωστος",
     "paralimni": "Παραλίμνι",
     "ayiaNapa": "Αγία Νάπα",
-    "protaras": "Πρωταράς"
+    "protaras": "Πρωταράς",
+    "Nicosia": "Λευκωσία",
+    "Limassol": "Λεμεσός",
+    "Larnaca": "Λάρνακα",
+    "Paphos": "Πάφος",
+    "Famagusta": "Αμμόχωστος",
+    "Paralimni": "Παραλίμνι",
+    "Ayia Napa": "Αγία Νάπα",
+    "Protaras": "Πρωταράς"
   }
 }

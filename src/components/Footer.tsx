@@ -4,6 +4,7 @@ import { useLocale } from 'next-intl'
 import { usePathname, useRouter } from '@/navigation'
 import { Link } from '@/navigation'
 import type { Locale } from '@/navigation'
+import { useCity } from '@/hooks/useCity'
 
 const CITIES = [
   'Nicosia', 'Limassol', 'Larnaca', 'Paphos',
@@ -14,6 +15,7 @@ export default function Footer() {
   const locale = useLocale()
   const pathname = usePathname()
   const router = useRouter()
+  const getCityName = useCity()
 
   const handleLocaleSwitch = (targetLocale: Locale) => {
     router.push(pathname, { locale: targetLocale })
@@ -93,7 +95,7 @@ export default function Footer() {
                   key={city}
                   className="text-[12px] text-[#6B8886] hover:text-white cursor-pointer transition-colors"
                 >
-                  {city}
+                  {getCityName(city)}
                 </span>
               ))}
             </div>

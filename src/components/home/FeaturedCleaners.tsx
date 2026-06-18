@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import { MOCK_CLEANERS } from '@/lib/mockCleaners'
+import { useCity } from '@/hooks/useCity'
 
 const CITY_TABS = [
   { label: 'allCities', value: 'all' },
@@ -29,6 +30,7 @@ function StarRow({ rating }: { rating: number }) {
 
 export default function FeaturedCleaners() {
   const t = useTranslations('cleaners')
+  const getCityName = useCity()
   const [activeCity, setActiveCity] = useState('all')
 
   const filtered = activeCity === 'all'
@@ -67,7 +69,7 @@ export default function FeaturedCleaners() {
                 : 'bg-white text-[#6B8886] border-[#E0EDEC]'
             }`}
           >
-            {tab.label === 'allCities' ? t('allCities') : tab.label}
+            {tab.label === 'allCities' ? t('allCities') : getCityName(tab.label)}
           </button>
         ))}
       </div>
@@ -115,7 +117,7 @@ export default function FeaturedCleaners() {
                 {/* City */}
                 <div className="mb-2.5">
                   <span className="inline bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2 py-0.5 text-[11px] font-medium">
-                    {cleaner.city}
+                    {getCityName(cleaner.city)}
                   </span>
                 </div>
 

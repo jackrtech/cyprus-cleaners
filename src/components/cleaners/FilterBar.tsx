@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { MOCK_CLEANERS } from '@/lib/mockCleaners'
+import { useCity } from '@/hooks/useCity'
 
 export type FilterState = {
   cities: string[]
@@ -109,6 +110,7 @@ interface Props {
 
 export default function FilterBar({ filters, onChange }: Props) {
   const t  = useTranslations('filters')
+  const getCityName = useCity()
   const [openPanel, setOpenPanel] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -138,7 +140,7 @@ export default function FilterBar({ filters, onChange }: Props) {
   // Active pills
   type Pill = { key: string; label: string; onRemove: () => void }
   const activePills: Pill[] = []
-  filters.cities.forEach(c => activePills.push({ key: `city-${c}`, label: c, onRemove: () => update({ cities: filters.cities.filter(x => x !== c) }) }))
+  filters.cities.forEach(c => activePills.push({ key: `city-${c}`, label: getCityName(c), onRemove: () => update({ cities: filters.cities.filter(x => x !== c) }) }))
   if (filters.maxRate < 40) activePills.push({ key: 'price', label: t('upTo', { value: filters.maxRate }), onRemove: () => update({ maxRate: 40 }) })
   if (filters.minRating !== null) activePills.push({ key: 'rating', label: `${filters.minRating}+`, onRemove: () => update({ minRating: null }) })
   if (filters.gender !== 'any') activePills.push({ key: 'gender', label: filters.gender === 'female' ? t('female') : t('male'), onRemove: () => update({ gender: 'any' }) })
@@ -169,7 +171,7 @@ export default function FilterBar({ filters, onChange }: Props) {
               onMouseDown={e => { e.stopPropagation(); toggle('city') }}
             >
               {filters.cities.length > 0 && <Dot />}
-              {filters.cities.length === 1 ? filters.cities[0] : t('city')}
+              {filters.cities.length === 1 ? getCityName(filters.cities[0]) : t('city')}
               <Chevron open={openPanel === 'city'} />
             </button>
             {openPanel === 'city' && (
@@ -182,7 +184,7 @@ export default function FilterBar({ filters, onChange }: Props) {
                     return (
                       <label key={city} className="flex items-center gap-2.5 cursor-pointer">
                         <Checkbox checked={checked} onChange={() => update({ cities: checked ? filters.cities.filter(c => c !== city) : [...filters.cities, city] })} />
-                        <span className="text-[13px] text-[#0D1F1E] flex-1">{city}</span>
+                        <span className="text-[13px] text-[#0D1F1E] flex-1">{getCityName(city)}</span>
                         <span className="text-[11px] text-[#6B8886]">{count}</span>
                       </label>
                     )

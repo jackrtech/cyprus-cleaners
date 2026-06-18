@@ -1,7 +1,9 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import type { MockCleaner } from '@/lib/mockCleaners'
+import { useCity } from '@/hooks/useCity'
 
 function StarRow({ rating }: { rating: number }) {
   const full = Math.round(rating)
@@ -17,6 +19,9 @@ function StarRow({ rating }: { rating: number }) {
 }
 
 export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
+  const t = useTranslations('cleaners')
+  const tCommon = useTranslations('common')
+  const getCityName = useCity()
   return (
     <Link
       href={`/cleaners/${cleaner.slug}`}
@@ -36,7 +41,7 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
         {cleaner.verified && (
           <div className="absolute top-2 right-2 flex items-center gap-1 bg-[#19706A] rounded-full px-2 py-0.5">
             <span className="w-1 h-1 rounded-full bg-white shrink-0" />
-            <span className="text-[9px] font-medium text-white">Verified</span>
+            <span className="text-[9px] font-medium text-white">{t('verified')}</span>
           </div>
         )}
       </div>
@@ -47,12 +52,12 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
           <span className="text-[13px] font-medium text-[#0D1F1E] leading-snug">{cleaner.display_name}</span>
           <span className="text-right shrink-0 ml-1.5">
             <span className="text-[12px] font-medium text-[#0D1F1E]">€{cleaner.hourly_rate_eur}</span>
-            <span className="text-[10px] text-[#6B8886]">/hr</span>
+            <span className="text-[10px] text-[#6B8886]">{tCommon('perHour')}</span>
           </span>
         </div>
 
         <span className="inline-block bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2 py-0.5 text-[10px] font-medium my-1.5">
-          {cleaner.city}
+          {getCityName(cleaner.city)}
         </span>
 
         <div className="flex gap-1 flex-wrap mb-2.5">
@@ -69,7 +74,7 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
             </span>
           </div>
           <span className="bg-[#E8F4F3] text-[#19706A] rounded-full px-2.5 py-1 text-[10px] font-medium group-hover:bg-[#19706A] group-hover:text-white transition-colors">
-            View profile
+            {t('viewProfile')}
           </span>
         </div>
       </div>

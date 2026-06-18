@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react'
 import { Link } from '@/navigation'
 import { MOCK_CLEANERS, MOCK_REVIEWS } from '@/lib/mockCleaners'
 import ReviewItem from '@/components/cleaners/ReviewItem'
+import { useCity } from '@/hooks/useCity'
 
 function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
   const full = Math.round(rating)
@@ -20,13 +21,13 @@ function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
   )
 }
 
-function cap(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1)
-}
 
 export default function CleanerProfilePage({ params }: { params: { slug: string } }) {
   const t = useTranslations('profile')
+  const tCommon = useTranslations('common')
+  const tFilters = useTranslations('filters')
   const locale = useLocale()
+  const getCityName = useCity()
   const { data: session } = useSession()
   const cleaner = MOCK_CLEANERS.find(c => c.slug === params.slug)
   if (!cleaner) notFound()
@@ -38,6 +39,37 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
   // Auth-aware intro button
   const role = (session?.user as { role?: string } | undefined)?.role
   const introHref = !session ? '/login' : role === 'CUSTOMER' ? `/introductions/new?cleaner=${cleaner.slug}` : null
+
+  // Gendered / locale-aware labels
+  const messageLabel = locale === 'el'
+    ? cleaner.gender === 'female'
+      ? t('messageBtnFemale', { name: firstName })
+      : t('messageBtnMale', { name: firstName })
+    : t('messageBtn', { name: firstName })
+
+  const unlockNote = locale === 'el'
+    ? cleaner.gender === 'female'
+      ? t('unlockNoteFemale', { name: firstName })
+      : t('unlockNoteMale', { name: firstName })
+    : t('unlockNote', { name: firstName })
+
+  const verifiedLabel = locale === 'el'
+    ? cleaner.gender === 'female'
+      ? t('verifiedFemale')
+      : t('verifiedMale')
+    : t('verified')
+
+  const cleanerTypeLabel = cleaner.cleaner_type === 'company'
+    ? t('company')
+    : locale === 'el'
+      ? cleaner.gender === 'female'
+        ? t('individualFemale')
+        : t('individualMale')
+      : t('individual')
+
+  const availabilityLabel = cleaner.availability
+    .map(a => tFilters(a as 'weekdays' | 'weekends' | 'evenings'))
+    .join(', ')
 
   return (
     <div className="min-h-screen bg-[#F7FAF9]">
@@ -69,7 +101,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
             {cleaner.verified && (
               <div className="absolute -bottom-1 -right-1 flex items-center gap-1 bg-[#19706A] rounded-full px-2 py-0.5 border-[2px] border-white">
                 <span className="w-1 h-1 rounded-full bg-white shrink-0" />
-                <span className="text-[9px] font-medium text-white">Verified</span>
+                <span className="text-[9px] font-medium text-white">{verifiedLabel}</span>
               </div>
             )}
           </div>
@@ -78,7 +110,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
               <h1 className="text-[26px] font-medium text-[#0D1F1E]">{cleaner.display_name}</h1>
-              <span className="bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2.5 py-0.5 text-[12px] font-medium">{cleaner.city}</span>
+              <span className="bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2.5 py-0.5 text-[12px] font-medium">{getCityName(cleaner.city)}</span>
             </div>
             <div className="flex gap-4 items-center flex-wrap text-[13px] text-[#6B8886] mb-3">
               <button
@@ -87,20 +119,20 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
               >
                 <StarRow rating={cleaner.avg_rating} />
                 <span className="group-hover:text-[#19706A] transition-colors group-hover:underline underline-offset-2">
-                  {cleaner.avg_rating} · {cleaner.review_count} reviews
+                  {cleaner.avg_rating} · {t('reviewsCount', { count: cleaner.review_count })}
                 </span>
               </button>
               <span>·</span>
-              <span>{cleaner.total_jobs_count} jobs completed</span>
+              <span>{t('jobsDone', { count: cleaner.total_jobs_count })}</span>
               <span>·</span>
-              <span>{uniqueCustomers} unique customers</span>
+              <span>{t('uniqueCustomers', { count: uniqueCustomers })}</span>
             </div>
             <div className="flex gap-1.5 flex-wrap">
               <span className="bg-[#E8F4F3] text-[#19706A] rounded-[6px] px-2 py-0.5 text-[11px] font-medium">
                 {cleaner.languages.join(' · ')}
               </span>
               <span className="bg-[#E8F4F3] text-[#19706A] rounded-[6px] px-2 py-0.5 text-[11px] font-medium">
-                {cap(cleaner.cleaner_type)}
+                {cleanerTypeLabel}
               </span>
             </div>
           </div>
@@ -109,11 +141,11 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           <div className="flex flex-col items-end gap-2 shrink-0">
             <p className="text-[12px] text-[#6B8886]">{t('hourlyRate')}</p>
             <p className="text-[26px] font-medium text-[#0D1F1E] leading-none">
-              €{cleaner.hourly_rate_eur}<span className="text-[14px] text-[#6B8886] font-normal">/hr</span>
+              €{cleaner.hourly_rate_eur}<span className="text-[14px] text-[#6B8886] font-normal">{tCommon('perHour')}</span>
             </p>
             {introHref ? (
               <Link href={introHref} className="btn-primary rounded-full px-6 py-3 text-[14px] whitespace-nowrap">
-                {t('messageBtn', { name: firstName })} →
+                {messageLabel} →
               </Link>
             ) : (
               <button disabled className="btn-primary rounded-full px-6 py-3 text-[14px] opacity-40 cursor-not-allowed whitespace-nowrap">
@@ -152,7 +184,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           <div className="sticky top-6 bg-white border border-[#E0EDEC] rounded-[16px] p-6">
             <div className="mb-1">
               <span className="text-[28px] font-medium text-[#0D1F1E]">€{cleaner.hourly_rate_eur}</span>
-              <span className="text-[14px] text-[#6B8886]">/hr</span>
+              <span className="text-[14px] text-[#6B8886]">{tCommon('perHour')}</span>
             </div>
             <button
               onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
@@ -167,9 +199,9 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
             <div className="space-y-2.5 mb-4">
               {[
                 { label: t('languages'), value: cleaner.languages.join(', ') },
-                { label: t('city'), value: cleaner.city },
-                { label: t('type'), value: cap(cleaner.cleaner_type) },
-                { label: t('availability'), value: cleaner.availability.map(cap).join(', ') },
+                { label: t('city'), value: getCityName(cleaner.city) },
+                { label: t('type'), value: cleanerTypeLabel },
+                { label: t('availability'), value: availabilityLabel },
               ].map(row => (
                 <div key={row.label} className="flex justify-between text-[13px]">
                   <span className="text-[#6B8886]">{row.label}</span>
@@ -182,7 +214,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
 
             {introHref ? (
               <Link href={introHref} className="btn-primary w-full text-center rounded-full py-3 text-[14px] block">
-                {t('messageBtn', { name: firstName })} →
+                {messageLabel} →
               </Link>
             ) : (
               <button disabled className="btn-primary w-full rounded-full py-3 text-[14px] opacity-40 cursor-not-allowed">
@@ -191,7 +223,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
             )}
 
             <p className="text-[11px] text-[#6B8886] text-center mt-3 leading-relaxed">
-              {t('unlockNote', { name: firstName })}
+              {unlockNote}
             </p>
           </div>
         </div>
