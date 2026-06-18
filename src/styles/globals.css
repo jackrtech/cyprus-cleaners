@@ -1,0 +1,180 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;1,9..40,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens as CSS custom properties ── */
+:root {
+  /* Colours */
+  --color-primary:        #19706A;
+  --color-primary-light:  #E8F4F3;
+  --color-primary-dark:   #0D1F1E;
+  --color-gold:           #F2C94C;
+  --color-gold-light:     #FDF8E1;
+  --color-blue:           #2D8CFF;
+  --color-blue-light:     #E6F1FF;
+  --color-muted:          #6B8886;
+  --color-surface:        #F7FAF9;
+  --color-border:         #E0EDEC;
+  --color-white:          #FFFFFF;
+
+  /* Typography */
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+
+  /* Radii */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-card:       0 1px 3px rgba(25,112,106,.08), 0 4px 12px rgba(25,112,106,.06);
+  --shadow-card-hover: 0 4px 16px rgba(25,112,106,.14), 0 1px 4px rgba(25,112,106,.08);
+  --shadow-focus:      0 0 0 3px rgba(25,112,106,.25);
+  --shadow-modal:      0 20px 60px rgba(13,31,30,.2);
+
+  /* CS shape — reusable SVG path for background motif */
+  --cs-curve: "M80 12 C50 12, 20 28, 20 55 C20 68, 32 76, 50 76";
+}
+
+/* ── Base resets ── */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-surface);
+  color: var(--color-primary-dark);
+  line-height: 1.6;
+}
+
+/* ── Focus visible — accessibility ── */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Scrollbar — teal-tinted ── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-surface); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-muted); }
+
+/* ── Utility classes ── */
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  /* CS kinetic background shape */
+  .cs-bg-shape {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0.06;
+  }
+
+  /* Blue tick badge */
+  .badge-verified {
+    @apply inline-flex items-center gap-1 text-label uppercase tracking-widest
+           bg-blue-50 text-blue-700 px-2 py-0.5 rounded-sm;
+  }
+
+  /* Gold stars */
+  .stars {
+    color: var(--color-gold);
+  }
+}
+
+/* ── Component layer ── */
+@layer components {
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-teal-500 text-white font-medium rounded-full
+           px-6 py-3 text-body
+           transition-all duration-200
+           hover:bg-teal-600 active:scale-[.98]
+           focus-visible:outline-none;
+    box-shadow: var(--shadow-focus);
+  }
+  .btn-primary:focus-visible {
+    box-shadow: var(--shadow-focus);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-transparent text-teal-500 font-medium rounded-full
+           px-6 py-[11px] text-body
+           border border-teal-500
+           transition-all duration-200
+           hover:bg-teal-50 active:scale-[.98];
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           bg-transparent text-teal-900 font-medium rounded-full
+           px-5 py-[10px] text-body
+           border border-border
+           transition-all duration-200
+           hover:border-teal-300 hover:bg-teal-50 active:scale-[.98];
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-lg border border-border;
+    box-shadow: var(--shadow-card);
+  }
+  .card:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* Form inputs */
+  .input {
+    @apply w-full bg-white border border-border rounded-md px-4 py-3
+           text-body text-teal-900 placeholder:text-muted
+           transition-colors duration-150
+           focus:outline-none focus:border-teal-500;
+    box-shadow: none;
+  }
+  .input:focus {
+    box-shadow: var(--shadow-focus);
+  }
+
+  .label {
+    @apply block text-sm font-medium text-teal-900 mb-1.5;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center gap-1 text-label uppercase tracking-widest
+           px-2 py-0.5 rounded-sm font-medium;
+  }
+  .badge-teal  { @apply bg-teal-50  text-teal-600; }
+  .badge-gold  { @apply bg-gold-50  text-gold-700; }
+  .badge-blue  { @apply bg-blue-50  text-blue-700; }
+
+  /* Pill tags (service types on cards) */
+  .pill {
+    @apply inline-block text-label uppercase tracking-widest
+           bg-surface text-muted border border-border
+           px-3 py-1 rounded-full;
+  }
+  .pill-teal { @apply bg-teal-50 text-teal-600 border-transparent; }
+}
