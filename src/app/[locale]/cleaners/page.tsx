@@ -20,7 +20,7 @@ export default function CleanersPage() {
     if (filters.cities.length) r = r.filter(c => filters.cities.includes(c.city))
     if (filters.maxRate < 40) r = r.filter(c => c.hourly_rate_eur <= filters.maxRate)
     if (filters.minRating !== null) r = r.filter(c => c.avg_rating >= filters.minRating!)
-    if (filters.gender !== 'any') r = r.filter(c => c.gender === filters.gender)
+    if (filters.gender !== 'any') r = r.filter(c => c.gender === null || c.gender === filters.gender)
     if (filters.languages.length) r = r.filter(c => filters.languages.every(l => c.languages.includes(l)))
     if (filters.availability.length) r = r.filter(c => filters.availability.every(a => c.availability.includes(a)))
     if (filters.cleanerType !== 'any') r = r.filter(c => c.cleaner_type === filters.cleanerType)

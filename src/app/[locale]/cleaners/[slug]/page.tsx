@@ -44,19 +44,25 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
   const messageLabel = locale === 'el'
     ? cleaner.gender === 'female'
       ? t('messageBtnFemale', { name: firstName })
-      : t('messageBtnMale', { name: firstName })
+      : cleaner.gender === 'male'
+        ? t('messageBtnMale', { name: firstName })
+        : t('messageBtnCompany', { name: firstName })
     : t('messageBtn', { name: firstName })
 
   const unlockNote = locale === 'el'
     ? cleaner.gender === 'female'
       ? t('unlockNoteFemale', { name: firstName })
-      : t('unlockNoteMale', { name: firstName })
+      : cleaner.gender === 'male'
+        ? t('unlockNoteMale', { name: firstName })
+        : t('unlockNoteCompany', { name: firstName })
     : t('unlockNote', { name: firstName })
 
   const verifiedLabel = locale === 'el'
     ? cleaner.gender === 'female'
       ? t('verifiedFemale')
-      : t('verifiedMale')
+      : cleaner.gender === 'male'
+        ? t('verifiedMale')
+        : t('verifiedCompany')
     : t('verified')
 
   const cleanerTypeLabel = cleaner.cleaner_type === 'company'

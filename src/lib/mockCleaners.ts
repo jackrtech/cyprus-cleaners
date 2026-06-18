@@ -12,7 +12,7 @@ export type MockCleaner = {
   initials: string
   avatarColor: string
   avatarText: string
-  gender: 'female' | 'male'
+  gender: 'female' | 'male' | null
   availability: ('weekdays' | 'weekends' | 'evenings')[]
   cleaner_type: 'individual' | 'company'
   total_jobs_count: number
@@ -62,7 +62,7 @@ export const MOCK_CLEANERS: MockCleaner[] = [
     city: 'Nicosia', hourly_rate_eur: 20, services: ['HOUSE', 'APARTMENT'],
     languages: ['EL'], verified: true, avg_rating: 5.0, review_count: 17,
     initials: 'C', avatarColor: '#EEEDFE', avatarText: '#3C3489',
-    gender: 'male', availability: ['weekends'], cleaner_type: 'company',
+    gender: null, availability: ['weekends'], cleaner_type: 'company',
     total_jobs_count: 29, unique_customer_count: 20,
     bio: "We are a small family-run cleaning company based in Nicosia. We offer professional house and apartment cleaning with consistent quality and flexible scheduling.",
   },
@@ -107,7 +107,7 @@ export const MOCK_CLEANERS: MockCleaner[] = [
     city: 'Limassol', hourly_rate_eur: 22, services: ['HOUSE', 'APARTMENT'],
     languages: ['EN', 'EL', 'RU'], verified: true, avg_rating: 4.8, review_count: 86,
     initials: 'S', avatarColor: '#E6F1FF', avatarText: '#185FA5',
-    gender: 'female', availability: ['weekdays', 'weekends'], cleaner_type: 'company',
+    gender: null, availability: ['weekdays', 'weekends'], cleaner_type: 'company',
     total_jobs_count: 143, unique_customer_count: 97,
     bio: "Professional cleaning company based in Limassol. Our team of vetted cleaners delivers consistent, high-quality results for homes and apartments across the city.",
   },
