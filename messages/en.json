@@ -1,4 +1,17 @@
 {
+  "hero": {
+    "badge": "All 8 cities in Cyprus",
+    "headline1": "Trusted cleaning",
+    "headline2": "services across",
+    "headline3": "Cyprus",
+    "sub": "Vetted local cleaners, easy booking, and in-app chat — all in one place.",
+    "tabHouse": "House",
+    "tabApartment": "Apartment",
+    "findBtn": "Find cleaners",
+    "howItWorks": "How it works",
+    "altPhoto": "Professional cleaner",
+    "ratingLabel": "from 1,000+ happy customers"
+  },
   "nav": {
     "findCleaner": "Find a cleaner",
     "forCleaners": "For cleaners",
