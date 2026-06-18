@@ -26,7 +26,7 @@ export const DEFAULT_FILTERS: FilterState = {
   verifiedOnly: false,
 }
 
-const ALL_CITIES = ['Nicosia', 'Limassol', 'Larnaca', 'Paphos', 'Famagusta', 'Paralimni', 'Ayia Napa', 'Kyrenia']
+const ALL_CITIES = ['Nicosia', 'Limassol', 'Larnaca', 'Paphos', 'Famagusta', 'Paralimni', 'Ayia Napa', 'Protaras']
 const LANGUAGES = [{ code: 'EN', label: 'English' }, { code: 'EL', label: 'Greek' }, { code: 'RU', label: 'Russian' }]
 const AVAIL_KEYS = ['weekdays', 'weekends', 'evenings'] as const
 

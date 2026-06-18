@@ -127,7 +127,7 @@ export const CYPRUS_CITIES = [
   'Famagusta',
   'Paralimni',
   'Ayia Napa',
-  'Kyrenia',
+  'Protaras',
 ] as const
 
 export type CyprusCity = typeof CYPRUS_CITIES[number]

@@ -7,7 +7,7 @@ import type { Locale } from '@/navigation'
 
 const CITIES = [
   'Nicosia', 'Limassol', 'Larnaca', 'Paphos',
-  'Famagusta', 'Paralimni', 'Ayia Napa', 'Kyrenia',
+  'Famagusta', 'Paralimni', 'Ayia Napa', 'Protaras',
 ]
 
 export default function Footer() {
