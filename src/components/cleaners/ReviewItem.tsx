@@ -35,8 +35,19 @@ export default function ReviewItem({ review, locale }: Props) {
   const [translated, setTranslated] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const formattedDate = new Intl.DateTimeFormat(
+    locale === 'el' ? 'el-GR' : 'en-GB',
+    { month: 'long', year: 'numeric' }
+  ).format(new Date(review.date))
+
   useEffect(() => {
-    if (locale !== 'el') return
+    // Greek chars in the body means it's a Greek review
+    const isGreek = /[Ͱ-Ͽἀ-῿]/.test(review.body)
+    // Translate: EN locale + Greek review, or EL locale + English review
+    const needsTranslation = (locale === 'en' && isGreek) || (locale === 'el' && !isGreek)
+    if (!needsTranslation) return
+
+    const targetLocale = isGreek ? 'en' : locale
 
     const fetchTranslation = async () => {
       setLoading(true)
@@ -47,7 +58,7 @@ export default function ReviewItem({ review, locale }: Props) {
           body: JSON.stringify({
             reviewId: review.id,
             text: review.body,
-            targetLocale: locale,
+            targetLocale,
           }),
         })
         const data = await res.json()
@@ -70,7 +81,7 @@ export default function ReviewItem({ review, locale }: Props) {
     <div className="py-4 border-b border-[#F0F5F4] last:border-none">
       <div className="flex justify-between items-start mb-1.5">
         <span className="text-[13px] font-medium text-[#0D1F1E]">{review.reviewer_name}</span>
-        <span className="text-[11px] text-[#6B8886]">{review.date}</span>
+        <span className="text-[11px] text-[#6B8886]">{formattedDate}</span>
       </div>
 
       <div className="mb-2">

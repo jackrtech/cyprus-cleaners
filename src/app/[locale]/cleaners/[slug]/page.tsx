@@ -34,7 +34,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
 
   const reviews = MOCK_REVIEWS.filter(r => r.cleaner_slug === cleaner.slug)
   const firstName = cleaner.display_name.split(' ')[0]
-  const uniqueCustomers = Math.round(cleaner.total_jobs_count * 0.7)
+  const uniqueCustomers = cleaner.unique_customer_count
 
   // Auth-aware intro button
   const role = (session?.user as { role?: string } | undefined)?.role
