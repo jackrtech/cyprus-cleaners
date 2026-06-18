@@ -1,27 +1,21 @@
 'use client'
 
-import { usePathname, useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { Link } from '@/navigation'
+import { Link, useRouter, usePathname } from '@/navigation'
+import type { Locale } from '@/navigation'
 import { useState } from 'react'
 
 export default function Navbar() {
   const t = useTranslations('nav')
   const locale = useLocale()
-  const pathname = usePathname()
-  const router = useRouter()
+  const pathname = usePathname() // locale-neutral path from next-intl
+  const router = useRouter()     // next-intl router — locale-aware push
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   const isCleanersActive = pathname.includes('/cleaners')
 
-  const handleLocaleSwitch = (targetLocale: string) => {
-    const segments = pathname.split('/').filter(Boolean)
-    const locales = ['en', 'el']
-    if (locales.includes(segments[0])) segments.shift()
-    const newPath = targetLocale === 'en'
-      ? `/${segments.join('/')}` || '/'
-      : `/el/${segments.join('/')}`.replace(/\/+$/, '')
-    router.push(newPath)
+  const handleLocaleSwitch = (targetLocale: Locale) => {
+    router.push(pathname, { locale: targetLocale })
   }
 
   const NavLinks = () => (
