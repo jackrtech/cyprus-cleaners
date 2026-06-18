@@ -14,9 +14,14 @@ export default function Navbar() {
 
   const isCleanersActive = pathname.includes('/cleaners')
 
-  function switchLocale(next: string) {
-    const stripped = pathname.replace(/^\/(en|el)(\/|$)/, '/') || '/'
-    router.push(next === 'en' ? stripped : `/${next}${stripped === '/' ? '' : stripped}`)
+  const handleLocaleSwitch = (targetLocale: string) => {
+    const segments = pathname.split('/').filter(Boolean)
+    const locales = ['en', 'el']
+    if (locales.includes(segments[0])) segments.shift()
+    const newPath = targetLocale === 'en'
+      ? `/${segments.join('/')}` || '/'
+      : `/el/${segments.join('/')}`.replace(/\/+$/, '')
+    router.push(newPath)
   }
 
   const NavLinks = () => (
@@ -45,7 +50,7 @@ export default function Navbar() {
       {(['en', 'el'] as const).map((lang) => (
         <button
           key={lang}
-          onClick={() => switchLocale(lang)}
+          onClick={() => handleLocaleSwitch(lang)}
           className={`text-xs font-medium tracking-wide px-3 py-1 rounded-full transition-all ${
             locale === lang
               ? 'bg-[#19706A] text-white'
