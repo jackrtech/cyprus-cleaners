@@ -70,8 +70,8 @@ const pillOn = "bg-[#E8F4F3] border-[#19706A] text-[#19706A] font-medium"
 function Panel({ children, onClick }: { children: React.ReactNode; onClick?: (e: React.MouseEvent) => void }) {
   return (
     <div
-      className="absolute top-full left-0 z-50 mt-1.5 bg-white border border-[#E0EDEC] rounded-[12px] p-4 min-w-[210px]"
-      style={{ boxShadow: '0 8px 24px rgba(25,112,106,0.10)' }}
+      className="absolute top-full left-0 mt-1.5 bg-white border border-[#E0EDEC] rounded-[12px] p-4 min-w-[210px]"
+      style={{ boxShadow: '0 8px 24px rgba(25,112,106,0.10)', zIndex: 200 }}
       onMouseDown={e => e.stopPropagation()}
       onClick={onClick}
     >
@@ -150,7 +150,7 @@ export default function FilterBar({ filters, onChange }: Props) {
 
   return (
     <div ref={containerRef}>
-      <div className="bg-white border-b border-[#E0EDEC] px-10">
+      <div className="sticky top-0 z-[40] bg-white border-b border-[#E0EDEC] px-10">
         <div className="flex items-center gap-2 py-3 overflow-x-auto">
 
           {/* City */}
