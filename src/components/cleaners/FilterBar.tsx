@@ -32,7 +32,7 @@ const LANGUAGES = [{ code: 'EN', label: 'English' }, { code: 'EL', label: 'Greek
 const AVAIL_KEYS = ['weekdays', 'weekends', 'evenings'] as const
 
 const cityCounts = MOCK_CLEANERS.reduce((acc, c) => {
-  acc[c.city] = (acc[c.city] || 0) + 1
+  c.cities.forEach(city => { acc[city] = (acc[city] || 0) + 1 })
   return acc
 }, {} as Record<string, number>)
 

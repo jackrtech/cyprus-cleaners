@@ -1,12 +1,14 @@
 'use client'
 
+import { useState } from 'react'
 import { notFound } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useSession } from 'next-auth/react'
-import { Link } from '@/navigation'
+import { Link, useRouter } from '@/navigation'
 import { MOCK_CLEANERS, MOCK_REVIEWS } from '@/lib/mockCleaners'
 import ReviewItem from '@/components/cleaners/ReviewItem'
 import { useCity } from '@/hooks/useCity'
+import SendIntroModal from '@/components/introductions/SendIntroModal'
 
 function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
   const full = Math.round(rating)
@@ -29,6 +31,9 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
   const locale = useLocale()
   const getCityName = useCity()
   const { data: session } = useSession()
+  const [modalOpen,    setModalOpen]    = useState(false)
+  const [cleanerToast, setCleanerToast] = useState(false)
+  const router = useRouter()
   const cleaner = MOCK_CLEANERS.find(c => c.slug === params.slug)
   if (!cleaner) notFound()
 
@@ -38,7 +43,19 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
 
   // Auth-aware intro button
   const role = (session?.user as { role?: string } | undefined)?.role
-  const introHref = !session ? '/login' : role === 'CUSTOMER' ? `/introductions/new?cleaner=${cleaner.slug}` : null
+
+  function handleIntroClick() {
+    if (!session) {
+      router.push(`/login?return=/cleaners/${cleaner.slug}`)
+      return
+    }
+    if (role === 'CUSTOMER') {
+      setModalOpen(true)
+      return
+    }
+    setCleanerToast(true)
+    setTimeout(() => setCleanerToast(false), 3000)
+  }
 
   // Gendered / locale-aware labels
   const messageLabel = locale === 'el'
@@ -116,7 +133,9 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
               <h1 className="text-[26px] font-medium text-[#0D1F1E]">{cleaner.display_name}</h1>
-              <span className="bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2.5 py-0.5 text-[12px] font-medium">{getCityName(cleaner.city)}</span>
+              {cleaner.cities.map(city => (
+                <span key={city} className="bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2.5 py-0.5 text-[12px] font-medium">{getCityName(city)}</span>
+              ))}
             </div>
             <div className="flex gap-4 items-center flex-wrap text-[13px] text-[#6B8886] mb-3">
               <button
@@ -149,15 +168,12 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
             <p className="text-[26px] font-medium text-[#0D1F1E] leading-none">
               €{cleaner.hourly_rate_eur}<span className="text-[14px] text-[#6B8886] font-normal">{tCommon('perHour')}</span>
             </p>
-            {introHref ? (
-              <Link href={introHref} className="btn-primary rounded-full px-6 py-3 text-[14px] whitespace-nowrap">
-                {messageLabel} →
-              </Link>
-            ) : (
-              <button disabled className="btn-primary rounded-full px-6 py-3 text-[14px] opacity-40 cursor-not-allowed whitespace-nowrap">
-                N/A
-              </button>
-            )}
+            <button
+              onClick={handleIntroClick}
+              className="btn-primary rounded-full px-6 py-3 text-[14px] whitespace-nowrap"
+            >
+              {messageLabel} →
+            </button>
           </div>
         </div>
       </div>
@@ -205,7 +221,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
             <div className="space-y-2.5 mb-4">
               {[
                 { label: t('languages'), value: cleaner.languages.join(', ') },
-                { label: t('city'), value: getCityName(cleaner.city) },
+                { label: t('city'), value: cleaner.cities.map(getCityName).join(', ') },
                 { label: t('type'), value: cleanerTypeLabel },
                 { label: t('availability'), value: availabilityLabel },
               ].map(row => (
@@ -218,15 +234,12 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
 
             <div className="border-t border-[#E0EDEC] my-4" />
 
-            {introHref ? (
-              <Link href={introHref} className="btn-primary w-full text-center rounded-full py-3 text-[14px] block">
-                {messageLabel} →
-              </Link>
-            ) : (
-              <button disabled className="btn-primary w-full rounded-full py-3 text-[14px] opacity-40 cursor-not-allowed">
-                N/A
-              </button>
-            )}
+            <button
+              onClick={handleIntroClick}
+              className="btn-primary w-full rounded-full py-3 text-[14px]"
+            >
+              {messageLabel} →
+            </button>
 
             <p className="text-[11px] text-[#6B8886] text-center mt-3 leading-relaxed">
               {unlockNote}
@@ -234,6 +247,18 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           </div>
         </div>
       </div>
+      {cleanerToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] bg-[#0D1F1E] text-white text-[13px] px-5 py-3 rounded-full shadow-lg whitespace-nowrap">
+          {t('cleanerCannotIntro')}
+        </div>
+      )}
+      <SendIntroModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        cleanerProfileId={cleaner.id}
+        firstName={firstName}
+        heading={messageLabel}
+      />
     </div>
   )
 }

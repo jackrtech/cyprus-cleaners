@@ -23,8 +23,8 @@ const authMiddleware = withAuth(
           return token?.role === 'ADMIN'
         }
 
-        // Cleaner dashboard — CLEANER only
-        if (pathname.startsWith('/cleaner/dashboard')) {
+        // Cleaner dashboard — CLEANER only (must be checked before /dashboard/**)
+        if (pathname.startsWith('/dashboard/cleaner')) {
           return token?.role === 'CLEANER'
         }
 
@@ -45,7 +45,6 @@ export function middleware(req: NextRequest) {
   // Protected paths go through auth middleware
   const isProtected =
     pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/cleaner/dashboard') ||
     pathname.startsWith('/admin')
 
   if (isProtected) {

@@ -4,40 +4,58 @@ import { useLocale, useTranslations } from 'next-intl'
 import { Link, useRouter, usePathname } from '@/navigation'
 import type { Locale } from '@/navigation'
 import { useState } from 'react'
+import { useSession, signOut } from 'next-auth/react'
 
 export default function Navbar() {
   const t = useTranslations('nav')
   const locale = useLocale()
-  const pathname = usePathname() // locale-neutral path from next-intl
-  const router = useRouter()     // next-intl router — locale-aware push
+  const pathname = usePathname()
+  const router = useRouter()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const isCleanersActive = pathname.includes('/cleaners')
+  const { data: session } = useSession()
+  const role = session?.user?.role
+  const isLoggedIn = !!session?.user
 
   const handleLocaleSwitch = (targetLocale: Locale) => {
     router.push(pathname, { locale: targetLocale })
   }
 
-  const NavLinks = () => (
-    <>
-      <Link
-        href="/cleaners"
-        className={`text-[14px] transition-colors ${
-          isCleanersActive
-            ? 'text-[#19706A] font-medium border-b-2 border-[#19706A] pb-0.5'
-            : 'text-[#0D1F1E] hover:text-[#19706A]'
-        }`}
-      >
-        {t('findCleaner')}
-      </Link>
-      <Link
-        href="/register?role=cleaner"
-        className="text-[14px] text-[#0D1F1E] hover:text-[#19706A] transition-colors"
-      >
-        {t('forCleaners')}
-      </Link>
-    </>
-  )
+  const handleSignOut = () => {
+    signOut({ callbackUrl: '/' })
+    setDrawerOpen(false)
+  }
+
+  // Nav centre links — vary by role
+  const navLinks: { label: string; href: string }[] = (() => {
+    if (role === 'CUSTOMER') return [{ label: t('findCleaner'), href: '/cleaners' }]
+    if (role === 'CLEANER')  return [{ label: t('forCleaners'), href: '/dashboard/cleaner' }]
+    if (role === 'ADMIN')    return [{ label: t('admin'),       href: '/admin' }]
+    // Logged out / loading
+    return [
+      { label: t('findCleaner'), href: '/cleaners' },
+      { label: t('forCleaners'), href: '/for-cleaners' },
+    ]
+  })()
+
+  // Ghost button — always a link
+  const ghostBtn = (() => {
+    if (role === 'CUSTOMER') return { label: t('dashboard'), href: '/dashboard' }
+    if (role === 'CLEANER')  return { label: t('dashboard'), href: '/dashboard/cleaner' }
+    if (role === 'ADMIN')    return { label: t('dashboard'), href: '/admin' }
+    return { label: t('signIn'), href: '/login' }
+  })()
+
+  const linkClass = (href: string) => {
+    const active = href === '/cleaners'
+      ? pathname.includes('/cleaners')
+      : pathname === href
+    return `text-[14px] transition-colors ${
+      active
+        ? 'text-[#19706A] font-medium border-b-2 border-[#19706A] pb-0.5'
+        : 'text-[#0D1F1E] hover:text-[#19706A]'
+    }`
+  }
 
   const LanguageToggle = () => (
     <div className="flex items-center bg-[#F7FAF9] border border-[#E0EDEC] rounded-full p-0.5 gap-0.5">
@@ -74,14 +92,22 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-8">
-          <NavLinks />
+          {navLinks.map(link => (
+            <Link key={link.href} href={link.href} className={linkClass(link.href)}>
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-3">
           <LanguageToggle />
-          <Link href="/login" className="btn-ghost">{t('signIn')}</Link>
-          <Link href="/register" className="btn-primary">{t('getStarted')}</Link>
+          <Link href={ghostBtn.href} className="btn-ghost">{ghostBtn.label}</Link>
+          {isLoggedIn ? (
+            <button onClick={handleSignOut} className="btn-primary">{t('signOut')}</button>
+          ) : (
+            <Link href="/get-started" className="btn-primary">{t('getStarted')}</Link>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -98,19 +124,27 @@ export default function Navbar() {
       {drawerOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-[#F7FAF9] border-b border-[#E0EDEC] px-6 py-4 flex flex-col gap-4">
           <div className="flex flex-col gap-3">
-            <NavLinks />
+            {navLinks.map(link => (
+              <Link key={link.href} href={link.href} className={linkClass(link.href)} onClick={() => setDrawerOpen(false)}>
+                {link.label}
+              </Link>
+            ))}
           </div>
           <div className="flex items-center gap-3">
             <span className="text-[14px] text-[#0D1F1E]">{t('language')}</span>
             <LanguageToggle />
           </div>
-          <div className="flex gap-3">
-            <Link href="/login" className="btn-ghost flex-1 justify-center" onClick={() => setDrawerOpen(false)}>
-              {t('signIn')}
+          <div className="flex flex-col gap-3">
+            <Link href={ghostBtn.href} className="btn-ghost justify-center" onClick={() => setDrawerOpen(false)}>
+              {ghostBtn.label}
             </Link>
-            <Link href="/register" className="btn-primary flex-1 justify-center" onClick={() => setDrawerOpen(false)}>
-              {t('getStarted')}
-            </Link>
+            {isLoggedIn ? (
+              <button onClick={handleSignOut} className="btn-primary w-full justify-center">{t('signOut')}</button>
+            ) : (
+              <Link href="/get-started" className="btn-primary justify-center" onClick={() => setDrawerOpen(false)}>
+                {t('getStarted')}
+              </Link>
+            )}
           </div>
         </div>
       )}

@@ -2,7 +2,7 @@ export type MockCleaner = {
   id: string
   slug: string
   display_name: string
-  city: string
+  cities: string[]
   hourly_rate_eur: number
   services: ('HOUSE' | 'APARTMENT')[]
   languages: string[]
@@ -23,7 +23,7 @@ export type MockCleaner = {
 export const MOCK_CLEANERS: MockCleaner[] = [
   {
     id: '1', slug: 'maria-stavrou', display_name: 'Maria Stavrou',
-    city: 'Nicosia', hourly_rate_eur: 15, services: ['HOUSE', 'APARTMENT'],
+    cities: ['Nicosia'], hourly_rate_eur: 15, services: ['HOUSE', 'APARTMENT'],
     languages: ['EN', 'EL'], verified: true, avg_rating: 4.9, review_count: 38,
     initials: 'M', avatarColor: '#E8F4F3', avatarText: '#19706A',
     gender: 'female', availability: ['weekdays', 'weekends'], cleaner_type: 'individual',
@@ -32,7 +32,7 @@ export const MOCK_CLEANERS: MockCleaner[] = [
   },
   {
     id: '2', slug: 'andreas-petrou', display_name: 'Andreas Petrou',
-    city: 'Limassol', hourly_rate_eur: 18, services: ['HOUSE'],
+    cities: ['Limassol'], hourly_rate_eur: 18, services: ['HOUSE'],
     languages: ['EN', 'EL', 'RU'], verified: true, avg_rating: 4.8, review_count: 52,
     initials: 'A', avatarColor: '#E6F1FF', avatarText: '#185FA5',
     gender: 'male', availability: ['weekdays', 'evenings'], cleaner_type: 'individual',
@@ -41,7 +41,7 @@ export const MOCK_CLEANERS: MockCleaner[] = [
   },
   {
     id: '3', slug: 'elena-georgiou', display_name: 'Elena Georgiou',
-    city: 'Larnaca', hourly_rate_eur: 14, services: ['APARTMENT'],
+    cities: ['Larnaca'], hourly_rate_eur: 14, services: ['APARTMENT'],
     languages: ['EN', 'EL'], verified: false, avg_rating: 4.7, review_count: 29,
     initials: 'E', avatarColor: '#EAF3DE', avatarText: '#3B6D11',
     gender: 'female', availability: ['weekdays'], cleaner_type: 'individual',
@@ -50,7 +50,7 @@ export const MOCK_CLEANERS: MockCleaner[] = [
   },
   {
     id: '4', slug: 'natasha-ivanova', display_name: 'Natasha Ivanova',
-    city: 'Paphos', hourly_rate_eur: 16, services: ['HOUSE'],
+    cities: ['Paphos'], hourly_rate_eur: 16, services: ['HOUSE'],
     languages: ['EN', 'RU'], verified: true, avg_rating: 4.6, review_count: 41,
     initials: 'N', avatarColor: '#FAECE7', avatarText: '#712B13',
     gender: 'female', availability: ['weekdays', 'weekends', 'evenings'], cleaner_type: 'individual',
@@ -59,7 +59,7 @@ export const MOCK_CLEANERS: MockCleaner[] = [
   },
   {
     id: '5', slug: 'christos-kyriacou', display_name: 'Christos Kyriacou',
-    city: 'Nicosia', hourly_rate_eur: 20, services: ['HOUSE', 'APARTMENT'],
+    cities: ['Nicosia'], hourly_rate_eur: 20, services: ['HOUSE', 'APARTMENT'],
     languages: ['EL'], verified: true, avg_rating: 5.0, review_count: 17,
     initials: 'C', avatarColor: '#EEEDFE', avatarText: '#3C3489',
     gender: null, availability: ['weekends'], cleaner_type: 'company',
@@ -68,7 +68,7 @@ export const MOCK_CLEANERS: MockCleaner[] = [
   },
   {
     id: '6', slug: 'sofia-papadopoulou', display_name: 'Sofia Papadopoulou',
-    city: 'Ayia Napa', hourly_rate_eur: 13, services: ['APARTMENT'],
+    cities: ['Ayia Napa'], hourly_rate_eur: 13, services: ['APARTMENT'],
     languages: ['EN', 'EL', 'RU'], verified: false, avg_rating: 4.5, review_count: 23,
     initials: 'S', avatarColor: '#FBEAF0', avatarText: '#72243E',
     gender: 'female', availability: ['weekdays', 'weekends'], cleaner_type: 'individual',
@@ -77,7 +77,7 @@ export const MOCK_CLEANERS: MockCleaner[] = [
   },
   {
     id: '7', slug: 'elena-papadaki', display_name: 'Elena Papadaki',
-    city: 'Limassol', hourly_rate_eur: 17, services: ['HOUSE', 'APARTMENT'],
+    cities: ['Limassol'], hourly_rate_eur: 17, services: ['HOUSE', 'APARTMENT'],
     languages: ['EN', 'EL', 'RU'], verified: true, avg_rating: 4.9, review_count: 44,
     initials: 'E', avatarColor: '#E8F4F3', avatarText: '#19706A',
     gender: 'female', availability: ['weekdays', 'weekends'], cleaner_type: 'individual',
@@ -86,7 +86,7 @@ export const MOCK_CLEANERS: MockCleaner[] = [
   },
   {
     id: '8', slug: 'nikos-andreou', display_name: 'Nikos Andreou',
-    city: 'Nicosia', hourly_rate_eur: 19, services: ['HOUSE'],
+    cities: ['Nicosia'], hourly_rate_eur: 19, services: ['HOUSE'],
     languages: ['EL', 'EN'], verified: true, avg_rating: 4.7, review_count: 31,
     initials: 'N', avatarColor: '#FDF8E1', avatarText: '#BA7517',
     gender: 'male', availability: ['weekdays', 'evenings'], cleaner_type: 'individual',
@@ -95,7 +95,7 @@ export const MOCK_CLEANERS: MockCleaner[] = [
   },
   {
     id: '9', slug: 'anna-kowalski', display_name: 'Anna Kowalski',
-    city: 'Paphos', hourly_rate_eur: 15, services: ['HOUSE', 'APARTMENT'],
+    cities: ['Paphos'], hourly_rate_eur: 15, services: ['HOUSE', 'APARTMENT'],
     languages: ['EN', 'RU'], verified: false, avg_rating: 4.6, review_count: 19,
     initials: 'A', avatarColor: '#EAF3DE', avatarText: '#3B6D11',
     gender: 'female', availability: ['weekdays', 'weekends', 'evenings'], cleaner_type: 'individual',
@@ -104,7 +104,7 @@ export const MOCK_CLEANERS: MockCleaner[] = [
   },
   {
     id: '10', slug: 'sparkling-clean-cy', display_name: 'Sparkling Clean CY',
-    city: 'Limassol', hourly_rate_eur: 22, services: ['HOUSE', 'APARTMENT'],
+    cities: ['Limassol'], hourly_rate_eur: 22, services: ['HOUSE', 'APARTMENT'],
     languages: ['EN', 'EL', 'RU'], verified: true, avg_rating: 4.8, review_count: 86,
     initials: 'S', avatarColor: '#E6F1FF', avatarText: '#185FA5',
     gender: null, availability: ['weekdays', 'weekends'], cleaner_type: 'company',
@@ -113,7 +113,7 @@ export const MOCK_CLEANERS: MockCleaner[] = [
   },
   {
     id: '11', slug: 'katerina-ioannou', display_name: 'Katerina Ioannou',
-    city: 'Larnaca', hourly_rate_eur: 13, services: ['APARTMENT'],
+    cities: ['Larnaca'], hourly_rate_eur: 13, services: ['APARTMENT'],
     languages: ['EL', 'EN'], verified: true, avg_rating: 4.8, review_count: 27,
     initials: 'K', avatarColor: '#FBEAF0', avatarText: '#72243E',
     gender: 'female', availability: ['weekdays'], cleaner_type: 'individual',
@@ -122,7 +122,7 @@ export const MOCK_CLEANERS: MockCleaner[] = [
   },
   {
     id: '12', slug: 'dimitris-stavros', display_name: 'Dimitris Stavros',
-    city: 'Ayia Napa', hourly_rate_eur: 16, services: ['HOUSE', 'APARTMENT'],
+    cities: ['Ayia Napa'], hourly_rate_eur: 16, services: ['HOUSE', 'APARTMENT'],
     languages: ['EL', 'EN', 'RU'], verified: false, avg_rating: 4.5, review_count: 14,
     initials: 'D', avatarColor: '#EEEDFE', avatarText: '#3C3489',
     gender: 'male', availability: ['weekends', 'evenings'], cleaner_type: 'individual',

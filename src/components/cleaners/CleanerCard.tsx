@@ -56,9 +56,14 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
           </span>
         </div>
 
-        <span className="inline-block bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2 py-0.5 text-[10px] font-medium my-1.5">
-          {getCityName(cleaner.city)}
-        </span>
+        <div className="flex items-center gap-1 my-1.5 flex-wrap">
+          <span className="inline-block bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2 py-0.5 text-[10px] font-medium">
+            {getCityName(cleaner.cities[0])}
+          </span>
+          {cleaner.cities.length > 1 && (
+            <span className="text-[10px] text-[#6B8886]">+{cleaner.cities.length - 1} more</span>
+          )}
+        </div>
 
         <div className="flex gap-1 flex-wrap mb-2.5">
           <span className="bg-[#E8F4F3] text-[#19706A] rounded-[6px] px-2 py-0.5 text-[10px] font-medium">

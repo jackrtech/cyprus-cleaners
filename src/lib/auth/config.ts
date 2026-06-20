@@ -34,9 +34,9 @@ declare module 'next-auth/jwt' {
 export const authOptions: NextAuthOptions = {
   session: { strategy: 'jwt' },
   pages: {
-    signIn:  '/auth/sign-in',
-    signOut: '/auth/sign-in',
-    error:   '/auth/sign-in',
+    signIn:  '/login',
+    signOut: '/login',
+    error:   '/login',
   },
   providers: [
     CredentialsProvider({
@@ -48,28 +48,33 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
-        const supabase = createAdminClient()
+        try {
+          const supabase = createAdminClient()
 
-        const { data: user, error } = await supabase
-          .from('users')
-          .select('id, email, full_name, password_hash, role, avatar_url')
-          .eq('email', credentials.email.toLowerCase().trim())
-          .single()
+          const { data: user, error } = await supabase
+            .from('users')
+            .select('id, email, full_name, password_hash, role, avatar_url')
+            .eq('email', credentials.email.toLowerCase().trim())
+            .single()
 
-        if (error || !user) return null
+          if (error || !user) return null
 
-        const passwordMatch = await bcrypt.compare(
-          credentials.password,
-          user.password_hash
-        )
-        if (!passwordMatch) return null
+          const passwordMatch = await bcrypt.compare(
+            credentials.password,
+            user.password_hash
+          )
+          if (!passwordMatch) return null
 
-        return {
-          id:         user.id,
-          email:      user.email,
-          name:       user.full_name,
-          role:       user.role as UserRole,
-          avatar_url: user.avatar_url,
+          return {
+            id:         user.id,
+            email:      user.email,
+            name:       user.full_name,
+            role:       user.role as UserRole,
+            avatar_url: user.avatar_url,
+          }
+        } catch (err) {
+          console.error('[NextAuth] authorize error:', err)
+          return null
         }
       },
     }),

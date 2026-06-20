@@ -17,7 +17,7 @@ export default function CleanersPage() {
   const results = useMemo(() => {
     let r = [...MOCK_CLEANERS]
 
-    if (filters.cities.length) r = r.filter(c => filters.cities.includes(c.city))
+    if (filters.cities.length) r = r.filter(c => filters.cities.some(fc => c.cities.includes(fc)))
     if (filters.maxRate < 40) r = r.filter(c => c.hourly_rate_eur <= filters.maxRate)
     if (filters.minRating !== null) r = r.filter(c => c.avg_rating >= filters.minRating!)
     if (filters.gender !== 'any') r = r.filter(c => c.gender === null || c.gender === filters.gender)
