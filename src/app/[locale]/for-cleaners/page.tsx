@@ -4,6 +4,8 @@ import { useEffect } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
+import CleanerCard from '@/components/cleaners/CleanerCard'
+import type { MockCleaner } from '@/lib/mockCleaners'
 
 type StepTitleKey = 'step1Title' | 'step2Title' | 'step3Title'
 type StepBodyKey  = 'step1Body'  | 'step2Body'  | 'step3Body'
@@ -19,7 +21,27 @@ const TRUST_KEYS: TrustKey[] = ['heroTrust1', 'heroTrust2', 'heroTrust3']
 
 const ARC_RADII = [110, 190, 270, 350, 430]
 
-const STAR = 'M10 1l2.4 7.4H19l-5.4 4 2.1 7-5.7-3.8L4.3 19.4l2.1-7L1 8.4h6.6L10 1z'
+const ELENA: MockCleaner = {
+  id: 'elena-k',
+  slug: 'elena-k',
+  display_name: 'Elena K.',
+  cities: ['Limassol'],
+  hourly_rate_eur: 18,
+  services: ['HOUSE', 'APARTMENT'],
+  languages: ['EN', 'EL'],
+  verified: true,
+  avg_rating: 4.9,
+  review_count: 38,
+  initials: 'EK',
+  avatarColor: '#E8F4F3',
+  avatarText: '#19706A',
+  gender: 'female',
+  availability: ['weekdays', 'weekends'],
+  cleaner_type: 'individual',
+  total_jobs_count: 120,
+  unique_customer_count: 48,
+  bio: 'Home & Apartment cleaning',
+}
 
 const LOGO_SVG = (
   <svg width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
@@ -55,16 +77,25 @@ export default function ForCleanersPage() {
         /* Static fallback: underline is visible for reduced-motion / no-JS */
         .fc-underline { stroke-dashoffset: 0; }
 
+        /* Truth items — subtle left gold accent, border between items */
+        .fc-truth {
+          border-left: 2px solid rgba(242,201,76,0.25);
+          padding-left: 14px;
+        }
+        .fc-truth + .fc-truth {
+          border-top: 1px solid rgba(255,255,255,0.12);
+          padding-top: clamp(18px,2.5vw,28px);
+        }
+
+        /* Closing CTA button hover */
+        .fc-cta-btn { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .fc-cta-btn:hover { transform: scale(1.04) translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.15); }
+        .fc-cta-btn:active { transform: scale(0.98) translateY(0); }
+
         @media (prefers-reduced-motion: no-preference) {
           @keyframes fc-bob {
             0%, 100% { transform: translateY(0px); }
             50%       { transform: translateY(-8px); }
-          }
-          @keyframes fc-scan {
-            0%   { transform: translateY(0); opacity: 0; }
-            5%   { opacity: 0.75; }
-            95%  { opacity: 0.75; }
-            100% { transform: translateY(600px); opacity: 0; }
           }
           @keyframes fc-draw {
             from { stroke-dashoffset: 140; }
@@ -72,7 +103,6 @@ export default function ForCleanersPage() {
           }
           .fc-bob          { animation: fc-bob 3.2s ease-in-out infinite; }
           .fc-bob-offset   { animation: fc-bob 3.2s ease-in-out infinite 1.6s; }
-          .fc-scan-beam    { animation: fc-scan 5s linear infinite 1.2s; }
           .fc-underline    { animation: fc-draw 0.9s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both; }
         }
 
@@ -80,7 +110,7 @@ export default function ForCleanersPage() {
           .fc-grid-2       { grid-template-columns: 1fr !important; }
           .fc-flex-close   { flex-direction: column !important; align-items: flex-start !important; }
           .fc-hide-mobile  { display: none !important; }
-          .fc-card-mobile  { width: 100% !important; max-width: 320px !important; }
+          .fc-arch-png     { height: 260px !important; }
         }
       `}</style>
 
@@ -178,7 +208,7 @@ export default function ForCleanersPage() {
             {/* Headline — 3 lines, teal word with animated gold underline */}
             <h1
               style={{
-                fontSize: 'clamp(40px,5.5vw,76px)',
+                fontSize: 'clamp(32px,4vw,40px)',
                 fontWeight: 500,
                 lineHeight: 1.08,
                 letterSpacing: '-0.03em',
@@ -226,9 +256,7 @@ export default function ForCleanersPage() {
                 marginBottom: 'clamp(28px,4vw,40px)',
               }}
             >
-              {t('heroSubPre')}{' '}
-              <strong style={{ color: '#0D1F1E', fontWeight: 500 }}>{t('heroSubBold')}</strong>
-              {' '}{t('heroSubPost')}
+              {t('heroSub')}
             </p>
 
             {/* CTA */}
@@ -264,14 +292,21 @@ export default function ForCleanersPage() {
             className="fc-hide-mobile"
             style={{ position: 'relative', height: 'clamp(420px,52vw,600px)' }}
           >
+            {/* S-curve clip-path matching homepage hero */}
+            <svg width="0" height="0" aria-hidden="true" style={{ position: 'absolute' }}>
+              <defs>
+                <clipPath id="fc-hero-clip" clipPathUnits="objectBoundingBox">
+                  <path d="M 0.26,0 L 1,0 L 1,1 L 0.26,1 C 0.04,0.88, 0.04,0.62, 0.26,0.5 C 0.48,0.38, 0.48,0.12, 0.26,0 Z" />
+                </clipPath>
+              </defs>
+            </svg>
+
             {/* Concentric arc backgrounds */}
             <div
               aria-hidden="true"
               style={{
                 position: 'absolute',
                 inset: 0,
-                borderRadius: '20px',
-                overflow: 'hidden',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -293,8 +328,8 @@ export default function ForCleanersPage() {
               </svg>
             </div>
 
-            {/* Photo */}
-            <div style={{ position: 'absolute', inset: 0, borderRadius: '20px', overflow: 'hidden' }}>
+            {/* Photo — S-curve clip matching homepage */}
+            <div style={{ position: 'absolute', inset: 0, clipPath: 'url(#fc-hero-clip)' }}>
               <Image
                 src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=700&h=900&q=80&auto=format&fit=crop"
                 alt="Professional cleaner in a bright home"
@@ -495,6 +530,8 @@ export default function ForCleanersPage() {
       </section>
 
       {/* ── ARCH SECTION — SIGNATURE ─────────────────────────────── */}
+      {/* White wrapper so clipped arch top matches the white section above */}
+      <div style={{ background: '#FFFFFF' }}>
       <section
         aria-label="What's different"
         style={{
@@ -516,40 +553,27 @@ export default function ForCleanersPage() {
             alignItems: 'center',
           }}
         >
-          {/* Left: photo + teal overlay + scan beam — hidden on mobile */}
+          {/* Left: free-standing cleaner PNG — transparent bg, grounded at bottom */}
           <div
-            className="fc-hide-mobile"
             style={{
-              position: 'relative',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              height: 'clamp(320px,38vw,500px)',
+              display: 'flex',
+              alignItems: 'flex-end',
+              justifyContent: 'center',
+              alignSelf: 'stretch',
             }}
           >
-            <Image
-              src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=640&h=800&q=80&auto=format&fit=crop"
-              alt="Professional cleaner at work"
-              fill
-              sizes="45vw"
-              style={{ objectFit: 'cover' }}
-            />
-            {/* Teal overlay */}
-            <div
-              aria-hidden="true"
-              style={{ position: 'absolute', inset: 0, background: 'rgba(25,112,106,0.28)' }}
-            />
-            {/* Scan beam */}
-            <div
-              aria-hidden="true"
-              className="fc-scan-beam"
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://claude.ai/api/7a604da2-8b09-4a8d-a796-e415790c1af4/files/73bd6302-597d-450d-8804-bd433cc1c859/preview"
+              alt=""
+              className="fc-arch-png"
               style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '3px',
-                background:
-                  'linear-gradient(90deg, transparent 0%, rgba(25,112,106,0.9) 30%, rgba(242,201,76,0.7) 50%, rgba(25,112,106,0.9) 70%, transparent 100%)',
+                display: 'block',
+                height: 'clamp(300px,42vw,480px)',
+                width: 'auto',
+                maxWidth: '100%',
+                objectFit: 'contain',
+                objectPosition: 'bottom center',
               }}
             />
           </div>
@@ -582,23 +606,23 @@ export default function ForCleanersPage() {
               <span style={{ color: '#F2C94C' }}>{t('archH2Gold')}</span>
             </h2>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(18px,2.5vw,28px)' }}>
-              <p style={{ fontSize: 'clamp(15px,1.6vw,18px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <p className="fc-truth" style={{ fontSize: 'clamp(15px,1.6vw,18px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
                 {t('archTruth1Pre')}{' '}
                 <strong style={{ color: '#F2C94C', fontWeight: 500 }}>{t('archTruth1Bold')}</strong>
                 {' '}{t('archTruth1Post')}
               </p>
-              <p style={{ fontSize: 'clamp(15px,1.6vw,18px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
+              <p className="fc-truth" style={{ fontSize: 'clamp(15px,1.6vw,18px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
                 {t('archTruth2')}
               </p>
-              <p style={{ fontSize: 'clamp(15px,1.6vw,18px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
+              <p className="fc-truth" style={{ fontSize: 'clamp(15px,1.6vw,18px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
                 {t('archTruth3')}
               </p>
-              <p style={{ fontSize: 'clamp(15px,1.6vw,18px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
+              <p className="fc-truth" style={{ fontSize: 'clamp(15px,1.6vw,18px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
                 {t('archTruth4Pre')}{' '}
                 <span style={{ color: '#F2C94C' }}>{t('archTruth4Gold')}</span>
               </p>
-              <p style={{ fontSize: 'clamp(15px,1.6vw,18px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
+              <p className="fc-truth" style={{ fontSize: 'clamp(15px,1.6vw,18px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
                 {t('archTruth5Pre')}{' '}
                 <span style={{ color: '#F2C94C' }}>{t('archTruth5Gold')}</span>
               </p>
@@ -606,6 +630,7 @@ export default function ForCleanersPage() {
           </div>
         </div>
       </section>
+      </div>
 
       {/* ── QUOTE + PROFILE CARD ─────────────────────────────────── */}
       <section
@@ -664,78 +689,9 @@ export default function ForCleanersPage() {
             </blockquote>
           </div>
 
-          {/* Right: profile card */}
-          <div
-            className="fc-card-mobile card"
-            style={{ width: '260px', flexShrink: 0, overflow: 'hidden', borderRadius: '16px' }}
-          >
-            {/* Card photo header */}
-            <div style={{ position: 'relative', height: '108px', background: '#E8F4F3' }}>
-              <Image
-                src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=520&h=216&q=80&auto=format&fit=crop"
-                alt=""
-                fill
-                sizes="260px"
-                style={{ objectFit: 'cover' }}
-                aria-hidden="true"
-              />
-              {/* Avatar */}
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: '-20px',
-                  left: '18px',
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '50%',
-                  border: '3px solid white',
-                  overflow: 'hidden',
-                  zIndex: 2,
-                }}
-              >
-                <Image
-                  src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=88&h=88&q=80&auto=format&fit=crop&crop=face"
-                  alt={t('cardName')}
-                  width={44}
-                  height={44}
-                  style={{ objectFit: 'cover' }}
-                />
-              </div>
-            </div>
-
-            {/* Card content */}
-            <div style={{ padding: '30px 18px 18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '14px', fontWeight: 500, color: '#0D1F1E' }}>{t('cardName')}</span>
-                <span className="badge-teal" style={{ fontSize: '11px' }}>{t('cardBadge')}</span>
-              </div>
-              <p style={{ fontSize: '12px', color: '#6B8886', marginBottom: '12px' }}>{t('cardLocation')}</p>
-
-              {/* Stars */}
-              <div style={{ display: 'flex', gap: '2px', marginBottom: '14px' }}>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <svg key={i} width="12" height="12" viewBox="0 0 20 20" fill="#F2C94C" aria-hidden="true">
-                    <path d={STAR} />
-                  </svg>
-                ))}
-              </div>
-
-              {/* Stats */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                <div>
-                  <p style={{ fontSize: '16px', fontWeight: 500, color: '#0D1F1E', lineHeight: 1 }}>48</p>
-                  <p style={{ fontSize: '11px', color: '#6B8886', marginTop: '3px' }}>{t('cardReviews')}</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: '16px', fontWeight: 500, color: '#0D1F1E', lineHeight: 1 }}>€14</p>
-                  <p style={{ fontSize: '11px', color: '#6B8886', marginTop: '3px' }}>{t('cardRate')}</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: '16px', fontWeight: 500, color: '#0D1F1E', lineHeight: 1 }}>6 yrs</p>
-                  <p style={{ fontSize: '11px', color: '#6B8886', marginTop: '3px' }}>{t('cardExp')}</p>
-                </div>
-              </div>
-            </div>
+          {/* Right: existing CleanerCard component */}
+          <div style={{ width: '260px', flexShrink: 0 }}>
+            <CleanerCard cleaner={ELENA} />
           </div>
         </div>
       </section>
@@ -812,6 +768,7 @@ export default function ForCleanersPage() {
           {/* White button */}
           <Link
             href="/register/cleaner"
+            className="fc-cta-btn"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
