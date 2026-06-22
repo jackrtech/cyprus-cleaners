@@ -4,8 +4,6 @@ import { useEffect } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
-import CleanerCard from '@/components/cleaners/CleanerCard'
-import type { MockCleaner } from '@/lib/mockCleaners'
 
 type StepTitleKey = 'step1Title' | 'step2Title' | 'step3Title'
 type StepBodyKey  = 'step1Body'  | 'step2Body'  | 'step3Body'
@@ -21,27 +19,6 @@ const TRUST_KEYS: TrustKey[] = ['heroTrust1', 'heroTrust2', 'heroTrust3']
 
 const ARC_RADII = [110, 190, 270, 350, 430]
 
-const ELENA: MockCleaner = {
-  id: 'elena-k',
-  slug: 'elena-k',
-  display_name: 'Elena K.',
-  cities: ['Limassol'],
-  hourly_rate_eur: 18,
-  services: ['HOUSE', 'APARTMENT'],
-  languages: ['EN', 'EL'],
-  verified: true,
-  avg_rating: 4.9,
-  review_count: 38,
-  initials: 'EK',
-  avatarColor: '#E8F4F3',
-  avatarText: '#19706A',
-  gender: 'female',
-  availability: ['weekdays', 'weekends'],
-  cleaner_type: 'individual',
-  total_jobs_count: 120,
-  unique_customer_count: 48,
-  bio: 'Home & Apartment cleaning',
-}
 
 const LOGO_SVG = (
   <svg width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
@@ -111,6 +88,7 @@ export default function ForCleanersPage() {
           .fc-flex-close   { flex-direction: column !important; align-items: flex-start !important; }
           .fc-hide-mobile  { display: none !important; }
           .fc-arch-png     { height: 260px !important; }
+          .fc-arch-section { clip-path: inset(0 round 120px 120px 0 0) !important; }
         }
       `}</style>
 
@@ -170,22 +148,28 @@ export default function ForCleanersPage() {
         aria-label="Hero"
         style={{
           background: '#F7FAF9',
-          padding: 'clamp(64px,8vh,100px) clamp(24px,5vw,72px)',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
+        <svg width="0" height="0" aria-hidden="true" style={{ position: 'absolute' }}>
+          <defs>
+            <clipPath id="fc-hero-clip" clipPathUnits="objectBoundingBox">
+              <path d="M 0.26,0 L 1,0 L 1,1 L 0.26,1 C 0.04,0.88, 0.04,0.62, 0.26,0.5 C 0.48,0.38, 0.48,0.12, 0.26,0 Z" />
+            </clipPath>
+          </defs>
+        </svg>
         <div
           className="fc-grid-2"
           style={{
-            maxWidth: '1100px',
-            margin: '0 auto',
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: 'clamp(40px,5vw,80px)',
-            alignItems: 'center',
+            minHeight: '560px',
           }}
         >
           {/* Left: text */}
-          <div>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 'clamp(64px,8vh,100px) clamp(24px,5vw,56px)' }}>
+          <div style={{ maxWidth: '480px' }}>
             {/* Eyebrow pill */}
             <div
               style={{
@@ -286,21 +270,13 @@ export default function ForCleanersPage() {
               ))}
             </div>
           </div>
+          </div>
 
           {/* Right: photo + floating elements — hidden on mobile */}
           <div
             className="fc-hide-mobile"
-            style={{ position: 'relative', height: 'clamp(420px,52vw,600px)' }}
+            style={{ position: 'relative' }}
           >
-            {/* S-curve clip-path matching homepage hero */}
-            <svg width="0" height="0" aria-hidden="true" style={{ position: 'absolute' }}>
-              <defs>
-                <clipPath id="fc-hero-clip" clipPathUnits="objectBoundingBox">
-                  <path d="M 0.26,0 L 1,0 L 1,1 L 0.26,1 C 0.04,0.88, 0.04,0.62, 0.26,0.5 C 0.48,0.38, 0.48,0.12, 0.26,0 Z" />
-                </clipPath>
-              </defs>
-            </svg>
-
             {/* Concentric arc backgrounds */}
             <div
               aria-hidden="true"
@@ -328,15 +304,15 @@ export default function ForCleanersPage() {
               </svg>
             </div>
 
-            {/* Photo — S-curve clip matching homepage */}
-            <div style={{ position: 'absolute', inset: 0, clipPath: 'url(#fc-hero-clip)' }}>
+            {/* Photo — S-curve clip, bleeds to viewport edge */}
+            <div style={{ position: 'absolute', top: '-72px', right: 0, bottom: '-80px', left: 0, clipPath: 'url(#fc-hero-clip)' }}>
               <Image
                 src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=700&h=900&q=80&auto=format&fit=crop"
                 alt="Professional cleaner in a bright home"
                 fill
                 priority
                 sizes="50vw"
-                style={{ objectFit: 'cover' }}
+                style={{ objectFit: 'cover', objectPosition: 'center top' }}
               />
             </div>
 
@@ -534,6 +510,7 @@ export default function ForCleanersPage() {
       <div style={{ background: '#FFFFFF' }}>
       <section
         aria-label="What's different"
+        className="fc-arch-section"
         style={{
           background: '#0D1F1E',
           clipPath: 'ellipse(56% 100% at 50% 100%)',
@@ -618,14 +595,6 @@ export default function ForCleanersPage() {
               <p className="fc-truth" style={{ fontSize: 'clamp(15px,1.6vw,18px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
                 {t('archTruth3')}
               </p>
-              <p className="fc-truth" style={{ fontSize: 'clamp(15px,1.6vw,18px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
-                {t('archTruth4Pre')}{' '}
-                <span style={{ color: '#F2C94C' }}>{t('archTruth4Gold')}</span>
-              </p>
-              <p className="fc-truth" style={{ fontSize: 'clamp(15px,1.6vw,18px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
-                {t('archTruth5Pre')}{' '}
-                <span style={{ color: '#F2C94C' }}>{t('archTruth5Gold')}</span>
-              </p>
             </div>
           </div>
         </div>
@@ -689,9 +658,31 @@ export default function ForCleanersPage() {
             </blockquote>
           </div>
 
-          {/* Right: existing CleanerCard component */}
-          <div style={{ width: '260px', flexShrink: 0 }}>
-            <CleanerCard cleaner={ELENA} />
+          {/* Right: testimonial card with photo */}
+          <div style={{ width: '240px', flexShrink: 0, background: 'white', borderRadius: '16px', border: '1px solid #E0EDEC', overflow: 'hidden', boxShadow: '0 4px 20px rgba(13,31,30,0.06)' }}>
+            <div style={{ position: 'relative', height: '220px' }}>
+              <Image
+                src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=300&h=280&q=80&auto=format&fit=crop&crop=face"
+                alt="Elena K."
+                fill
+                sizes="240px"
+                style={{ objectFit: 'cover', objectPosition: 'center top' }}
+              />
+            </div>
+            <div style={{ padding: '16px 18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ fontWeight: 500, fontSize: '15px', color: '#0D1F1E' }}>Elena K.</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#E8F4F3', borderRadius: '9999px', padding: '2px 8px', fontSize: '11px', fontWeight: 600, color: '#19706A' }}>
+                  ✓ Verified
+                </span>
+              </div>
+              <p style={{ fontSize: '12px', color: '#6B8886', marginBottom: '10px' }}>Limassol · €18/hr</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span style={{ color: '#F2C94C', fontSize: '12px', letterSpacing: '-0.5px' }}>★★★★★</span>
+                <span style={{ fontSize: '12px', fontWeight: 500, color: '#0D1F1E' }}>4.9</span>
+                <span style={{ fontSize: '12px', color: '#6B8886' }}>(38 reviews)</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
