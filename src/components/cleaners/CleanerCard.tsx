@@ -32,12 +32,20 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
         className="h-[120px] relative flex items-center justify-center"
         style={{ background: cleaner.avatarColor }}
       >
-        <div
-          className="w-14 h-14 rounded-full border-[3px] border-white flex items-center justify-center text-[20px] font-medium bg-white"
-          style={{ color: cleaner.avatarText }}
-        >
-          {cleaner.initials}
-        </div>
+        {cleaner.photo_url ? (
+          <img
+            src={cleaner.photo_url}
+            alt={cleaner.display_name}
+            className="w-14 h-14 rounded-full object-cover border-[3px] border-white"
+          />
+        ) : (
+          <div
+            className="w-14 h-14 rounded-full border-[3px] border-white flex items-center justify-center text-[20px] font-medium bg-white"
+            style={{ color: cleaner.avatarText }}
+          >
+            {cleaner.initials}
+          </div>
+        )}
         {cleaner.verified && (
           <div className="absolute top-2 right-2 flex items-center gap-1 bg-[#19706A] rounded-full px-2 py-0.5">
             <span className="w-1 h-1 rounded-full bg-white shrink-0" />

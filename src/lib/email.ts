@@ -33,6 +33,65 @@ export async function sendEmail({ to, subject, html }: { to: string; subject: st
   return resend.emails.send({ from: FROM, to, subject, html })
 }
 
+// ─── 0. Email verification ───────────────────────────────────────────────────
+
+export async function sendVerificationEmail({
+  to, token, locale,
+}: {
+  to:     string
+  token:  string
+  locale: string
+}) {
+  const recipient = process.env.RESEND_TEST_EMAIL || to
+
+  const isEl = locale === 'el'
+
+  const subject = isEl
+    ? 'Επαληθεύστε τον λογαριασμό σας'
+    : 'Verify your Cyprus Cleaners account'
+
+  const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`
+
+  const html = layout(
+    `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Welcome to Cyprus Cleaners!</h2>
+     <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Please verify your email address to get started.</p>
+     ${cta('Verify email', verifyUrl)}
+     <p style="color:#6B8886;font-size:12px;line-height:1.5;margin:16px 0 0;">This link expires in 24 hours.</p>`
+  )
+
+  return sendEmail({ to: recipient, subject, html })
+}
+
+// ─── 0b. Password reset ───────────────────────────────────────────────────────
+
+export async function sendPasswordResetEmail({
+  to, token, locale,
+}: {
+  to:     string
+  token:  string
+  locale: string
+}) {
+  const recipient = process.env.RESEND_TEST_EMAIL || to
+
+  const isEl = locale === 'el'
+
+  const subject = isEl
+    ? 'Επαναφορά κωδικού Cyprus Cleaners'
+    : 'Reset your Cyprus Cleaners password'
+
+  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`
+
+  const html = layout(
+    `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Reset your password</h2>
+     <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">We received a request to reset your password.</p>
+     ${cta('Reset password', resetUrl)}
+     <p style="color:#6B8886;font-size:12px;line-height:1.5;margin:16px 0 0;">This link expires in 1 hour.</p>
+     <p style="color:#6B8886;font-size:12px;line-height:1.5;margin:8px 0 0;">If you didn't request this, you can safely ignore this email.</p>`
+  )
+
+  return sendEmail({ to: recipient, subject, html })
+}
+
 // ─── 1. New introduction → cleaner ───────────────────────────────────────────
 
 export async function sendNewIntroEmail({

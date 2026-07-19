@@ -95,7 +95,11 @@
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "forCustomersAndCleaners": "For customers and cleaners",
-    "emailPlaceholder": "you@example.com"
+    "emailPlaceholder": "you@example.com",
+    "verifyEmailBanner": "Please verify your email address. Check your inbox for a verification link.",
+    "emailSent": "Email sent!",
+    "pleaseWait": "Please wait a few minutes before requesting another email",
+    "resendEmail": "Resend email"
   },
   "forCleaners": {
     "joinHeading": "Join Cyprus Cleaners",
@@ -262,7 +266,13 @@
     "introSuccess": "Introduction sent! {name} will be notified.",
     "introError": "Something went wrong. Please try again.",
     "cleanerCannotIntro": "Cleaners can't send introductions",
-    "characters": "characters"
+    "characters": "characters",
+    "suggestedMessage": "Hi, I'm interested in your cleaning services. Are you available?",
+    "suggestedLabel": "Suggested message — feel free to edit",
+    "sendMessage": "Send message",
+    "alreadyHaveChat": "You already have an active chat with {name}. Go to your <dashboardLink>dashboard</dashboardLink> to continue the conversation.",
+    "goToDashboard": "dashboard",
+    "openChat": "Open chat"
   },
   "cleaners": {
     "topRated": "Top rated",
@@ -353,6 +363,13 @@
     "Paralimni": "Paralimni",
     "Ayia Napa": "Ayia Napa",
     "Protaras": "Protaras"
+  },
+  "chat": {
+    "noMessages": "No messages yet. Say hello!",
+    "inputPlaceholder": "Type a message...",
+    "sendError": "Failed to send. Please try again.",
+    "characters": "characters",
+    "photoComingSoon": "Photo upload coming soon"
   },
   "getStarted": {
     "heading": "How can we help you?",

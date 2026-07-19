@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import { createClient } from '@/lib/supabase/client'
+import ChatPanel from '@/components/chat/ChatPanel'
 
 interface CleanerProfile {
   slug:      string
@@ -32,80 +33,72 @@ const STATUS_PILL: Record<Introduction['status'], string> = {
 }
 
 interface IntroCardProps {
-  intro:         Introduction
-  statusLabel:   string
-  tApprove:      string
-  tDecline:      string
-  tReceivedOn:   string
-  dateFormatter: Intl.DateTimeFormat
-  onAction:      (id: string, action: 'APPROVE' | 'DECLINE') => Promise<void>
+  intro:                Introduction
+  statusLabel:          string
+  tReceivedOn:          string
+  dateFormatter:        Intl.DateTimeFormat
+  currentUserId:        string
+  isChatOpen:           boolean
+  onToggleChat:         () => void
 }
 
-function IntroCard({ intro, statusLabel, tApprove, tDecline, tReceivedOn, dateFormatter, onAction }: IntroCardProps) {
-  const [acting,    setActing]    = useState<'APPROVE' | 'DECLINE' | null>(null)
-  const [cardError, setCardError] = useState<string | null>(null)
-
+function IntroCard({
+  intro, statusLabel, tReceivedOn, dateFormatter,
+  currentUserId, isChatOpen, onToggleChat,
+}: IntroCardProps) {
   const customerName = intro.users?.full_name ?? '—'
 
-  async function handleAction(action: 'APPROVE' | 'DECLINE') {
-    setActing(action)
-    setCardError(null)
-    try {
-      await onAction(intro.id, action)
-    } catch {
-      setCardError('Something went wrong. Please try again.')
-    } finally {
-      setActing(null)
-    }
-  }
-
   return (
-    <div className="card p-5">
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2.5 flex-wrap mb-1">
-            <p className="text-[15px] font-medium text-[#0D1F1E]">{customerName}</p>
-            <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full ${STATUS_PILL[intro.status]}`}>
-              {statusLabel}
-            </span>
+    <>
+      <div className="card p-5">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2.5 flex-wrap mb-1">
+              <p className="text-[15px] font-medium text-[#0D1F1E]">{customerName}</p>
+              <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full ${STATUS_PILL[intro.status]}`}>
+                {statusLabel}
+              </span>
+            </div>
+            <p className="text-[12px] text-[#6B8886]">
+              {tReceivedOn} {dateFormatter.format(new Date(intro.created_at))}
+            </p>
           </div>
-          <p className="text-[12px] text-[#6B8886]">
-            {tReceivedOn} {dateFormatter.format(new Date(intro.created_at))}
-          </p>
-        </div>
 
-        {intro.status === 'PENDING' && (
           <div className="flex gap-2 shrink-0">
             <button
-              onClick={() => handleAction('DECLINE')}
-              disabled={!!acting}
-              className="btn-ghost rounded-full px-4 py-2 text-[13px] disabled:opacity-50"
+              type="button"
+              onClick={onToggleChat}
+              className={`rounded-full px-4 py-2 text-[13px] ${
+                isChatOpen ? 'btn-primary' : 'btn-secondary'
+              }`}
             >
-              {acting === 'DECLINE' ? '…' : tDecline}
-            </button>
-            <button
-              onClick={() => handleAction('APPROVE')}
-              disabled={!!acting}
-              className="btn-primary rounded-full px-4 py-2 text-[13px] disabled:opacity-50"
-            >
-              {acting === 'APPROVE' ? '…' : tApprove}
+              {isChatOpen ? 'Close chat' : 'Open chat'}
             </button>
           </div>
-        )}
+        </div>
+
+        <p className="text-[13px] text-[#6B8886] leading-relaxed">{intro.message}</p>
       </div>
 
-      <p className="text-[13px] text-[#6B8886] leading-relaxed">{intro.message}</p>
-
-      {cardError && (
-        <p className="text-[12px] text-red-600 mt-2">{cardError}</p>
+      {isChatOpen && (
+        <div className="mt-2 transition-all duration-200">
+          <ChatPanel
+            introductionId={intro.id}
+            currentUserId={currentUserId}
+            otherPartyName={intro.users?.full_name ?? 'Customer'}
+            otherPartyAvatar={null}
+            onClose={onToggleChat}
+          />
+        </div>
       )}
-    </div>
+    </>
   )
 }
 
 export default function CleanerDashboardPage() {
   const { data: session, status: sessionStatus } = useSession()
   const t      = useTranslations('dashboard')
+  const tAuth  = useTranslations('auth')
   const locale = useLocale()
   const router = useRouter()
 
@@ -114,12 +107,40 @@ export default function CleanerDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState<string | null>(null)
 
+  const [emailVerified, setEmailVerified] = useState<boolean | null>(null)
+  const [resending,     setResending]     = useState(false)
+  const [resendResult,  setResendResult]  = useState<'sent' | 'rate_limited' | null>(null)
+
+  const [openChatId, setOpenChatId] = useState<string | null>(null)
+
   // Auth guard
   useEffect(() => {
     if (sessionStatus === 'loading') return
     if (!session) { router.replace('/login'); return }
     if (session.user.role === 'CUSTOMER') router.replace('/dashboard')
   }, [session, sessionStatus, router])
+
+  // Fetch email verification status
+  useEffect(() => {
+    if (sessionStatus !== 'authenticated') return
+    fetch('/api/user/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setEmailVerified(d.email_verified ?? null) })
+      .catch(() => {})
+  }, [sessionStatus])
+
+  async function handleResendVerification() {
+    setResending(true)
+    try {
+      const res = await fetch('/api/auth/resend-verification', { method: 'POST' })
+      if (res.status === 429) setResendResult('rate_limited')
+      else if (res.ok) setResendResult('sent')
+    } catch {
+      // ignore
+    } finally {
+      setResending(false)
+    }
+  }
 
   // Parallel fetch: intros from API + profile from Supabase
   useEffect(() => {
@@ -145,17 +166,6 @@ export default function CleanerDashboardPage() {
       .finally(() => setLoading(false))
   }, [session, sessionStatus])
 
-  const handleAction = useCallback(async (id: string, action: 'APPROVE' | 'DECLINE') => {
-    const res = await fetch(`/api/introductions/${id}`, {
-      method:  'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action }),
-    })
-    if (!res.ok) throw new Error()
-    const updated = await res.json()
-    setIntros(prev => prev.map(i => i.id === id ? { ...i, status: updated.status } : i))
-  }, [])
-
   if (sessionStatus === 'loading' || !session || session.user.role === 'CUSTOMER') {
     return <div className="min-h-screen bg-[#F7FAF9]" />
   }
@@ -176,6 +186,31 @@ export default function CleanerDashboardPage() {
   return (
     <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-8">
       <div className="max-w-[720px] mx-auto space-y-8">
+
+        {/* Email verification banner */}
+        {emailVerified === false && (
+          <div className="flex items-center gap-3 bg-[#FDF8E1] border-l-4 border-[#F2C94C] rounded-lg p-4 mb-4 flex-wrap">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#F2C94C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
+              <path d="M9 1.5L1.5 15h15L9 1.5z" />
+              <path d="M9 7.5v3" />
+              <circle cx="9" cy="13" r="0.75" fill="#F2C94C" stroke="none" />
+            </svg>
+            <p className="text-[13px] text-[#0D1F1E] flex-1">{tAuth('verifyEmailBanner')}</p>
+            {resendResult === 'sent' ? (
+              <span className="text-[13px] text-[#19706A] shrink-0">{tAuth('emailSent')}</span>
+            ) : resendResult === 'rate_limited' ? (
+              <span className="text-[13px] text-red-600 shrink-0">{tAuth('pleaseWait')}</span>
+            ) : (
+              <button
+                onClick={handleResendVerification}
+                disabled={resending}
+                className="btn-primary shrink-0 text-[13px] px-4 py-2 rounded-full disabled:opacity-50"
+              >
+                {tAuth('resendEmail')}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* SECTION 1 — Profile completion banner */}
         {!loading && profileIncomplete && (
@@ -235,11 +270,11 @@ export default function CleanerDashboardPage() {
                   key={intro.id}
                   intro={intro}
                   statusLabel={statusLabels[intro.status]}
-                  tApprove={t('approve')}
-                  tDecline={t('decline')}
                   tReceivedOn={t('receivedOn')}
                   dateFormatter={dateFormatter}
-                  onAction={handleAction}
+                  currentUserId={session.user.id}
+                  isChatOpen={openChatId === intro.id}
+                  onToggleChat={() => setOpenChatId(openChatId === intro.id ? null : intro.id)}
                 />
               ))}
             </div>

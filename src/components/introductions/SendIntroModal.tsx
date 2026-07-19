@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Link } from '@/navigation'
 
 const MAX_CHARS = 500
 
@@ -16,9 +17,9 @@ interface Props {
 export default function SendIntroModal({ isOpen, onClose, cleanerProfileId, firstName, heading }: Props) {
   const t = useTranslations('profile')
 
-  const [message,  setMessage]  = useState('')
+  const [message,  setMessage]  = useState(t('suggestedMessage'))
   const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState<string | null>(null)
+  const [error,    setError]    = useState<React.ReactNode | null>(null)
   const [success,  setSuccess]  = useState(false)
 
   if (!isOpen) return null
@@ -33,8 +34,38 @@ export default function SendIntroModal({ isOpen, onClose, cleanerProfileId, firs
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cleaner_profile_id: cleanerProfileId, message }),
       })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const errData = await res.json()
+        if (res.status === 409) {
+          setError(
+            t.rich('alreadyHaveChat', {
+              name: firstName,
+              dashboardLink: () => (
+                <Link href="/dashboard" className="text-[#19706A] hover:underline">
+                  {t('goToDashboard')}
+                </Link>
+              ),
+            })
+          )
+        } else {
+          console.error('Introduction creation error:', errData)
+          setError(t('introError'))
+        }
+        return
+      }
+      const data = await res.json()
       setSuccess(true)
+
+      try {
+        const msgRes = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ introduction_id: data.id, body: message }),
+        })
+        if (!msgRes.ok) throw new Error()
+      } catch (msgErr) {
+        console.error('Failed to send first chat message:', msgErr)
+      }
     } catch {
       setError(t('introError'))
     } finally {
@@ -43,7 +74,7 @@ export default function SendIntroModal({ isOpen, onClose, cleanerProfileId, firs
   }
 
   function handleClose() {
-    setMessage('')
+    setMessage(t('suggestedMessage'))
     setError(null)
     setSuccess(false)
     onClose()
@@ -94,12 +125,13 @@ export default function SendIntroModal({ isOpen, onClose, cleanerProfileId, firs
               )}
 
               <div>
+                <p className="text-[11px] text-[#6B8886] mb-1.5">{t('suggestedLabel')}</p>
                 <textarea
                   value={message}
                   onChange={e => setMessage(e.target.value.slice(0, MAX_CHARS))}
                   required
                   rows={5}
-                  className="input w-full resize-none"
+                  className="input w-full resize-none cursor-text"
                   placeholder={t('introPlaceholder', { name: firstName })}
                 />
                 <p className="text-[11px] text-[#6B8886] text-right mt-1">
@@ -112,7 +144,7 @@ export default function SendIntroModal({ isOpen, onClose, cleanerProfileId, firs
                 disabled={loading || message.trim().length === 0}
                 className="btn-primary w-full py-3 rounded-full text-[14px] disabled:opacity-50"
               >
-                {loading ? '…' : t('sendIntro')}
+                {loading ? '…' : t('sendMessage')}
               </button>
             </form>
           </>

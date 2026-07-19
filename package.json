@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "db:push": "supabase db push",
-    "db:reset": "supabase db reset"
+    "db:reset": "supabase db reset",
+    "start-dev": "git pull origin main && npm install && node src/scripts/check-env.js && npm run dev",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.6.0",

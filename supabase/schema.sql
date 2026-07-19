@@ -25,6 +25,7 @@ create table users (
   full_name         text not null,
   phone             text,
   phone_verified    boolean not null default false,
+  email_verified    boolean not null default false,
   avatar_url        text,
   locale            locale_type not null default 'en',
   created_at        timestamptz not null default now()

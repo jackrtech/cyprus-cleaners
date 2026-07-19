@@ -1,21 +1,110 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
-import { MOCK_CLEANERS } from '@/lib/mockCleaners'
+import type { MockCleaner } from '@/lib/mockCleaners'
 import CleanerCard from '@/components/cleaners/CleanerCard'
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/cleaners/FilterBar'
 
 type SortKey = 'top-rated' | 'price-asc' | 'price-desc' | 'most-reviews' | 'most-jobs'
+
+interface DbCleanerRow {
+  id:                    string
+  slug:                  string
+  display_name:          string
+  bio:                   string | null
+  photo_url:             string | null
+  city:                  string | null
+  cities:                string[] | null
+  hourly_rate_eur:       number
+  services:              ('HOUSE' | 'APARTMENT')[] | null
+  languages:             string[] | null
+  cleaner_type:          'individual' | 'company' | null
+  gender:                'female' | 'male' | null
+  verified:              boolean
+  avg_rating:            number
+  review_count:          number
+  unique_customer_count: number
+  total_jobs_count:      number
+  availability:          Record<string, boolean> | null
+  is_mock:               boolean
+  is_company:            boolean
+}
+
+const AVATAR_PALETTE = [
+  { bg: '#E8F4F3', text: '#19706A' },
+  { bg: '#E6F1FF', text: '#185FA5' },
+  { bg: '#EAF3DE', text: '#3B6D11' },
+  { bg: '#FAECE7', text: '#712B13' },
+  { bg: '#EEEDFE', text: '#3C3489' },
+  { bg: '#FBEAF0', text: '#72243E' },
+  { bg: '#FDF8E1', text: '#BA7517' },
+]
+
+function getInitials(name: string): string {
+  return name.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase()
+}
+
+function hashString(str: string): number {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0
+  return hash
+}
+
+function mapAvailability(raw: Record<string, boolean> | null): ('weekdays' | 'weekends' | 'evenings')[] {
+  if (!raw) return []
+  return (['weekdays', 'weekends', 'evenings'] as const).filter(key => raw[key])
+}
+
+function mapCleaner(row: DbCleanerRow): MockCleaner {
+  const palette      = AVATAR_PALETTE[hashString(row.id) % AVATAR_PALETTE.length]
+  const cleanerType  = row.cleaner_type ?? (row.is_company ? 'company' : 'individual')
+  const gender       = cleanerType === 'company' ? null : row.gender
+
+  return {
+    id:                     row.id,
+    slug:                   row.slug,
+    display_name:           row.display_name,
+    cities:                 row.cities ?? (row.city ? [row.city] : []),
+    hourly_rate_eur:        row.hourly_rate_eur,
+    services:               row.services ?? [],
+    languages:              row.languages ?? [],
+    verified:               row.verified,
+    avg_rating:             row.avg_rating,
+    review_count:           row.review_count,
+    initials:               getInitials(row.display_name),
+    avatarColor:            palette.bg,
+    avatarText:             palette.text,
+    gender,
+    availability:           mapAvailability(row.availability),
+    cleaner_type:           cleanerType,
+    total_jobs_count:       row.total_jobs_count,
+    unique_customer_count:  row.unique_customer_count,
+    bio:                    row.bio ?? '',
+    photo_url:              row.photo_url,
+  }
+}
 
 export default function CleanersPage() {
   const t = useTranslations('directory')
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
   const [sort, setSort] = useState<SortKey>('top-rated')
 
+  const [cleaners, setCleaners] = useState<MockCleaner[]>([])
+  const [loading,  setLoading]  = useState(true)
+  const [error,    setError]    = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/cleaners', { cache: 'no-store' })
+      .then(r => { if (!r.ok) throw new Error(); return r.json() })
+      .then((rows: DbCleanerRow[]) => setCleaners(rows.map(mapCleaner)))
+      .catch(() => setError('Failed to load cleaners. Please refresh.'))
+      .finally(() => setLoading(false))
+  }, [])
+
   const results = useMemo(() => {
-    let r = [...MOCK_CLEANERS]
+    let r = [...cleaners]
 
     if (filters.cities.length) r = r.filter(c => filters.cities.some(fc => c.cities.includes(fc)))
     if (filters.maxRate < 40) r = r.filter(c => c.hourly_rate_eur <= filters.maxRate)
@@ -34,9 +123,9 @@ export default function CleanersPage() {
       case 'most-jobs':   r.sort((a, b) => b.total_jobs_count - a.total_jobs_count); break
     }
     return r
-  }, [filters, sort])
+  }, [filters, sort, cleaners])
 
-  const verifiedCount = MOCK_CLEANERS.filter(c => c.verified).length
+  const verifiedCount = cleaners.filter(c => c.verified).length
 
   return (
     <div className="min-h-screen bg-[#F7FAF9]">
@@ -70,7 +159,24 @@ export default function CleanersPage() {
           </select>
         </div>
 
-        {results.length > 0 ? (
+        {error ? (
+          <p className="text-[13px] text-red-600 bg-red-50 border border-red-200 rounded-[10px] px-4 py-3">
+            {error}
+          </p>
+        ) : loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="bg-white border border-[#E0EDEC] rounded-[16px] overflow-hidden animate-pulse">
+                <div className="h-[120px] bg-[#E0EDEC]" />
+                <div className="p-3 pb-3.5 space-y-2">
+                  <div className="h-3.5 bg-[#E0EDEC] rounded w-3/4" />
+                  <div className="h-3 bg-[#E0EDEC] rounded w-1/2" />
+                  <div className="h-3 bg-[#E0EDEC] rounded w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : results.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {results.map(cleaner => (
               <CleanerCard key={cleaner.id} cleaner={cleaner} />

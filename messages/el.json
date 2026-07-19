@@ -95,7 +95,11 @@
     "showPassword": "Εμφάνιση κωδικού",
     "hidePassword": "Απόκρυψη κωδικού",
     "forCustomersAndCleaners": "Για πελάτες και καθαριστές",
-    "emailPlaceholder": "εσείς@παράδειγμα.com"
+    "emailPlaceholder": "εσείς@παράδειγμα.com",
+    "verifyEmailBanner": "Παρακαλώ επαληθεύστε τη διεύθυνση email σας. Ελέγξτε τα εισερχόμενά σας.",
+    "emailSent": "Το email στάλθηκε!",
+    "pleaseWait": "Παρακαλώ περιμένετε μερικά λεπτά πριν ζητήσετε άλλο email",
+    "resendEmail": "Αποστολή νέου email"
   },
   "forCleaners": {
     "joinHeading": "Εγγραφείτε στο Cyprus Cleaners",
@@ -273,7 +277,13 @@
     "introSuccess": "Το αίτημα στάλθηκε! Ο/Η {name} θα ειδοποιηθεί.",
     "introError": "Κάτι πήγε στραβά. Παρακαλώ δοκιμάστε ξανά.",
     "cleanerCannotIntro": "Οι καθαριστές δεν μπορούν να στείλουν αιτήματα",
-    "characters": "χαρακτήρες"
+    "characters": "χαρακτήρες",
+    "suggestedMessage": "Γεια σας, ενδιαφέρομαι για τις υπηρεσίες καθαρισμού σας. Είστε διαθέσιμοι;",
+    "suggestedLabel": "Προτεινόμενο μήνυμα — μπορείτε να το επεξεργαστείτε",
+    "sendMessage": "Αποστολή μηνύματος",
+    "alreadyHaveChat": "Έχετε ήδη ενεργή συνομιλία με τον/την {name}. Πηγαίνετε στον <dashboardLink>πίνακα ελέγχου</dashboardLink> σας για να συνεχίσετε.",
+    "goToDashboard": "πίνακα ελέγχου",
+    "openChat": "Ανοίξτε τη συνομιλία"
   },
   "cleaners": {
     "topRated": "Κορυφαίοι",
@@ -364,6 +374,13 @@
     "Paralimni": "Παραλίμνι",
     "Ayia Napa": "Αγία Νάπα",
     "Protaras": "Πρωταράς"
+  },
+  "chat": {
+    "noMessages": "Δεν υπάρχουν μηνύματα ακόμα. Πείτε γεια!",
+    "inputPlaceholder": "Γράψτε ένα μήνυμα...",
+    "sendError": "Αποτυχία αποστολής. Παρακαλώ δοκιμάστε ξανά.",
+    "characters": "χαρακτήρες",
+    "photoComingSoon": "Η αποστολή φωτογραφιών έρχεται σύντομα"
   },
   "getStarted": {
     "heading": "Πώς μπορούμε να σας βοηθήσουμε;",

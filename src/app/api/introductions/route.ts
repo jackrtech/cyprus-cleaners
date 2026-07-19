@@ -135,14 +135,17 @@ export async function GET() {
       .from('introductions')
       .select(`
         id, status, message, created_at,
-        cleaner_profiles ( display_name, photo_url, cities, phone, email )
+        cleaner_profiles ( id, display_name, photo_url, cities )
       `)
       .eq('customer_id', userId)
       .order('created_at', { ascending: false })
 
     if (error) {
       console.error('GET introductions (CUSTOMER) error:', error)
-      return NextResponse.json({ error: 'Failed to fetch introductions' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Failed to fetch introductions' },
+        { status: 500 }
+      )
     }
     return NextResponse.json(data)
   }

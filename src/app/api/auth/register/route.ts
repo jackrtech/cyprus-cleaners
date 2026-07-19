@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/server'
 import { slugify } from '@/lib/utils'
+import { sendVerificationEmail } from '@/lib/email'
 import type { UserRole } from '@/types'
 
 const RegisterSchema = z.object({
@@ -88,6 +89,21 @@ export async function POST(req: NextRequest) {
       if (profileError) {
         console.error('cleaner_profiles insert error:', profileError)
       }
+    }
+
+    // Send verification email
+    try {
+      const token = crypto.randomUUID() + '-' + Date.now()
+      await supabase.from('verification_tokens').insert({
+        user_id:    user.id,
+        token,
+        type:       'EMAIL_VERIFY',
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      })
+      await sendVerificationEmail({ to: user.email, token, locale: 'en' })
+    } catch (emailErr) {
+      console.error('Verification email error:', emailErr)
+      // Do not fail registration if email sending fails
     }
 
     return NextResponse.json({ success: true, user: { id: user.id, role: user.role } })
