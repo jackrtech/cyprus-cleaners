@@ -44,6 +44,11 @@ export default function ChatPanel({
   const textareaRef   = useRef<HTMLTextAreaElement>(null)
   const fileInputRef  = useRef<HTMLInputElement>(null)
 
+  const [showSecret, setShowSecret] = useState(false)
+  const canvasRef     = useRef<HTMLCanvasElement>(null)
+  const audioCtxRef   = useRef<AudioContext | null>(null)
+  const animFrameRef  = useRef<number | null>(null)
+
   const timeFormatter = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' })
 
   // Initial fetch
@@ -93,6 +98,147 @@ export default function ChatPanel({
     el.style.height = 'auto'
     el.style.height = `${Math.min(el.scrollHeight, 96)}px`
   }, [draft])
+
+  // Secret overlay — canvas fireworks + synthetic sound, skipped under prefers-reduced-motion
+  useEffect(() => {
+    if (!showSecret) return
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion) return
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    canvas.width  = window.innerWidth
+    canvas.height = window.innerHeight
+
+    if (!audioCtxRef.current) {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+      audioCtxRef.current = new AudioContextClass()
+    }
+    const audioCtx = audioCtxRef.current!
+
+    const colors = ['#ff0000', '#F2C94C', '#19706A', '#ffffff', '#ff69b4', '#ffa500']
+
+    interface Particle { x: number; y: number; vx: number; vy: number; color: string; born: number }
+    interface Rocket    { x: number; y: number; vy: number; targetY: number; color: string }
+
+    let rockets: Rocket[]     = []
+    let particles: Particle[] = []
+
+    function playExplosionSound() {
+      const bufferSize = Math.floor(audioCtx.sampleRate * 0.3)
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate)
+      const data = buffer.getChannelData(0)
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1
+      }
+
+      const source = audioCtx.createBufferSource()
+      source.buffer = buffer
+
+      const filter = audioCtx.createBiquadFilter()
+      filter.type = 'bandpass'
+      filter.frequency.value = 800
+
+      const gain = audioCtx.createGain()
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime)
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3)
+
+      source.connect(filter)
+      filter.connect(gain)
+      gain.connect(audioCtx.destination)
+
+      source.start()
+      source.stop(audioCtx.currentTime + 0.3)
+    }
+
+    function spawnFireworks() {
+      for (let i = 0; i < 6; i++) {
+        const x = Math.random() * canvas!.width
+        const targetY = canvas!.height * 0.2 + Math.random() * canvas!.height * 0.3
+        rockets.push({
+          x,
+          y: canvas!.height,
+          vy: -(6 + Math.random() * 3),
+          targetY,
+          color: colors[Math.floor(Math.random() * colors.length)],
+        })
+      }
+    }
+
+    function explode(rocket: Rocket) {
+      const count = 30 + Math.floor(Math.random() * 11)
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2
+        const speed = 1 + Math.random() * 4
+        particles.push({
+          x: rocket.x,
+          y: rocket.y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          born: performance.now(),
+        })
+      }
+      playExplosionSound()
+    }
+
+    spawnFireworks()
+    const intervalId = window.setInterval(spawnFireworks, 2500)
+
+    function tick() {
+      ctx!.clearRect(0, 0, canvas!.width, canvas!.height)
+
+      rockets = rockets.filter(rocket => {
+        rocket.y += rocket.vy
+        ctx!.beginPath()
+        ctx!.fillStyle = rocket.color
+        ctx!.arc(rocket.x, rocket.y, 2, 0, Math.PI * 2)
+        ctx!.fill()
+
+        if (rocket.y <= rocket.targetY) {
+          explode(rocket)
+          return false
+        }
+        return true
+      })
+
+      const now = performance.now()
+      particles = particles.filter(p => {
+        const age = now - p.born
+        if (age >= 1500) return false
+
+        p.x += p.vx
+        p.y += p.vy
+        p.vy += 0.05
+
+        ctx!.beginPath()
+        ctx!.fillStyle = p.color
+        ctx!.globalAlpha = 1 - age / 1500
+        ctx!.arc(p.x, p.y, 2.5, 0, Math.PI * 2)
+        ctx!.fill()
+        ctx!.globalAlpha = 1
+
+        return true
+      })
+
+      animFrameRef.current = requestAnimationFrame(tick)
+    }
+
+    animFrameRef.current = requestAnimationFrame(tick)
+
+    return () => {
+      if (animFrameRef.current !== null) cancelAnimationFrame(animFrameRef.current)
+      window.clearInterval(intervalId)
+    }
+  }, [showSecret])
+
+  function handleSecretClick() {
+    setShowSecret(true)
+  }
 
   function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setDraft(e.target.value.slice(0, 2000))
@@ -144,6 +290,7 @@ export default function ChatPanel({
   }
 
   return (
+    <>
     <div className="flex flex-col bg-white border border-[#E0EDEC] rounded-[16px] overflow-hidden">
 
       {/* Header */}
@@ -265,6 +412,14 @@ export default function ChatPanel({
           </button>
           <button
             type="button"
+            onClick={handleSecretClick}
+            aria-label="?"
+            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-[#E0EDEC] text-[#6B8886] cursor-pointer transition-colors"
+          >
+            ?
+          </button>
+          <button
+            type="button"
             onClick={handleSend}
             disabled={sending || draft.trim().length === 0}
             aria-label="Send"
@@ -277,5 +432,51 @@ export default function ChatPanel({
         </div>
       </div>
     </div>
+
+    {showSecret && (
+      <div
+        className="fixed inset-0 z-[500] flex flex-col items-center justify-center"
+        style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+        onClick={() => setShowSecret(false)}
+      >
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
+        <div className="relative flex flex-col items-center pointer-events-none">
+          <span className="secret-heart" style={{ fontSize: '6rem', lineHeight: 1 }}>❤️</span>
+          <p className="secret-text text-white font-bold text-center mt-4" style={{ fontSize: '2.5rem' }}>
+            I LOVE YOU MY DEAREST SASHA
+          </p>
+        </div>
+      </div>
+    )}
+
+    <style jsx>{`
+      @keyframes secretPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.15); }
+      }
+      @keyframes secretFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .secret-heart {
+        display: inline-block;
+        animation: secretPulse 0.8s ease-in-out infinite;
+      }
+      .secret-text {
+        opacity: 0;
+        animation: secretFadeIn 0.3s ease-in forwards;
+        animation-delay: 0.3s;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .secret-heart {
+          animation: none;
+        }
+        .secret-text {
+          animation: none;
+          opacity: 1;
+        }
+      }
+    `}</style>
+    </>
   )
 }
