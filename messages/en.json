@@ -371,7 +371,9 @@
     "inputPlaceholder": "Type a message...",
     "sendError": "Failed to send. Please try again.",
     "characters": "characters",
-    "photoComingSoon": "Photo upload coming soon"
+    "photoInvalidType": "Only JPEG, PNG, and WebP photos are allowed",
+    "photoTooLarge": "Photo must be 5MB or smaller",
+    "removePhoto": "Remove photo"
   },
   "booking": {
     "requestBtn": "Request booking",

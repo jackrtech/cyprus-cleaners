@@ -122,9 +122,11 @@ create table messages (
   id                uuid primary key default gen_random_uuid(),
   introduction_id   uuid not null references introductions(id) on delete cascade,
   sender_id         uuid not null references users(id) on delete cascade,
-  body              text not null,
+  body              text,
+  photo_path        text,  -- Private storage path in 'chat-photos' bucket; signed URL generated at read time
   read_at           timestamptz,
-  created_at        timestamptz not null default now()
+  created_at        timestamptz not null default now(),
+  constraint messages_body_or_photo check (body is not null or photo_path is not null)
 );
 
 create index idx_messages_intro  on messages (introduction_id, created_at);

@@ -10,10 +10,15 @@ interface Message {
   id:               string
   introduction_id:  string
   sender_id:        string
-  body:             string
+  body:             string | null
+  photo_path:       string | null
+  photo_url:        string | null
   read_at:          string | null
   created_at:       string
 }
+
+const PHOTO_ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+const PHOTO_MAX_BYTES = 5 * 1024 * 1024
 
 interface Booking {
   id:              string
@@ -89,7 +94,9 @@ export default function ChatPanel({
   const [sending,     setSending]     = useState(false)
   const [sendFailed,  setSendFailed]  = useState<string | null>(null)
 
+  const [photoFile,    setPhotoFile]    = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoError,   setPhotoError]   = useState<string | null>(null)
 
   const [bookings,         setBookings]         = useState<Booking[] | null>(null)
   const [showBookingForm,  setShowBookingForm]  = useState(false)
@@ -349,17 +356,30 @@ export default function ChatPanel({
 
   async function handleSend() {
     const trimmed = draft.trim()
-    if (!trimmed || sending) return
+    if ((!trimmed && !photoFile) || sending) return
+
+    const pendingFile = photoFile
 
     setDraft('')
+    setPhotoFile(null)
+    setPhotoPreview(null)
     setSendFailed(null)
     setSending(true)
     try {
-      const res = await fetch('/api/messages', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ introduction_id: introductionId, body: trimmed }),
-      })
+      let res: Response
+      if (pendingFile) {
+        const formData = new FormData()
+        formData.append('introduction_id', introductionId)
+        formData.append('body', trimmed)
+        formData.append('photo', pendingFile)
+        res = await fetch('/api/messages', { method: 'POST', body: formData })
+      } else {
+        res = await fetch('/api/messages', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ introduction_id: introductionId, body: trimmed }),
+        })
+      }
       if (!res.ok) throw new Error(await extractErrorMessage(res, t('sendError')))
 
       const newMessage: Message = await res.json()
@@ -381,8 +401,26 @@ export default function ChatPanel({
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file) return
+
+    setPhotoError(null)
+    if (!PHOTO_ALLOWED_TYPES.has(file.type)) {
+      setPhotoError(t('photoInvalidType'))
+      return
+    }
+    if (file.size > PHOTO_MAX_BYTES) {
+      setPhotoError(t('photoTooLarge'))
+      return
+    }
+    setPhotoFile(file)
     setPhotoPreview(URL.createObjectURL(file))
+  }
+
+  function handleRemovePhoto() {
+    setPhotoFile(null)
+    setPhotoPreview(null)
+    setPhotoError(null)
   }
 
   async function handleBookingSubmit(e: React.FormEvent) {
@@ -821,15 +859,26 @@ export default function ChatPanel({
               const isMine = m.sender_id === currentUserId
               return (
                 <div key={m.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} mb-3`}>
-                  <div
-                    className={`max-w-[75%] px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap break-words ${
-                      isMine
-                        ? 'bg-[#19706A] text-white rounded-[16px_16px_4px_16px]'
-                        : 'bg-[#E6F1FF] text-[#0D1F1E] rounded-[16px_16px_16px_4px]'
-                    }`}
-                  >
-                    {m.body}
-                  </div>
+                  {m.photo_url && (
+                    <a href={m.photo_url} target="_blank" rel="noopener noreferrer" className="block mb-1">
+                      <img
+                        src={m.photo_url}
+                        alt=""
+                        className="max-w-[220px] max-h-[220px] rounded-[16px] object-cover border border-[#E0EDEC]"
+                      />
+                    </a>
+                  )}
+                  {m.body && (
+                    <div
+                      className={`max-w-[75%] px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap break-words ${
+                        isMine
+                          ? 'bg-[#19706A] text-white rounded-[16px_16px_4px_16px]'
+                          : 'bg-[#E6F1FF] text-[#0D1F1E] rounded-[16px_16px_16px_4px]'
+                      }`}
+                    >
+                      {m.body}
+                    </div>
+                  )}
                   <span className="text-[11px] text-[#6B8886] mt-1 px-1">
                     {timeFormatter.format(new Date(m.created_at))}
                   </span>
@@ -846,8 +895,17 @@ export default function ChatPanel({
         {photoPreview && (
           <div className="flex items-center gap-2 mb-2">
             <img src={photoPreview} alt="" className="w-12 h-12 rounded-lg object-cover border border-[#E0EDEC]" />
-            <p className="text-[11px] text-[#6B8886]">{t('photoComingSoon')}</p>
+            <button
+              type="button"
+              onClick={handleRemovePhoto}
+              className="text-[12px] text-[#6B8886] hover:text-red-600 transition-colors"
+            >
+              {t('removePhoto')}
+            </button>
           </div>
+        )}
+        {photoError && (
+          <p className="text-[12px] text-red-600 mb-2">{photoError}</p>
         )}
         {sendFailed && (
           <p className="text-[12px] text-red-600 mb-2">{sendFailed}</p>
@@ -896,7 +954,7 @@ export default function ChatPanel({
           <button
             type="button"
             onClick={handleSend}
-            disabled={sending || draft.trim().length === 0}
+            disabled={sending || (draft.trim().length === 0 && !photoFile)}
             aria-label="Send"
             className="btn-primary !px-0 w-10 h-10 rounded-full flex items-center justify-center shrink-0 disabled:opacity-50"
           >

@@ -382,7 +382,9 @@
     "inputPlaceholder": "Γράψτε ένα μήνυμα...",
     "sendError": "Αποτυχία αποστολής. Παρακαλώ δοκιμάστε ξανά.",
     "characters": "χαρακτήρες",
-    "photoComingSoon": "Η αποστολή φωτογραφιών έρχεται σύντομα"
+    "photoInvalidType": "Επιτρέπονται μόνο φωτογραφίες JPEG, PNG και WebP",
+    "photoTooLarge": "Η φωτογραφία πρέπει να είναι έως 5MB",
+    "removePhoto": "Αφαίρεση φωτογραφίας"
   },
   "booking": {
     "requestBtn": "Αίτημα κράτησης",
