@@ -13,6 +13,7 @@ create type cleaner_status as enum ('ACTIVE', 'PAUSED', 'SUSPENDED');
 create type service_type as enum ('HOUSE', 'APARTMENT');
 create type introduction_status as enum ('PENDING', 'APPROVED', 'DECLINED');
 create type booking_status as enum ('REQUESTED', 'CONFIRMED', 'COMPLETED', 'CANCELLED');
+create type cleaning_type as enum ('STANDARD', 'DEEP');
 create type locale_type as enum ('en', 'el');
 
 -- ─── USERS ───────────────────────────────────────────────────
@@ -97,10 +98,14 @@ create table bookings (
   customer_id         uuid not null references users(id) on delete cascade,
   cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
   service_type        service_type not null,
+  bedrooms            int,
+  bathrooms           int,
+  cleaning_type       cleaning_type,
   date                date not null,
   start_time          time not null,
-  duration_hours      numeric(4,2) not null,
+  duration_hours      numeric(4,2),  -- Set by the cleaner on CONFIRM, not by the customer on request
   notes               text,
+  photo_paths         text[] not null default '{}',  -- Private storage paths in 'booking-photos' bucket; signed URLs generated at read time
   status              booking_status not null default 'REQUESTED',
   review_prompted_at  timestamptz,  -- Set when status → COMPLETED; triggers review prompt
   created_at          timestamptz not null default now()
@@ -135,6 +140,8 @@ create table reviews (
   cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
   rating              int not null check (rating >= 1 and rating <= 5),
   body                text,
+  body_translations   jsonb,  -- Cached DeepL translations, keyed by locale — see /api/translate-review
+  is_mock             boolean not null default false,
   created_at          timestamptz not null default now()
 );
 

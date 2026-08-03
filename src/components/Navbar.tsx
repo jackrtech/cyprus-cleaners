@@ -17,6 +17,11 @@ export default function Navbar() {
   const role = session?.user?.role
   const isLoggedIn = !!session?.user
 
+  const roleLabel = role === 'CUSTOMER' ? t('roleCustomer')
+    : role === 'CLEANER' ? t('roleCleaner')
+    : role === 'ADMIN'   ? t('admin')
+    : null
+
   const handleLocaleSwitch = (targetLocale: Locale) => {
     router.push(pathname, { locale: targetLocale })
   }
@@ -101,6 +106,12 @@ export default function Navbar() {
 
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-3">
+          {isLoggedIn && session?.user?.name && (
+            <span className="hidden lg:block text-[13px] text-[#0D1F1E] whitespace-nowrap">
+              {session.user.name}
+              {roleLabel && <span className="text-[#19706A] font-medium"> · {roleLabel}</span>}
+            </span>
+          )}
           <LanguageToggle />
           <Link href={ghostBtn.href} className="btn-ghost">{ghostBtn.label}</Link>
           {isLoggedIn ? (
@@ -123,6 +134,12 @@ export default function Navbar() {
       {/* Mobile drawer */}
       {drawerOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-[#F7FAF9] border-b border-[#E0EDEC] px-6 py-4 flex flex-col gap-4">
+          {isLoggedIn && session?.user?.name && (
+            <span className="text-[13px] text-[#0D1F1E]">
+              {session.user.name}
+              {roleLabel && <span className="text-[#19706A] font-medium"> · {roleLabel}</span>}
+            </span>
+          )}
           <div className="flex flex-col gap-3">
             {navLinks.map(link => (
               <Link key={link.href} href={link.href} className={linkClass(link.href)} onClick={() => setDrawerOpen(false)}>

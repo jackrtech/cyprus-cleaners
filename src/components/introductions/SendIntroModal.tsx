@@ -49,7 +49,7 @@ export default function SendIntroModal({ isOpen, onClose, cleanerProfileId, firs
           )
         } else {
           console.error('Introduction creation error:', errData)
-          setError(t('introError'))
+          setError(typeof errData?.error === 'string' && errData.error ? errData.error : t('introError'))
         }
         return
       }

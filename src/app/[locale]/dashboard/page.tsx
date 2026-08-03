@@ -5,6 +5,8 @@ import { useSession, signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import ChatPanel from '@/components/chat/ChatPanel'
+import ReviewPrompt from '@/components/reviews/ReviewPrompt'
+import type { BookingStatus, CleaningType } from '@/types'
 
 interface CleanerProfile {
   id?:           string
@@ -23,26 +25,54 @@ interface Introduction {
   cleaner_profiles: CleanerProfile | null
 }
 
+interface Booking {
+  id:                 string
+  status:             BookingStatus
+  bedrooms:           number | null
+  bathrooms:          number | null
+  cleaning_type:      CleaningType | null
+  date:               string
+  start_time:         string
+  duration_hours:     number | null
+  notes:              string | null
+  created_at:         string
+  cleaner_profiles:   CleanerProfile | null
+  reviews:            { id: string }[] | null
+  photo_urls:         string[]
+}
+
+const BOOKING_STATUS_BADGE: Record<BookingStatus, string> = {
+  REQUESTED: 'badge-gold',
+  CONFIRMED: 'badge-teal',
+  COMPLETED: 'badge-blue',
+  CANCELLED: 'bg-red-50 text-red-600',
+}
+
 function getInitials(name: string): string {
   return name.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase()
 }
 
 export default function DashboardPage() {
   const { data: session, status: sessionStatus } = useSession()
-  const t      = useTranslations('dashboard')
-  const tAuth  = useTranslations('auth')
-  const locale = useLocale()
-  const router = useRouter()
+  const t        = useTranslations('dashboard')
+  const tAuth    = useTranslations('auth')
+  const tBooking = useTranslations('booking')
+  const locale   = useLocale()
+  const router   = useRouter()
 
   const [intros,  setIntros]  = useState<Introduction[]>([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState<string | null>(null)
+
+  const [bookings,        setBookings]        = useState<Booking[]>([])
+  const [bookingsLoading, setBookingsLoading]  = useState(true)
 
   const [emailVerified, setEmailVerified] = useState<boolean | null>(null)
   const [resending,     setResending]     = useState(false)
   const [resendResult,  setResendResult]  = useState<'sent' | 'rate_limited' | null>(null)
 
   const [openChatId, setOpenChatId] = useState<string | null>(null)
+  const [skippedReviewIds, setSkippedReviewIds] = useState<Set<string>>(new Set())
 
   // Auth guard
   useEffect(() => {
@@ -59,6 +89,16 @@ export default function DashboardPage() {
       .then(data => { if (Array.isArray(data)) setIntros(data) })
       .catch(() => setError('Failed to load introductions. Please refresh.'))
       .finally(() => setLoading(false))
+  }, [session, sessionStatus])
+
+  // Fetch bookings once confirmed CUSTOMER
+  useEffect(() => {
+    if (sessionStatus !== 'authenticated' || session?.user.role !== 'CUSTOMER') return
+    fetch('/api/bookings')
+      .then(r => { if (!r.ok) throw new Error(); return r.json() })
+      .then(data => { if (Array.isArray(data)) setBookings(data) })
+      .catch(() => {})
+      .finally(() => setBookingsLoading(false))
   }, [session, sessionStatus])
 
   // Fetch email verification status
@@ -227,12 +267,99 @@ export default function DashboardPage() {
                     <ChatPanel
                       introductionId={intro.id}
                       currentUserId={session.user.id}
+                      currentUserRole="CUSTOMER"
                       otherPartyName={cp?.display_name ?? 'Cleaner'}
                       otherPartyAvatar={cp?.photo_url ?? null}
                       onClose={() => setOpenChatId(null)}
                     />
                   </div>
                 )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Section heading + count badge — bookings */}
+        <div className="flex items-center gap-2.5 mb-4 mt-10">
+          <h2 className="text-[17px] font-medium text-[#0D1F1E]">{tBooking('yourBookings')}</h2>
+          {!bookingsLoading && bookings.length > 0 && (
+            <span className="text-[12px] font-medium bg-[#E8F4F3] text-[#19706A] px-2 py-0.5 rounded-full">
+              {bookings.length}
+            </span>
+          )}
+        </div>
+
+        {bookingsLoading ? (
+          <div className="space-y-3">
+            {[1, 2].map(i => (
+              <div key={i} className="card p-5 h-[80px] animate-pulse" />
+            ))}
+          </div>
+        ) : bookings.length === 0 ? (
+          <div className="card p-8 flex flex-col items-center text-center gap-2">
+            <p className="text-[14px] font-medium text-[#0D1F1E]">{tBooking('noBookingsYet')}</p>
+            <p className="text-[13px] text-[#6B8886]">{tBooking('noBookingsBodyCustomer')}</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {bookings.map(booking => {
+              const cp = booking.cleaner_profiles
+              const bookingSummary = tBooking(booking.duration_hours == null ? 'summaryNoDuration' : 'summary', {
+                cleaningType: tBooking(booking.cleaning_type === 'DEEP' ? 'deepClean' : 'standardClean'),
+                bedrooms: booking.bedrooms ?? '—',
+                bathrooms: booking.bathrooms ?? '—',
+                date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${booking.date}T00:00:00`)),
+                time: booking.start_time.slice(0, 5),
+                duration: booking.duration_hours ?? undefined,
+              })
+              const needsReview = booking.status === 'COMPLETED'
+                && (!booking.reviews || booking.reviews.length === 0)
+                && !skippedReviewIds.has(booking.id)
+
+              return (
+                <div key={booking.id} className="space-y-2">
+                  <div className="card p-5">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="text-[14px] font-medium text-[#0D1F1E]">
+                            {tBooking('with', { name: cp?.display_name ?? '—' })}
+                          </p>
+                          <span className={`inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full ${BOOKING_STATUS_BADGE[booking.status]}`}>
+                            {tBooking(
+                              booking.status === 'REQUESTED' ? 'statusRequested'
+                              : booking.status === 'CONFIRMED' ? 'statusConfirmed'
+                              : booking.status === 'COMPLETED' ? 'statusCompleted'
+                              : 'statusCancelled'
+                            )}
+                          </span>
+                        </div>
+                        <p className="text-[13px] text-[#6B8886]">{bookingSummary}</p>
+                        {booking.status === 'COMPLETED' && booking.photo_urls.length > 0 && (
+                          <div className="flex items-center gap-2 flex-wrap mt-2">
+                            {booking.photo_urls.map((url, i) => (
+                              <img key={i} src={url} alt="" className="w-12 h-12 rounded-md object-cover border border-[#E0EDEC]" />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {needsReview && (
+                    <ReviewPrompt
+                      bookingId={booking.id}
+                      cleanerName={cp?.display_name ?? '—'}
+                      subtitle={bookingSummary}
+                      onSubmitted={review => {
+                        setBookings(prev => prev.map(b =>
+                          b.id === booking.id ? { ...b, reviews: [{ id: review.id }] } : b
+                        ))
+                      }}
+                      onSkip={() => setSkippedReviewIds(prev => new Set(prev).add(booking.id))}
+                    />
+                  )}
                 </div>
               )
             })}

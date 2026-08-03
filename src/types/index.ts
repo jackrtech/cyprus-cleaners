@@ -10,6 +10,8 @@ export type IntroductionStatus = 'PENDING' | 'APPROVED' | 'DECLINED'
 
 export type BookingStatus = 'REQUESTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
 
+export type CleaningType = 'STANDARD' | 'DEEP'
+
 export type Locale = 'en' | 'el'
 
 // ─── Core entities ────────────────────────────────────────────────────────────
@@ -74,6 +76,9 @@ export interface Booking {
   customer_id: string
   cleaner_profile_id: string
   service_type: ServiceType
+  bedrooms: number | null
+  bathrooms: number | null
+  cleaning_type: CleaningType | null
   date: string        // ISO date: 2025-06-14
   start_time: string  // HH:MM
   duration_hours: number
@@ -104,6 +109,8 @@ export interface Review {
   cleaner_profile_id: string
   rating: number  // 1–5
   body: string | null
+  body_translations: Record<string, string> | null
+  is_mock: boolean
   created_at: string
   // Joins
   customer?: User

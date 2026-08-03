@@ -1,7 +1,9 @@
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM   = 'Cyprus Cleaners <onboarding@resend.dev>'
+const FROM   = process.env.RESEND_FROM_EMAIL
+  ? `Cyprus Cleaners <${process.env.RESEND_FROM_EMAIL}>`
+  : 'Cyprus Cleaners <onboarding@resend.dev>'
 
 function layout(body: string): string {
   return `<!DOCTYPE html>
@@ -30,7 +32,13 @@ function cta(label: string, url: string): string {
 // ─── Base send ────────────────────────────────────────────────────────────────
 
 export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
-  return resend.emails.send({ from: FROM, to, subject, html })
+  // While RESEND_FROM_EMAIL's domain isn't verified with Resend, sends from the
+  // sandbox address onboarding@resend.dev are silently dropped for any
+  // recipient other than the account's own signup email. RESEND_TEST_EMAIL
+  // redirects every send to one known-good address so the flows are still
+  // testable — remove it (or verify the domain) before going live.
+  const recipient = process.env.RESEND_TEST_EMAIL || to
+  return resend.emails.send({ from: FROM, to: recipient, subject, html })
 }
 
 // ─── 0. Email verification ───────────────────────────────────────────────────
@@ -42,8 +50,6 @@ export async function sendVerificationEmail({
   token:  string
   locale: string
 }) {
-  const recipient = process.env.RESEND_TEST_EMAIL || to
-
   const isEl = locale === 'el'
 
   const subject = isEl
@@ -59,7 +65,7 @@ export async function sendVerificationEmail({
      <p style="color:#6B8886;font-size:12px;line-height:1.5;margin:16px 0 0;">This link expires in 24 hours.</p>`
   )
 
-  return sendEmail({ to: recipient, subject, html })
+  return sendEmail({ to, subject, html })
 }
 
 // ─── 0b. Password reset ───────────────────────────────────────────────────────
@@ -71,8 +77,6 @@ export async function sendPasswordResetEmail({
   token:  string
   locale: string
 }) {
-  const recipient = process.env.RESEND_TEST_EMAIL || to
-
   const isEl = locale === 'el'
 
   const subject = isEl
@@ -89,7 +93,7 @@ export async function sendPasswordResetEmail({
      <p style="color:#6B8886;font-size:12px;line-height:1.5;margin:8px 0 0;">If you didn't request this, you can safely ignore this email.</p>`
   )
 
-  return sendEmail({ to: recipient, subject, html })
+  return sendEmail({ to, subject, html })
 }
 
 // ─── 1. New introduction → cleaner ───────────────────────────────────────────
@@ -189,6 +193,105 @@ export async function sendIntroDeclinedEmail({
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Introduction update</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 16px;"><strong>${cleanerName}</strong> is not available right now. Browse other cleaners.</p>
        ${cta('Browse cleaners', dashboardUrl)}`)
+
+  return sendEmail({ to: customerEmail, subject, html })
+}
+
+// ─── 4. New booking request → cleaner ────────────────────────────────────────
+
+export async function sendNewBookingRequestEmail({
+  cleanerEmail, cleanerLocale, customerName, date, startTime, durationHours, dashboardUrl,
+}: {
+  cleanerEmail:  string
+  cleanerLocale: string | null
+  customerName:  string
+  date:          string // ISO date
+  startTime:     string // HH:MM
+  durationHours: number
+  dashboardUrl:  string
+}) {
+  const isEl = cleanerLocale === 'el'
+
+  const formattedDate = new Intl.DateTimeFormat(isEl ? 'el-GR' : 'en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  }).format(new Date(`${date}T00:00:00`))
+
+  const subject = isEl ? 'Νέο αίτημα κράτησης' : 'New booking request'
+
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Νέο αίτημα κράτησης</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${customerName}</strong> ζήτησε κράτηση:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime} · ${durationHours} ώρες</p>
+       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:16px 0 0;">Έχετε 24 ώρες για να απαντήσετε.</p>
+       ${cta('Προβολή αιτήματος', dashboardUrl)}`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">New booking request</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${customerName}</strong> requested a booking:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime} · ${durationHours}h</p>
+       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:16px 0 0;">You have 24 hours to respond.</p>
+       ${cta('View request', dashboardUrl)}`)
+
+  return sendEmail({ to: cleanerEmail, subject, html })
+}
+
+// ─── 5. Booking confirmed → customer ─────────────────────────────────────────
+
+export async function sendBookingConfirmedEmail({
+  customerEmail, customerLocale, cleanerName, date, startTime, durationHours, dashboardUrl,
+}: {
+  customerEmail: string
+  customerLocale: string | null
+  cleanerName:   string
+  date:          string // ISO date
+  startTime:     string // HH:MM
+  durationHours: number
+  dashboardUrl:  string
+}) {
+  const isEl = customerLocale === 'el'
+
+  const formattedDate = new Intl.DateTimeFormat(isEl ? 'el-GR' : 'en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  }).format(new Date(`${date}T00:00:00`))
+
+  const subject = isEl
+    ? `Η κράτησή σας με ${cleanerName} επιβεβαιώθηκε`
+    : `Your booking with ${cleanerName} is confirmed`
+
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η κράτηση επιβεβαιώθηκε</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${cleanerName}</strong> επιβεβαίωσε την κράτησή σας:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime} · ${durationHours} ώρες</p>
+       ${cta('Προβολή στον πίνακα ελέγχου', dashboardUrl)}`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Booking confirmed</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${cleanerName}</strong> confirmed your booking:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime} · ${durationHours}h</p>
+       ${cta('View in dashboard', dashboardUrl)}`)
+
+  return sendEmail({ to: customerEmail, subject, html })
+}
+
+// ─── 6. Booking completed → customer ─────────────────────────────────────────
+
+export async function sendBookingCompletedEmail({
+  customerEmail, customerLocale, cleanerName, dashboardUrl,
+}: {
+  customerEmail:  string
+  customerLocale: string | null
+  cleanerName:    string
+  dashboardUrl:   string
+}) {
+  const isEl = customerLocale === 'el'
+
+  const subject = isEl
+    ? `Η κράτησή σας με ${cleanerName} ολοκληρώθηκε`
+    : `Your booking with ${cleanerName} is complete`
+
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η εργασία ολοκληρώθηκε</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Ο/Η <strong>${cleanerName}</strong> σήμανε την κράτησή σας ως ολοκληρωμένη. Ρίξτε μια ματιά στις φωτογραφίες και αφήστε μια κριτική.</p>
+       ${cta('Προβολή στον πίνακα ελέγχου', dashboardUrl)}`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Job complete</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;"><strong>${cleanerName}</strong> marked your booking complete. Take a look at the photos and leave a review.</p>
+       ${cta('View in dashboard', dashboardUrl)}`)
 
   return sendEmail({ to: customerEmail, subject, html })
 }
