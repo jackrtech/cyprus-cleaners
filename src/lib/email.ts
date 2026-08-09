@@ -29,6 +29,18 @@ function cta(label: string, url: string): string {
   return `<a href="${url}" style="display:inline-block;margin-top:24px;padding:12px 28px;background:#19706A;color:#ffffff;text-decoration:none;border-radius:999px;font-size:14px;font-weight:500;">${label}</a>`
 }
 
+// User-supplied text (names, messages, addresses) gets interpolated straight
+// into these HTML email bodies — escape it first so a display name or chat
+// message can't inject markup/links into someone else's inbox.
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 // ─── Base send ────────────────────────────────────────────────────────────────
 
 export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
@@ -113,15 +125,18 @@ export async function sendNewMessageEmail({
     ? 'Έχετε νέο μήνυμα'
     : 'You have a new message'
 
+  const safeSenderName = escapeHtml(senderName)
+  const safeMessage    = escapeHtml(message)
+
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Νέο μήνυμα</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${senderName}</strong> σας έστειλε μήνυμα:</p>
-       <blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;font-style:italic;line-height:1.6;">${message}</blockquote>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${safeSenderName}</strong> σας έστειλε μήνυμα:</p>
+       <blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;font-style:italic;line-height:1.6;">${safeMessage}</blockquote>
        <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:0;">Συνδεθείτε στον πίνακα ελέγχου για να απαντήσετε.</p>
        ${cta('Προβολή μηνύματος', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">You have a new message</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${senderName}</strong> sent you a message:</p>
-       <blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;font-style:italic;line-height:1.6;">${message}</blockquote>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${safeSenderName}</strong> sent you a message:</p>
+       <blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;font-style:italic;line-height:1.6;">${safeMessage}</blockquote>
        <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:0;">Log in to your dashboard to reply.</p>
        ${cta('View message', dashboardUrl)}`)
 
@@ -150,17 +165,20 @@ export async function sendNewBookingRequestEmail({
 
   const subject = isEl ? 'Νέο αίτημα κράτησης' : 'New booking request'
 
+  const safeCustomerName = escapeHtml(customerName)
+  const safeAddress      = escapeHtml(address)
+
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Νέο αίτημα κράτησης</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${customerName}</strong> ζήτησε κράτηση:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${safeCustomerName}</strong> ζήτησε κράτηση:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime} · ${durationHours} ώρες</p>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:8px 0 0;">📍 ${address}</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:8px 0 0;">📍 ${safeAddress}</p>
        <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:16px 0 0;">Έχετε 24 ώρες για να απαντήσετε.</p>
        ${cta('Προβολή αιτήματος', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">New booking request</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${customerName}</strong> requested a booking:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${safeCustomerName}</strong> requested a booking:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime} · ${durationHours}h</p>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:8px 0 0;">📍 ${address}</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:8px 0 0;">📍 ${safeAddress}</p>
        <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:16px 0 0;">You have 24 hours to respond.</p>
        ${cta('View request', dashboardUrl)}`)
 
@@ -190,13 +208,15 @@ export async function sendBookingConfirmedEmail({
     ? `Η κράτησή σας με ${cleanerName} επιβεβαιώθηκε`
     : `Your booking with ${cleanerName} is confirmed`
 
+  const safeCleanerName = escapeHtml(cleanerName)
+
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η κράτηση επιβεβαιώθηκε</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${cleanerName}</strong> επιβεβαίωσε την κράτησή σας:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${safeCleanerName}</strong> επιβεβαίωσε την κράτησή σας:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime} · ${durationHours} ώρες</p>
        ${cta('Προβολή στον πίνακα ελέγχου', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Booking confirmed</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${cleanerName}</strong> confirmed your booking:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${safeCleanerName}</strong> confirmed your booking:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime} · ${durationHours}h</p>
        ${cta('View in dashboard', dashboardUrl)}`)
 
@@ -219,12 +239,14 @@ export async function sendBookingCompletedEmail({
     ? `Η κράτησή σας με ${cleanerName} ολοκληρώθηκε`
     : `Your booking with ${cleanerName} is complete`
 
+  const safeCleanerName = escapeHtml(cleanerName)
+
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η εργασία ολοκληρώθηκε</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Ο/Η <strong>${cleanerName}</strong> σήμανε την κράτησή σας ως ολοκληρωμένη. Ρίξτε μια ματιά στις φωτογραφίες και αφήστε μια κριτική.</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Ο/Η <strong>${safeCleanerName}</strong> σήμανε την κράτησή σας ως ολοκληρωμένη. Ρίξτε μια ματιά στις φωτογραφίες και αφήστε μια κριτική.</p>
        ${cta('Προβολή στον πίνακα ελέγχου', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Job complete</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;"><strong>${cleanerName}</strong> marked your booking complete. Take a look at the photos and leave a review.</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;"><strong>${safeCleanerName}</strong> marked your booking complete. Take a look at the photos and leave a review.</p>
        ${cta('View in dashboard', dashboardUrl)}`)
 
   return sendEmail({ to: customerEmail, subject, html })

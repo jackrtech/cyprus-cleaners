@@ -585,7 +585,11 @@ export default function ChatPanel({
 
   return (
     <>
-    <div className={embedded ? 'flex flex-col max-md:h-full' : 'flex flex-col max-md:h-full bg-white border border-[#E0EDEC] rounded-[16px] overflow-hidden'}>
+    {/* No background/border/rounding here — when embedded, the parent
+        dashboard card supplies it on desktop and the mobile takeover
+        wrapper supplies white on mobile; when standalone (ChatModal), the
+        shared FullScreenModal shell supplies it in both cases. */}
+    <div className="flex flex-col max-md:h-full">
 
       {/* Header — suppressed at desktop widths when embedded (the parent card
           shows name/status/close itself there), but always shown on mobile:

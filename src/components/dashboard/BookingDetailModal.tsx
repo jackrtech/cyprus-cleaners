@@ -2,6 +2,7 @@
 
 import { useTranslations, useLocale } from 'next-intl'
 import type { BookingStatus, CleaningType } from '@/types'
+import FullScreenModal from '@/components/ui/FullScreenModal'
 
 export interface BookingDetailData {
   otherPartyName: string
@@ -37,24 +38,21 @@ const STATUS_KEY: Record<BookingStatus, string> = {
   CANCELLED: 'statusCancelled',
 }
 
-// Full-screen detail view for a single booking (any status) — mirrors the
-// mobile chat takeover. Reachable from both the dashboard's "Your bookings"
-// list and a chat thread's booking history, so a booking looked up from
-// either place shows the same thing: full details plus job photos, the
-// latter only fetched into the DOM once this is actually opened.
+// Detail view for a single booking (any status) — full-screen on mobile,
+// centered card on desktop (see FullScreenModal). Reachable from both the
+// dashboard's "Your bookings" list and a chat thread's booking history, so a
+// booking looked up from either place shows the same thing: full details
+// plus job photos, the latter only fetched into the DOM once this is opened.
 export default function BookingDetailModal({ isOpen, onClose, booking }: Props) {
   const tBooking = useTranslations('booking')
   const locale   = useLocale()
 
-  if (!isOpen || !booking) return null
+  if (!booking) return null
 
   const dateFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
 
   return (
-    <div
-      className="fixed inset-0 z-[300] flex flex-col bg-white"
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
+    <FullScreenModal isOpen={isOpen} onClose={onClose}>
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#E0EDEC] shrink-0">
         <span className="text-[14px] font-medium text-[#0D1F1E] truncate">
           {tBooking('with', { name: booking.otherPartyName })}
@@ -107,6 +105,6 @@ export default function BookingDetailModal({ isOpen, onClose, booking }: Props) 
           </div>
         )}
       </div>
-    </div>
+    </FullScreenModal>
   )
 }
