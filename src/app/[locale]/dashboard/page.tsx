@@ -7,6 +7,7 @@ import { Link, useRouter } from '@/navigation'
 import ChatPanel from '@/components/chat/ChatPanel'
 import ReviewPrompt from '@/components/reviews/ReviewPrompt'
 import DashboardTabs from '@/components/dashboard/DashboardTabs'
+import BookingPhotoViewer from '@/components/dashboard/BookingPhotoViewer'
 import { groupBookingsByPriority } from '@/lib/utils'
 import type { BookingStatus, CleaningType } from '@/types'
 
@@ -83,6 +84,7 @@ export default function DashboardPage() {
   const [openChatId, setOpenChatId] = useState<string | null>(null)
   const [skippedReviewIds, setSkippedReviewIds] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<'bookings' | 'messages'>('bookings')
+  const [viewingPhotosBookingId, setViewingPhotosBookingId] = useState<string | null>(null)
 
   // Auth guard
   useEffect(() => {
@@ -178,11 +180,20 @@ export default function DashboardPage() {
               </div>
               <p className="text-[13px] text-[#6B8886]">{bookingSummary}</p>
               {booking.status === 'COMPLETED' && booking.photo_urls.length > 0 && (
-                <div className="flex items-center gap-2 flex-wrap mt-2">
-                  {booking.photo_urls.map((url, i) => (
-                    <img key={i} src={url} alt="" className="w-12 h-12 rounded-md object-cover border border-[#E0EDEC]" />
-                  ))}
-                </div>
+                // Photos aren't fetched into the DOM until this is clicked —
+                // see BookingPhotoViewer.
+                <button
+                  type="button"
+                  onClick={() => setViewingPhotosBookingId(booking.id)}
+                  className="inline-flex items-center gap-1.5 mt-2 text-[12px] font-medium text-[#19706A] hover:underline"
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="1.5" y="4" width="13" height="10" rx="1.5" />
+                    <path d="M5 4l1.2-2h3.6L11 4" />
+                    <circle cx="8" cy="9" r="2.25" />
+                  </svg>
+                  {tBooking('viewPhotos', { count: booking.photo_urls.length })}
+                </button>
               )}
             </div>
           </div>
@@ -378,11 +389,16 @@ export default function DashboardPage() {
                             </button>
                           </div>
 
-                          {/* City pills */}
+                          {/* City pills — matches the softer, normal-case city
+                              tag style used on CleanerCard rather than the loud
+                              uppercase badge-teal treatment (meant for status
+                              badges like booking state, not plain metadata) */}
                           {cp?.cities && cp.cities.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 mt-2">
                               {cp.cities.map(city => (
-                                <span key={city} className="badge-teal">{city}</span>
+                                <span key={city} className="inline-block bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2 py-0.5 text-[11px] font-medium">
+                                  {city}
+                                </span>
                               ))}
                             </div>
                           )}
@@ -429,6 +445,13 @@ export default function DashboardPage() {
           </button>
         </div>
       </div>
+
+      <BookingPhotoViewer
+        isOpen={!!viewingPhotosBookingId}
+        onClose={() => setViewingPhotosBookingId(null)}
+        photoUrls={bookings.find(b => b.id === viewingPhotosBookingId)?.photo_urls ?? []}
+        title={tBooking('with', { name: bookings.find(b => b.id === viewingPhotosBookingId)?.cleaner_profiles?.display_name ?? '—' })}
+      />
     </div>
   )
 }

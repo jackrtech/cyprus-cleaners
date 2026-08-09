@@ -410,6 +410,7 @@
     "notYetDue": "You can mark this complete on {date}",
     "photoReminder": "Remember to take photos of the finished job before you mark it complete — customers may ask to see them.",
     "photoCount": "{count} of {min} minimum photos",
+    "viewPhotos": "View {count} photo(s)",
     "photoUploadError": "Failed to upload photo. Please try again.",
     "needMorePhotos": "{count} more photo(s) needed before you can mark this complete",
     "cancelBooking": "Cancel booking",
