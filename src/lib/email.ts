@@ -131,7 +131,7 @@ export async function sendNewMessageEmail({
 // ─── 4. New booking request → cleaner ────────────────────────────────────────
 
 export async function sendNewBookingRequestEmail({
-  cleanerEmail, cleanerLocale, customerName, date, startTime, durationHours, dashboardUrl,
+  cleanerEmail, cleanerLocale, customerName, date, startTime, durationHours, address, dashboardUrl,
 }: {
   cleanerEmail:  string
   cleanerLocale: string | null
@@ -139,6 +139,7 @@ export async function sendNewBookingRequestEmail({
   date:          string // ISO date
   startTime:     string // HH:MM
   durationHours: number
+  address:       string
   dashboardUrl:  string
 }) {
   const isEl = cleanerLocale === 'el'
@@ -153,11 +154,13 @@ export async function sendNewBookingRequestEmail({
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Νέο αίτημα κράτησης</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${customerName}</strong> ζήτησε κράτηση:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime} · ${durationHours} ώρες</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:8px 0 0;">📍 ${address}</p>
        <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:16px 0 0;">Έχετε 24 ώρες για να απαντήσετε.</p>
        ${cta('Προβολή αιτήματος', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">New booking request</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${customerName}</strong> requested a booking:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime} · ${durationHours}h</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:8px 0 0;">📍 ${address}</p>
        <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:16px 0 0;">You have 24 hours to respond.</p>
        ${cta('View request', dashboardUrl)}`)
 

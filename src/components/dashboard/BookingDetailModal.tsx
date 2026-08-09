@@ -13,6 +13,7 @@ export interface BookingDetailData {
   bathrooms:      number | null
   cleaning_type:  CleaningType | null
   notes:          string | null
+  address:        string | null
   photo_urls:     string[]
 }
 
@@ -84,6 +85,10 @@ export default function BookingDetailModal({ isOpen, onClose, booking }: Props) 
               duration:  booking.duration_hours ?? undefined,
             })}
           </p>
+          <div>
+            <p className="text-[12px] font-medium text-[#6B8886] mb-0.5">{tBooking('propertyAddress')}</p>
+            <p className="text-[13px] text-[#0D1F1E]">{booking.address ?? tBooking('noAddressProvided')}</p>
+          </div>
           {booking.notes && (
             <p className="text-[13px] text-[#6B8886] whitespace-pre-wrap">{booking.notes}</p>
           )}

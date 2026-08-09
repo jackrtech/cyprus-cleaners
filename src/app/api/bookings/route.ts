@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { introduction_id, bedrooms, bathrooms, cleaning_type, date, start_time, duration_hours, notes } = body
+  const { introduction_id, bedrooms, bathrooms, cleaning_type, date, start_time, duration_hours, notes, address } = body
 
   if (!introduction_id || typeof introduction_id !== 'string') {
     return NextResponse.json({ error: 'introduction_id is required' }, { status: 400 })
@@ -101,6 +101,12 @@ export async function POST(req: NextRequest) {
   }
   if (notes !== undefined && notes !== null && (typeof notes !== 'string' || notes.length > 1000)) {
     return NextResponse.json({ error: 'Notes must be 1000 characters or fewer' }, { status: 400 })
+  }
+  if (typeof address !== 'string' || address.trim().length === 0) {
+    return NextResponse.json({ error: 'A property address is required' }, { status: 400 })
+  }
+  if (address.trim().length > 200) {
+    return NextResponse.json({ error: 'Address must be 200 characters or fewer' }, { status: 400 })
   }
 
   const supabase = createAdminClient()
@@ -142,6 +148,7 @@ export async function POST(req: NextRequest) {
       start_time,
       duration_hours,
       notes: notes?.trim() || null,
+      address: address.trim(),
       status: 'REQUESTED',
     })
     .select('*')
@@ -169,6 +176,7 @@ export async function POST(req: NextRequest) {
           date,
           startTime:     start_time,
           durationHours: duration_hours,
+          address:       address.trim(),
           dashboardUrl:  `${BASE_URL}/dashboard/cleaner`,
         })
       }

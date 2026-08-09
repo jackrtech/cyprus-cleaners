@@ -104,6 +104,7 @@ create table bookings (
   start_time          time not null,
   duration_hours      numeric(4,2),  -- Set by the cleaner on CONFIRM, not by the customer on request
   notes               text,
+  address             text,  -- Free-text property address for this job; nullable so pre-existing bookings aren't broken
   photo_paths         text[] not null default '{}',  -- Private storage paths in 'booking-photos' bucket; signed URLs generated at read time
   status              booking_status not null default 'REQUESTED',
   review_prompted_at  timestamptz,  -- Set when status → COMPLETED; triggers review prompt

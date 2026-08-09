@@ -36,6 +36,7 @@ interface Introduction {
 
 interface Booking {
   id:                 string
+  introduction_id:    string
   status:             BookingStatus
   bedrooms:           number | null
   bathrooms:          number | null
@@ -44,6 +45,7 @@ interface Booking {
   start_time:         string
   duration_hours:     number | null
   notes:              string | null
+  address:            string | null
   created_at:         string
   cleaner_profiles:   CleanerProfile | null
   reviews:            { id: string }[] | null
@@ -179,17 +181,37 @@ export default function DashboardPage() {
                 </span>
               </div>
               <p className="text-[13px] text-[#6B8886]">{bookingSummary}</p>
+              {booking.address && (
+                <p className="text-[12px] text-[#6B8886] line-clamp-1 mt-0.5">📍 {booking.address}</p>
+              )}
               {/* Photos aren't fetched into the DOM until this is clicked —
                   see BookingDetailModal. Every booking gets this, not just
                   completed ones with photos, so the full detail view is
                   reachable consistently from any booking of any status. */}
-              <button
-                type="button"
-                onClick={() => setViewingBookingId(booking.id)}
-                className="inline-flex items-center gap-1.5 mt-2 text-[12px] font-medium text-[#19706A] hover:underline"
-              >
-                {tBooking('viewDetails')}
-              </button>
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setViewingBookingId(booking.id)}
+                  className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#19706A] hover:underline"
+                >
+                  {tBooking('viewDetails')}
+                </button>
+                {(booking.status === 'COMPLETED' || booking.status === 'CANCELLED') && (
+                  // Rebooking itself already works (canRequestNew in ChatPanel
+                  // flips true once the latest booking resolves) — what was
+                  // missing was a way back to that chat from here.
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('messages')
+                      setOpenChatId(booking.introduction_id)
+                    }}
+                    className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#19706A] hover:underline"
+                  >
+                    {tBooking('bookAgain')}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -457,6 +479,7 @@ export default function DashboardPage() {
             bathrooms:      b.bathrooms,
             cleaning_type:  b.cleaning_type,
             notes:          b.notes,
+            address:        b.address,
             photo_urls:     b.photo_urls,
           }
         })()}

@@ -33,6 +33,7 @@ interface Booking {
   start_time:      string
   duration_hours:  number | null
   notes:           string | null
+  address:         string | null
   created_at:      string
   photo_paths:     string[]
   photo_urls:      string[]
@@ -119,6 +120,7 @@ export default function ChatPanel({
   const [durationHours,  setDurationHours]  = useState(String(estimateCleaningHours(1, 1, 'STANDARD')))
   const [durationTouched, setDurationTouched] = useState(false)
   const [bookingNotes,   setBookingNotes]   = useState('')
+  const [bookingAddress, setBookingAddress] = useState('')
 
   // Pre-fill the duration estimate as room count/type change, but stop
   // overwriting it once the customer has edited it themselves
@@ -126,6 +128,16 @@ export default function ChatPanel({
     if (durationTouched) return
     setDurationHours(String(estimateCleaningHours(Number(bedrooms) || 0, Number(bathrooms) || 0, cleaningType)))
   }, [bedrooms, bathrooms, cleaningType, durationTouched])
+
+  // Pre-fill the address from the most recent booking with this same cleaner
+  // that had one — a nicer default than a blank field every time, without an
+  // extra request (the data's already loaded). Never overwrites something the
+  // customer's already typed.
+  useEffect(() => {
+    if (bookings === null) return
+    const priorAddress = bookings.find(b => b.address)?.address
+    if (priorAddress) setBookingAddress(prev => prev || priorAddress)
+  }, [bookings])
 
   const [showHistory, setShowHistory] = useState(false)
   const [viewingBookingId, setViewingBookingId] = useState<string | null>(null)
@@ -474,7 +486,7 @@ export default function ChatPanel({
 
   async function handleBookingSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!bookingDate || !startTime || bookingSubmitting) return
+    if (!bookingDate || !startTime || !bookingAddress.trim() || bookingSubmitting) return
 
     setBookingSubmitting(true)
     setBookingError(null)
@@ -491,6 +503,7 @@ export default function ChatPanel({
           start_time:       startTime,
           duration_hours:   Number(durationHours),
           notes:            bookingNotes.trim() || undefined,
+          address:          bookingAddress.trim(),
         }),
       })
       if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('submitError')))
@@ -638,6 +651,9 @@ export default function ChatPanel({
                     duration: activeBooking.duration_hours ?? undefined,
                   })}
                 </p>
+                <p className="text-[12px] text-[#0D1F1E] mt-1">
+                  📍 {activeBooking.address ?? tBooking('noAddressProvided')}
+                </p>
                 {activeBooking.notes && (
                   <p className="text-[12px] text-[#6B8886] mt-1">{activeBooking.notes}</p>
                 )}
@@ -744,15 +760,36 @@ export default function ChatPanel({
           {bookingError && <p className="text-[12px] text-red-600 mt-2">{bookingError}</p>}
 
           {currentUserRole === 'CUSTOMER' && canRequestNew && !showBookingForm && (
+            // A resolved previous booking (COMPLETED/CANCELLED) gets a more
+            // prominent "book again" prompt than the first-ever nudge — this
+            // was previously an easy-to-miss muted line sitting right where
+            // the Cancel button had just been.
             <div className={activeBooking ? 'mt-3' : ''}>
-              <p className="text-[11px] text-[#6B8886] mb-1.5">{tBooking('bookingNudge')}</p>
-              <button
-                type="button"
-                onClick={() => setShowBookingForm(true)}
-                className="btn-secondary !px-4 !py-2 text-[13px] rounded-full"
-              >
-                {tBooking('requestBtn')}
-              </button>
+              {latestBooking ? (
+                <>
+                  <p className="text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+                    {tBooking(latestBooking.status === 'CANCELLED' ? 'bookingCancelledNudge' : 'bookingCompletedNudge')}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowBookingForm(true)}
+                    className="btn-primary !px-4 !py-2 text-[13px] rounded-full"
+                  >
+                    {tBooking('bookAgain')}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-[11px] text-[#6B8886] mb-1.5">{tBooking('bookingNudge')}</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowBookingForm(true)}
+                    className="btn-secondary !px-4 !py-2 text-[13px] rounded-full"
+                  >
+                    {tBooking('requestBtn')}
+                  </button>
+                </>
+              )}
             </div>
           )}
 
@@ -841,6 +878,17 @@ export default function ChatPanel({
                 </div>
               </div>
               <div>
+                <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('address')}</label>
+                <input
+                  type="text"
+                  value={bookingAddress}
+                  onChange={e => setBookingAddress(e.target.value.slice(0, 200))}
+                  placeholder={tBooking('addressPlaceholder')}
+                  className="input !py-2 text-[13px] w-full"
+                  required
+                />
+              </div>
+              <div>
                 <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('notes')}</label>
                 <textarea
                   value={bookingNotes}
@@ -853,7 +901,7 @@ export default function ChatPanel({
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  disabled={bookingSubmitting}
+                  disabled={bookingSubmitting || !bookingAddress.trim()}
                   className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
                 >
                   {tBooking('submit')}
@@ -1047,6 +1095,7 @@ export default function ChatPanel({
           bathrooms:      b.bathrooms,
           cleaning_type:  b.cleaning_type,
           notes:          b.notes,
+          address:        b.address,
           photo_urls:     b.photo_urls,
         }
       })()}

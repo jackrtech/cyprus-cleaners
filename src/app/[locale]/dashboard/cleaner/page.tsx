@@ -47,6 +47,7 @@ interface Booking {
   start_time:     string
   duration_hours: number | null
   notes:          string | null
+  address:        string | null
   created_at:     string
   users:          IntroUser | null
   photo_paths:    string[]
@@ -391,6 +392,9 @@ export default function CleanerDashboardPage() {
             duration: booking.duration_hours ?? undefined,
           })}
         </p>
+        {booking.address && (
+          <p className="text-[12px] text-[#6B8886] line-clamp-1 mt-0.5">📍 {booking.address}</p>
+        )}
         {booking.notes && (
           <p className="text-[12px] text-[#6B8886] mt-1">{booking.notes}</p>
         )}
@@ -664,6 +668,7 @@ export default function CleanerDashboardPage() {
             bathrooms:      b.bathrooms,
             cleaning_type:  b.cleaning_type,
             notes:          b.notes,
+            address:        b.address,
             photo_urls:     b.photo_urls,
           }
         })()}
