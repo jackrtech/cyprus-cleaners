@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import type { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { extractErrorMessage, estimateCleaningHours } from '@/lib/utils'
+import { compressImage } from '@/lib/utils/compressImage'
 import type { BookingStatus, CleaningType } from '@/types'
 
 interface Message {
@@ -444,7 +445,7 @@ export default function ChatPanel({
     fileInputRef.current?.click()
   }
 
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
@@ -458,8 +459,9 @@ export default function ChatPanel({
       setPhotoError(t('photoTooLarge'))
       return
     }
-    setPhotoFile(file)
-    setPhotoPreview(URL.createObjectURL(file))
+    const compressed = await compressImage(file)
+    setPhotoFile(compressed)
+    setPhotoPreview(URL.createObjectURL(compressed))
   }
 
   function handleRemovePhoto() {
@@ -542,8 +544,9 @@ export default function ChatPanel({
     setCompletionPhotoUploading(true)
     setCompletionPhotoError(null)
     try {
+      const compressed = await compressImage(file)
       const formData = new FormData()
-      formData.append('photo', file)
+      formData.append('photo', compressed)
 
       const res = await fetch(`/api/bookings/${activeBooking.id}/photos`, {
         method: 'POST',
@@ -567,44 +570,45 @@ export default function ChatPanel({
 
   return (
     <>
-    <div className={embedded ? 'flex flex-col' : 'flex flex-col bg-white border border-[#E0EDEC] rounded-[16px] overflow-hidden'}>
+    <div className={embedded ? 'flex flex-col max-md:h-full' : 'flex flex-col max-md:h-full bg-white border border-[#E0EDEC] rounded-[16px] overflow-hidden'}>
 
-      {/* Header — suppressed when embedded, the parent card shows name/status/close itself */}
-      {embedded ? (
-        <div className="border-t border-[#E0EDEC]" />
-      ) : (
-        <div className="border-b border-[#E0EDEC]">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              {otherPartyAvatar ? (
-                <img
-                  src={otherPartyAvatar}
-                  alt={otherPartyName}
-                  className="w-8 h-8 rounded-full object-cover shrink-0"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-[#19706A] flex items-center justify-center text-white text-[12px] font-medium shrink-0">
-                  {getInitials(otherPartyName)}
-                </div>
-              )}
-              <span className="text-[14px] font-medium text-[#0D1F1E] truncate">{otherPartyName}</span>
-            </div>
+      {/* Header — suppressed at desktop widths when embedded (the parent card
+          shows name/status/close itself there), but always shown on mobile:
+          embedded chats become a full-screen takeover on small screens (see the
+          max-md:fixed wrapper in the dashboard pages), so they need their own
+          reachable close control instead of relying on a toggle button that's
+          scrolled off-screen behind the chat. */}
+      <div className={embedded ? 'border-t border-[#E0EDEC]' : 'border-b border-[#E0EDEC]'}>
+        <div className={`${embedded ? 'flex md:hidden border-b border-[#E0EDEC]' : 'flex'} items-center justify-between px-4 py-3`}>
+          <div className="flex items-center gap-2.5 min-w-0">
+            {otherPartyAvatar ? (
+              <img
+                src={otherPartyAvatar}
+                alt={otherPartyName}
+                className="w-8 h-8 rounded-full object-cover shrink-0"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-[#19706A] flex items-center justify-center text-white text-[12px] font-medium shrink-0">
+                {getInitials(otherPartyName)}
+              </div>
+            )}
+            <span className="text-[14px] font-medium text-[#0D1F1E] truncate">{otherPartyName}</span>
+          </div>
 
-            <div className="flex items-center gap-2 shrink-0 ml-2">
-              {onClose && (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="Close"
-                  className="text-[#6B8886] hover:text-[#0D1F1E] transition-colors text-[20px] leading-none"
-                >
-                  ×
-                </button>
-              )}
-            </div>
+          <div className="flex items-center gap-2 shrink-0 ml-2">
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className="text-[#6B8886] hover:text-[#0D1F1E] transition-colors text-[20px] leading-none"
+              >
+                ×
+              </button>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Booking */}
       {bookings !== null && (activeBooking || (currentUserRole === 'CUSTOMER' && canRequestNew)) && (
@@ -891,8 +895,10 @@ export default function ChatPanel({
         </div>
       )}
 
-      {/* Message list */}
-      <div ref={messageListRef} className="max-h-[400px] overflow-y-auto px-4 py-4">
+      {/* Message list — fills the available height on mobile (where the panel
+          is a full-screen takeover), capped to a fixed height on desktop (where
+          it's inline inside a card) */}
+      <div ref={messageListRef} className="flex-1 min-h-0 md:flex-none md:max-h-[400px] overflow-y-auto px-4 py-4">
         {messages === null ? (
           <div className="space-y-3">
             {[0, 1, 2].map(i => (

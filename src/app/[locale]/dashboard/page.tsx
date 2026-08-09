@@ -394,15 +394,21 @@ export default function DashboardPage() {
                         </div>
 
                         {isChatOpen && (
-                          <ChatPanel
-                            embedded
-                            introductionId={intro.id}
-                            currentUserId={session.user.id}
-                            currentUserRole="CUSTOMER"
-                            otherPartyName={cp?.display_name ?? 'Cleaner'}
-                            otherPartyAvatar={cp?.photo_url ?? null}
-                            onClose={() => setOpenChatId(null)}
-                          />
+                          // Full-screen takeover on mobile so the chat can't be
+                          // accidentally scrolled past — inline expansion (desktop
+                          // behavior, kept via md:) made it easy to scroll the chat
+                          // out of view entirely on small screens.
+                          <div className="max-md:fixed max-md:inset-0 max-md:z-[300] max-md:bg-white max-md:flex max-md:flex-col">
+                            <ChatPanel
+                              embedded
+                              introductionId={intro.id}
+                              currentUserId={session.user.id}
+                              currentUserRole="CUSTOMER"
+                              otherPartyName={cp?.display_name ?? 'Cleaner'}
+                              otherPartyAvatar={cp?.photo_url ?? null}
+                              onClose={() => setOpenChatId(null)}
+                            />
+                          </div>
                         )}
                       </div>
                     )

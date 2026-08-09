@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { extractErrorMessage, groupBookingsByPriority } from '@/lib/utils'
+import { compressImage } from '@/lib/utils/compressImage'
 import ChatPanel from '@/components/chat/ChatPanel'
 import DashboardTabs from '@/components/dashboard/DashboardTabs'
 import type { BookingStatus, CleaningType } from '@/types'
@@ -114,15 +115,20 @@ function IntroCard({
       </div>
 
       {isChatOpen && (
-        <ChatPanel
-          embedded
-          introductionId={intro.id}
-          currentUserId={currentUserId}
-          currentUserRole="CLEANER"
-          otherPartyName={intro.users?.full_name ?? 'Customer'}
-          otherPartyAvatar={null}
-          onClose={onToggleChat}
-        />
+        // Full-screen takeover on mobile so the chat can't be accidentally
+        // scrolled past — inline expansion (desktop behavior, kept via md:)
+        // made it easy to scroll the chat out of view entirely on small screens.
+        <div className="max-md:fixed max-md:inset-0 max-md:z-[300] max-md:bg-white max-md:flex max-md:flex-col">
+          <ChatPanel
+            embedded
+            introductionId={intro.id}
+            currentUserId={currentUserId}
+            currentUserRole="CLEANER"
+            otherPartyName={intro.users?.full_name ?? 'Customer'}
+            otherPartyAvatar={null}
+            onClose={onToggleChat}
+          />
+        </div>
       )}
     </div>
   )
@@ -221,8 +227,9 @@ export default function CleanerDashboardPage() {
     setPhotoUploadingId(bookingId)
     setPhotoUploadError(null)
     try {
+      const compressed = await compressImage(file)
       const formData = new FormData()
-      formData.append('photo', file)
+      formData.append('photo', compressed)
 
       const res = await fetch(`/api/bookings/${bookingId}/photos`, {
         method: 'POST',

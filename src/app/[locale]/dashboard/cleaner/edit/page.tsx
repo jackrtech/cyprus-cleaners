@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
+import { compressImage } from '@/lib/utils/compressImage'
 
 const MAX_BIO = 500
 
@@ -109,18 +110,20 @@ export default function EditProfilePage() {
     if (type === 'company') setGender(null)
   }
 
-  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setNewPhotoFile(file)
-    setPhotoPreview(URL.createObjectURL(file))
+    const compressed = await compressImage(file)
+    setNewPhotoFile(compressed)
+    setPhotoPreview(URL.createObjectURL(compressed))
   }
 
-  function handleCoverPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleCoverPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setNewCoverPhotoFile(file)
-    setCoverPhotoPreview(URL.createObjectURL(file))
+    const compressed = await compressImage(file)
+    setNewCoverPhotoFile(compressed)
+    setCoverPhotoPreview(URL.createObjectURL(compressed))
   }
 
   async function handleSave(e: React.FormEvent) {
