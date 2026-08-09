@@ -31,11 +31,13 @@ export default function Navbar() {
     setDrawerOpen(false)
   }
 
-  // Nav centre links — vary by role
+  // Nav centre links — vary by role. Cleaner/Admin have no link here: their
+  // only "nav link" would point to the exact same place as the Dashboard
+  // button right next to it, which is just a redundant duplicate entry.
   const navLinks: { label: string; href: string }[] = (() => {
     if (role === 'CUSTOMER') return [{ label: t('findCleaner'), href: '/cleaners' }]
-    if (role === 'CLEANER')  return [{ label: t('forCleaners'), href: '/dashboard/cleaner' }]
-    if (role === 'ADMIN')    return [{ label: t('admin'),       href: '/admin' }]
+    if (role === 'CLEANER')  return []
+    if (role === 'ADMIN')    return []
     // Logged out / loading
     return [
       { label: t('findCleaner'), href: '/cleaners' },
@@ -82,7 +84,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b border-[#E0EDEC]">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-16">
+      <div className="px-6 lg:px-12 flex items-center justify-between h-16">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
@@ -115,7 +117,7 @@ export default function Navbar() {
           <LanguageToggle />
           <Link href={ghostBtn.href} className="btn-ghost">{ghostBtn.label}</Link>
           {isLoggedIn ? (
-            <button onClick={handleSignOut} className="btn-primary">{t('signOut')}</button>
+            <button onClick={handleSignOut} className="text-[13px] text-[#6B8886] hover:text-[#0D1F1E] transition-colors">{t('signOut')}</button>
           ) : (
             <Link href="/get-started" className="btn-primary">{t('getStarted')}</Link>
           )}
@@ -131,32 +133,41 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — each group gets a divider instead of relying on gap
+          spacing alone, so an empty group (e.g. no nav links for a cleaner)
+          can't leave a phantom blank row; text sizing is consistent (14px)
+          across every plain row, leaving the Dashboard button as the one
+          deliberately-emphasized action, same as it is on desktop. */}
       {drawerOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-[#F7FAF9] border-b border-[#E0EDEC] px-6 py-4 flex flex-col gap-4">
+        <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-[#E0EDEC] px-6 py-5 flex flex-col gap-4" style={{ boxShadow: '0 8px 24px rgba(25,112,106,0.08)' }}>
           {isLoggedIn && session?.user?.name && (
-            <span className="text-[13px] text-[#0D1F1E]">
+            <span className="text-[14px] font-medium text-[#0D1F1E]">
               {session.user.name}
-              {roleLabel && <span className="text-[#19706A] font-medium"> · {roleLabel}</span>}
+              {roleLabel && <span className="text-[13px] text-[#19706A] font-normal"> · {roleLabel}</span>}
             </span>
           )}
-          <div className="flex flex-col gap-3">
-            {navLinks.map(link => (
-              <Link key={link.href} href={link.href} className={linkClass(link.href)} onClick={() => setDrawerOpen(false)}>
-                {link.label}
-              </Link>
-            ))}
-          </div>
-          <div className="flex items-center gap-3">
+
+          {navLinks.length > 0 && (
+            <div className="flex flex-col gap-3 pt-4 border-t border-[#E0EDEC]">
+              {navLinks.map(link => (
+                <Link key={link.href} href={link.href} className={linkClass(link.href)} onClick={() => setDrawerOpen(false)}>
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-4 border-t border-[#E0EDEC]">
             <span className="text-[14px] text-[#0D1F1E]">{t('language')}</span>
             <LanguageToggle />
           </div>
-          <div className="flex flex-col gap-3">
+
+          <div className="flex flex-col gap-3 pt-4 border-t border-[#E0EDEC]">
             <Link href={ghostBtn.href} className="btn-ghost justify-center" onClick={() => setDrawerOpen(false)}>
               {ghostBtn.label}
             </Link>
             {isLoggedIn ? (
-              <button onClick={handleSignOut} className="btn-primary w-full justify-center">{t('signOut')}</button>
+              <button onClick={handleSignOut} className="text-[14px] text-[#6B8886] hover:text-[#0D1F1E] transition-colors text-center">{t('signOut')}</button>
             ) : (
               <Link href="/get-started" className="btn-primary justify-center" onClick={() => setDrawerOpen(false)}>
                 {t('getStarted')}

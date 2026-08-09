@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import type { BookingStatus } from '@/types'
 
 // Merge Tailwind classes safely — use this everywhere instead of string concatenation
 export function cn(...inputs: ClassValue[]) {
@@ -75,6 +76,41 @@ export function estimateCleaningHours(
   const minutes = baseMinutes * (cleaningType === 'DEEP' ? 1.6 : 1)
   const hours = Math.round((minutes / 60) * 2) / 2
   return Math.min(12, Math.max(1, hours))
+}
+
+export interface BookingGroups<T> {
+  requested: T[]
+  confirmed: T[]
+  history:   T[]
+}
+
+// Groups bookings into the three priority buckets used on both dashboards'
+// Bookings tab: REQUESTED (needs a response) and CONFIRMED (upcoming) sorted
+// soonest-first by job date/time so the most urgent one is on top; COMPLETED
+// and CANCELLED are grouped together as history, most recently-scheduled
+// first. Keeps the two dashboard files' sort/group logic identical without
+// duplicating it — the card JSX itself still lives in each file since it
+// differs meaningfully by role (read-only vs. confirm/decline + photo upload).
+export function groupBookingsByPriority<T extends { status: BookingStatus; date: string; start_time: string }>(
+  bookings: T[]
+): BookingGroups<T> {
+  const requested: T[] = []
+  const confirmed: T[] = []
+  const history:   T[] = []
+
+  for (const b of bookings) {
+    if (b.status === 'REQUESTED') requested.push(b)
+    else if (b.status === 'CONFIRMED') confirmed.push(b)
+    else history.push(b)
+  }
+
+  const byDateTime = (a: T, b: T) => `${a.date}T${a.start_time}`.localeCompare(`${b.date}T${b.start_time}`)
+
+  requested.sort(byDateTime)
+  confirmed.sort(byDateTime)
+  history.sort((a, b) => byDateTime(b, a))
+
+  return { requested, confirmed, history }
 }
 
 // Extract the server's { error: "..." } message from a failed API response,

@@ -6,8 +6,6 @@ export type CleanerStatus = 'ACTIVE' | 'PAUSED' | 'SUSPENDED'
 
 export type ServiceType = 'HOUSE' | 'APARTMENT'
 
-export type IntroductionStatus = 'PENDING' | 'APPROVED' | 'DECLINED'
-
 export type BookingStatus = 'REQUESTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
 
 export type CleaningType = 'STANDARD' | 'DEEP'
@@ -61,9 +59,6 @@ export interface Introduction {
   id: string
   customer_id: string
   cleaner_profile_id: string
-  message: string
-  status: IntroductionStatus
-  approved_at: string | null
   created_at: string
   // Joins
   customer?: User

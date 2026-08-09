@@ -6,6 +6,8 @@ import { useTranslations, useLocale } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import ChatPanel from '@/components/chat/ChatPanel'
 import ReviewPrompt from '@/components/reviews/ReviewPrompt'
+import DashboardTabs from '@/components/dashboard/DashboardTabs'
+import { groupBookingsByPriority } from '@/lib/utils'
 import type { BookingStatus, CleaningType } from '@/types'
 
 interface CleanerProfile {
@@ -17,12 +19,18 @@ interface CleanerProfile {
   email?:        string | null
 }
 
+interface LastMessage {
+  body:       string | null
+  photo_path: string | null
+  created_at: string
+}
+
 interface Introduction {
   id:               string
-  status:           'PENDING' | 'APPROVED' | 'DECLINED'
-  message:          string
   created_at:       string
   cleaner_profiles: CleanerProfile | null
+  last_message:     LastMessage | null
+  has_unread:       boolean
 }
 
 interface Booking {
@@ -57,6 +65,7 @@ export default function DashboardPage() {
   const t        = useTranslations('dashboard')
   const tAuth    = useTranslations('auth')
   const tBooking = useTranslations('booking')
+  const tChat    = useTranslations('chat')
   const locale   = useLocale()
   const router   = useRouter()
 
@@ -73,6 +82,7 @@ export default function DashboardPage() {
 
   const [openChatId, setOpenChatId] = useState<string | null>(null)
   const [skippedReviewIds, setSkippedReviewIds] = useState<Set<string>>(new Set())
+  const [activeTab, setActiveTab] = useState<'bookings' | 'messages'>('bookings')
 
   // Auth guard
   useEffect(() => {
@@ -131,6 +141,70 @@ export default function DashboardPage() {
     day: 'numeric', month: 'short', year: 'numeric',
   })
 
+  const threads       = intros.filter(i => i.last_message !== null)
+  const bookingGroups = groupBookingsByPriority(bookings)
+
+  function renderBookingCard(booking: Booking) {
+    const cp = booking.cleaner_profiles
+    const bookingSummary = tBooking(booking.duration_hours == null ? 'summaryNoDuration' : 'summary', {
+      cleaningType: tBooking(booking.cleaning_type === 'DEEP' ? 'deepClean' : 'standardClean'),
+      bedrooms: booking.bedrooms ?? '—',
+      bathrooms: booking.bathrooms ?? '—',
+      date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${booking.date}T00:00:00`)),
+      time: booking.start_time.slice(0, 5),
+      duration: booking.duration_hours ?? undefined,
+    })
+    const needsReview = booking.status === 'COMPLETED'
+      && (!booking.reviews || booking.reviews.length === 0)
+      && !skippedReviewIds.has(booking.id)
+
+    return (
+      <div key={booking.id} className="space-y-2">
+        <div className="card p-5">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <p className="text-[14px] font-medium text-[#0D1F1E]">
+                  {tBooking('with', { name: cp?.display_name ?? '—' })}
+                </p>
+                <span className={`inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full ${BOOKING_STATUS_BADGE[booking.status]}`}>
+                  {tBooking(
+                    booking.status === 'REQUESTED' ? 'statusRequested'
+                    : booking.status === 'CONFIRMED' ? 'statusConfirmed'
+                    : booking.status === 'COMPLETED' ? 'statusCompleted'
+                    : 'statusCancelled'
+                  )}
+                </span>
+              </div>
+              <p className="text-[13px] text-[#6B8886]">{bookingSummary}</p>
+              {booking.status === 'COMPLETED' && booking.photo_urls.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap mt-2">
+                  {booking.photo_urls.map((url, i) => (
+                    <img key={i} src={url} alt="" className="w-12 h-12 rounded-md object-cover border border-[#E0EDEC]" />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {needsReview && (
+          <ReviewPrompt
+            bookingId={booking.id}
+            cleanerName={cp?.display_name ?? '—'}
+            subtitle={bookingSummary}
+            onSubmitted={review => {
+              setBookings(prev => prev.map(b =>
+                b.id === booking.id ? { ...b, reviews: [{ id: review.id }] } : b
+              ))
+            }}
+            onSkip={() => setSkippedReviewIds(prev => new Set(prev).add(booking.id))}
+          />
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-8">
       <div className="max-w-[720px] mx-auto">
@@ -165,16 +239,6 @@ export default function DashboardPage() {
           {t('welcomeBack', { name: session.user.name })}
         </h1>
 
-        {/* Section heading + count badge */}
-        <div className="flex items-center gap-2.5 mb-4">
-          <h2 className="text-[17px] font-medium text-[#0D1F1E]">{t('yourIntroductions')}</h2>
-          {!loading && intros.length > 0 && (
-            <span className="text-[12px] font-medium bg-[#E8F4F3] text-[#19706A] px-2 py-0.5 rounded-full">
-              {intros.length}
-            </span>
-          )}
-        </div>
-
         {/* Inline error */}
         {error && (
           <p className="text-[13px] text-red-600 bg-red-50 border border-red-200 rounded-[10px] px-4 py-3 mb-4">
@@ -182,188 +246,171 @@ export default function DashboardPage() {
           </p>
         )}
 
-        {/* Loading skeleton */}
+        {/* Loading skeleton (covers the tabs below) */}
         {loading ? (
-          <div className="space-y-3">
+          <div className="space-y-3 mb-8">
             {[1, 2, 3].map(i => (
               <div key={i} className="card p-5 h-[88px] animate-pulse" />
             ))}
           </div>
-
-        ) : intros.length === 0 && !error ? (
-          /* Empty state */
-          <div className="card p-10 flex flex-col items-center text-center gap-5">
-            <div className="w-16 h-16 rounded-full bg-[#E8F4F3] flex items-center justify-center">
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#19706A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M4 12L14 3l10 9v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-                <path d="M10 24V16h8v8" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-[16px] font-medium text-[#0D1F1E] mb-1">{t('noIntrosYet')}</p>
-              <p className="text-[13px] text-[#6B8886]">{t('noIntrosBody')}</p>
-            </div>
-            <Link href="/cleaners" className="btn-primary">{t('findACleaner')}</Link>
-          </div>
-
         ) : (
-          /* Introduction cards */
-          <div className="space-y-3">
-            {intros.map(intro => {
-              const cp       = intro.cleaner_profiles
-              const name     = cp?.display_name ?? '—'
-              const initials = getInitials(name)
+          <>
+            {/* Tabs: Bookings / Messages */}
+            <DashboardTabs
+              idPrefix="customer-dashboard"
+              ariaLabel={t('sectionsLabel')}
+              activeKey={activeTab}
+              onChange={key => setActiveTab(key as 'bookings' | 'messages')}
+              tabs={[
+                { key: 'bookings', label: tBooking('yourBookings'), count: bookingGroups.requested.length },
+                { key: 'messages', label: t('messagesTab'), count: threads.filter(i => i.has_unread).length },
+              ]}
+            />
 
-              return (
-                <div key={intro.id}>
-                  <div className="card p-5">
-                  <div className="flex items-start gap-4">
-
-                    {/* Avatar */}
-                    <div className="shrink-0 w-12 h-12 rounded-full bg-[#19706A] flex items-center justify-center text-white text-[15px] font-medium overflow-hidden">
-                      {cp?.photo_url
-                        ? <img src={cp.photo_url} alt={name} className="w-full h-full object-cover" />
-                        : initials
-                      }
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-
-                      {/* Name + date */}
-                      <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
-                        <p className="text-[15px] font-medium text-[#0D1F1E]">{name}</p>
-                        <span className="text-[12px] text-[#6B8886] shrink-0">
-                          {t('sentOn')} {dateFormatter.format(new Date(intro.created_at))}
-                        </span>
-                      </div>
-
-                      {/* City pills */}
-                      {cp?.cities && cp.cities.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                          {cp.cities.map(city => (
-                            <span key={city} className="badge-teal">{city}</span>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Open chat (all statuses) */}
-                      <div className="mt-3 pt-3 border-t border-[#E0EDEC]">
-                        <button
-                          type="button"
-                          onClick={() => setOpenChatId(openChatId === intro.id ? null : intro.id)}
-                          className={`rounded-full px-4 py-2 text-[13px] ${
-                            openChatId === intro.id ? 'btn-secondary' : 'btn-ghost'
-                          }`}
-                        >
-                          {openChatId === intro.id ? 'Close chat' : 'Open chat'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+            {/* Bookings panel */}
+            <div
+              role="tabpanel"
+              id="customer-dashboard-panel-bookings"
+              aria-labelledby="customer-dashboard-tab-bookings"
+              hidden={activeTab !== 'bookings'}
+            >
+              {bookingsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2].map(i => (
+                    <div key={i} className="card p-5 h-[80px] animate-pulse" />
+                  ))}
                 </div>
-
-                {openChatId === intro.id && (
-                  <div className="mt-2 transition-all duration-200">
-                    <ChatPanel
-                      introductionId={intro.id}
-                      currentUserId={session.user.id}
-                      currentUserRole="CUSTOMER"
-                      otherPartyName={cp?.display_name ?? 'Cleaner'}
-                      otherPartyAvatar={cp?.photo_url ?? null}
-                      onClose={() => setOpenChatId(null)}
-                    />
-                  </div>
-                )}
+              ) : bookings.length === 0 ? (
+                <div className="card p-8 flex flex-col items-center text-center gap-2">
+                  <p className="text-[14px] font-medium text-[#0D1F1E]">{tBooking('noBookingsYet')}</p>
+                  <p className="text-[13px] text-[#6B8886]">{tBooking('noBookingsBodyCustomer')}</p>
                 </div>
-              )
-            })}
-          </div>
-        )}
-
-        {/* Section heading + count badge — bookings */}
-        <div className="flex items-center gap-2.5 mb-4 mt-10">
-          <h2 className="text-[17px] font-medium text-[#0D1F1E]">{tBooking('yourBookings')}</h2>
-          {!bookingsLoading && bookings.length > 0 && (
-            <span className="text-[12px] font-medium bg-[#E8F4F3] text-[#19706A] px-2 py-0.5 rounded-full">
-              {bookings.length}
-            </span>
-          )}
-        </div>
-
-        {bookingsLoading ? (
-          <div className="space-y-3">
-            {[1, 2].map(i => (
-              <div key={i} className="card p-5 h-[80px] animate-pulse" />
-            ))}
-          </div>
-        ) : bookings.length === 0 ? (
-          <div className="card p-8 flex flex-col items-center text-center gap-2">
-            <p className="text-[14px] font-medium text-[#0D1F1E]">{tBooking('noBookingsYet')}</p>
-            <p className="text-[13px] text-[#6B8886]">{tBooking('noBookingsBodyCustomer')}</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {bookings.map(booking => {
-              const cp = booking.cleaner_profiles
-              const bookingSummary = tBooking(booking.duration_hours == null ? 'summaryNoDuration' : 'summary', {
-                cleaningType: tBooking(booking.cleaning_type === 'DEEP' ? 'deepClean' : 'standardClean'),
-                bedrooms: booking.bedrooms ?? '—',
-                bathrooms: booking.bathrooms ?? '—',
-                date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${booking.date}T00:00:00`)),
-                time: booking.start_time.slice(0, 5),
-                duration: booking.duration_hours ?? undefined,
-              })
-              const needsReview = booking.status === 'COMPLETED'
-                && (!booking.reviews || booking.reviews.length === 0)
-                && !skippedReviewIds.has(booking.id)
-
-              return (
-                <div key={booking.id} className="space-y-2">
-                  <div className="card p-5">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <p className="text-[14px] font-medium text-[#0D1F1E]">
-                            {tBooking('with', { name: cp?.display_name ?? '—' })}
-                          </p>
-                          <span className={`inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full ${BOOKING_STATUS_BADGE[booking.status]}`}>
-                            {tBooking(
-                              booking.status === 'REQUESTED' ? 'statusRequested'
-                              : booking.status === 'CONFIRMED' ? 'statusConfirmed'
-                              : booking.status === 'COMPLETED' ? 'statusCompleted'
-                              : 'statusCancelled'
-                            )}
-                          </span>
-                        </div>
-                        <p className="text-[13px] text-[#6B8886]">{bookingSummary}</p>
-                        {booking.status === 'COMPLETED' && booking.photo_urls.length > 0 && (
-                          <div className="flex items-center gap-2 flex-wrap mt-2">
-                            {booking.photo_urls.map((url, i) => (
-                              <img key={i} src={url} alt="" className="w-12 h-12 rounded-md object-cover border border-[#E0EDEC]" />
-                            ))}
-                          </div>
-                        )}
-                      </div>
+              ) : (
+                <div className="space-y-8">
+                  {bookingGroups.requested.length > 0 && (
+                    <div>
+                      <h3 className="text-[12px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">
+                        {tBooking('awaitingConfirmation')}
+                      </h3>
+                      <div className="space-y-3">{bookingGroups.requested.map(renderBookingCard)}</div>
                     </div>
-                  </div>
-
-                  {needsReview && (
-                    <ReviewPrompt
-                      bookingId={booking.id}
-                      cleanerName={cp?.display_name ?? '—'}
-                      subtitle={bookingSummary}
-                      onSubmitted={review => {
-                        setBookings(prev => prev.map(b =>
-                          b.id === booking.id ? { ...b, reviews: [{ id: review.id }] } : b
-                        ))
-                      }}
-                      onSkip={() => setSkippedReviewIds(prev => new Set(prev).add(booking.id))}
-                    />
+                  )}
+                  {bookingGroups.confirmed.length > 0 && (
+                    <div>
+                      <h3 className="text-[12px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">
+                        {tBooking('upcoming')}
+                      </h3>
+                      <div className="space-y-3">{bookingGroups.confirmed.map(renderBookingCard)}</div>
+                    </div>
+                  )}
+                  {bookingGroups.history.length > 0 && (
+                    <div>
+                      <h3 className="text-[12px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">
+                        {tBooking('bookingHistory')}
+                      </h3>
+                      <div className="space-y-3">{bookingGroups.history.map(renderBookingCard)}</div>
+                    </div>
                   )}
                 </div>
-              )
-            })}
-          </div>
+              )}
+            </div>
+
+            {/* Messages panel */}
+            <div
+              role="tabpanel"
+              id="customer-dashboard-panel-messages"
+              aria-labelledby="customer-dashboard-tab-messages"
+              hidden={activeTab !== 'messages'}
+            >
+              {threads.length === 0 && !error ? (
+                <div className="card p-10 flex flex-col items-center text-center gap-5">
+                  <div className="w-16 h-16 rounded-full bg-[#E8F4F3] flex items-center justify-center">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#19706A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M4 12L14 3l10 9v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                      <path d="M10 24V16h8v8" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-[16px] font-medium text-[#0D1F1E] mb-1">{t('noIntrosYet')}</p>
+                    <p className="text-[13px] text-[#6B8886]">{t('noIntrosBody')}</p>
+                  </div>
+                  <Link href="/cleaners" className="btn-primary">{t('findACleaner')}</Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {threads.map(intro => {
+                    const cp        = intro.cleaner_profiles
+                    const name      = cp?.display_name ?? '—'
+                    const initials  = getInitials(name)
+                    const isChatOpen = openChatId === intro.id
+                    const previewText = intro.last_message?.body ?? tChat('photoMessage')
+
+                    return (
+                      <div key={intro.id} className="card overflow-hidden">
+                        <div className="p-5">
+                          {/* Header row — avatar+name+date on the left, the chat
+                              toggle inline on the right, matching the cleaner
+                              dashboard's compact IntroCard layout instead of
+                              stacking the button in its own full-width row */}
+                          <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="shrink-0 w-10 h-10 rounded-full bg-[#19706A] flex items-center justify-center text-white text-[13px] font-medium overflow-hidden">
+                                {cp?.photo_url
+                                  ? <img src={cp.photo_url} alt={name} className="w-full h-full object-cover" />
+                                  : initials
+                                }
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[15px] font-medium text-[#0D1F1E] truncate">{name}</p>
+                                <p className="text-[12px] text-[#6B8886]">
+                                  {t('sentOn')} {dateFormatter.format(new Date(intro.created_at))}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setOpenChatId(isChatOpen ? null : intro.id)}
+                              className={`rounded-full px-4 py-2 text-[13px] shrink-0 ${
+                                isChatOpen ? 'btn-secondary' : 'btn-ghost'
+                              }`}
+                            >
+                              {isChatOpen ? 'Close chat' : 'Open chat'}
+                            </button>
+                          </div>
+
+                          {/* City pills */}
+                          {cp?.cities && cp.cities.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {cp.cities.map(city => (
+                                <span key={city} className="badge-teal">{city}</span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Most recent message preview — hidden once the chat is open below */}
+                          {!isChatOpen && (
+                            <p className="text-[13px] text-[#6B8886] line-clamp-2 mt-2">{previewText}</p>
+                          )}
+                        </div>
+
+                        {isChatOpen && (
+                          <ChatPanel
+                            embedded
+                            introductionId={intro.id}
+                            currentUserId={session.user.id}
+                            currentUserRole="CUSTOMER"
+                            otherPartyName={cp?.display_name ?? 'Cleaner'}
+                            otherPartyAvatar={cp?.photo_url ?? null}
+                            onClose={() => setOpenChatId(null)}
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </>
         )}
 
         {/* Sign out */}

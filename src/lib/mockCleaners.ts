@@ -19,6 +19,7 @@ export type MockCleaner = {
   unique_customer_count: number
   bio: string
   photo_url?: string | null
+  cover_photo_url?: string | null
 }
 
 export const MOCK_CLEANERS: MockCleaner[] = [

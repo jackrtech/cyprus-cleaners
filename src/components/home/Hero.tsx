@@ -1,12 +1,14 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
-import { useRouter } from '@/navigation'
+import { Link, useRouter } from '@/navigation'
 
 export default function Hero() {
   const t = useTranslations('hero')
   const router = useRouter()
+  const [showBusinessModal, setShowBusinessModal] = useState(false)
 
   return (
     <section className="relative w-full bg-[#F7FAF9] overflow-hidden">
@@ -70,11 +72,13 @@ export default function Hero() {
         <circle className="dot-3" cx="758" cy="382" r="2.5" fill="#F2C94C" opacity="0" />
       </svg>
 
-      {/* Two-column grid */}
-      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 min-h-[520px]">
+      {/* Two-column grid — min-height only applies once the right-column image
+          is actually present (md:), so mobile doesn't get padded out to match
+          a desktop image height it doesn't have */}
+      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 md:min-h-[520px]">
 
         {/* Left content */}
-        <div className="flex flex-col justify-center px-6 py-16 md:pl-14 md:pr-0 md:py-[72px]">
+        <div className="flex flex-col justify-center px-6 py-8 md:pl-14 md:pr-0 md:py-[72px]">
           <div className="max-w-[460px]">
 
             {/* Badge */}
@@ -120,6 +124,16 @@ export default function Hero() {
                 {t('howItWorks')}
               </a>
             </div>
+
+            {/* Business owner CTA — subtler than the primary CTAs above, opens
+                an info modal rather than jumping straight to a form */}
+            <button
+              type="button"
+              onClick={() => setShowBusinessModal(true)}
+              className="mt-5 text-[13px] text-[#6B8886] hover:text-[#19706A] transition-colors underline underline-offset-2 decoration-[#E0EDEC] hover:decoration-[#19706A]"
+            >
+              {t('businessCta')} →
+            </button>
           </div>
         </div>
 
@@ -186,6 +200,43 @@ export default function Hero() {
           </div>
         </div>
       </div>
+
+      {/* Business owner info modal */}
+      {showBusinessModal && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center px-4"
+          style={{ backgroundColor: 'rgba(13,31,30,0.5)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowBusinessModal(false) }}
+        >
+          <div className="card w-full max-w-[440px] p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[17px] font-medium text-[#0D1F1E]">{t('businessModalHeading')}</h2>
+              <button
+                type="button"
+                onClick={() => setShowBusinessModal(false)}
+                aria-label="Close"
+                className="text-[#6B8886] hover:text-[#0D1F1E] transition-colors text-[22px] leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <ul className="space-y-3 mb-6">
+              {[t('businessModalBody1'), t('businessModalBody2'), t('businessModalBody3')].map((line, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-[13px] text-[#3F4E4C] leading-relaxed">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#19706A] shrink-0 mt-1.5" />
+                  {line}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/register/cleaner"
+              className="btn-primary w-full text-center rounded-full py-3 text-[14px]"
+            >
+              {t('businessModalCta')} →
+            </Link>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

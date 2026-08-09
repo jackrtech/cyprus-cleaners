@@ -119,9 +119,9 @@ export default function FeaturedCleaners() {
     : featured.filter(c => c.cities.includes(activeCity))
 
   return (
-    <section className="bg-white py-[72px] px-6 md:px-12 w-full">
+    <section className="bg-white py-10 md:py-[72px] px-6 md:px-12 w-full">
       {/* Header */}
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex justify-between items-end mb-5 md:mb-8">
         <div>
           <p className="text-[11px] font-medium text-[#19706A] tracking-[0.07em] uppercase mb-2">
             {t('topRated')}
@@ -139,14 +139,14 @@ export default function FeaturedCleaners() {
       </div>
 
       {/* City filter tabs */}
-      <div className="flex gap-2 flex-wrap mb-9">
+      <div className="flex gap-2 flex-wrap mb-6 md:mb-9">
         {CITY_TABS.map(tab => (
           <button
             key={tab.value}
             onClick={() => setActiveCity(tab.value)}
-            className={`rounded-full border-[1.5px] px-4 py-[7px] text-[13px] cursor-pointer transition-all ${
+            className={`rounded-full border-[1.5px] px-4 py-[7px] text-[13px] font-medium cursor-pointer transition-colors ${
               activeCity === tab.value
-                ? 'bg-[#E8F4F3] text-[#19706A] border-[#19706A] font-medium'
+                ? 'bg-[#E8F4F3] text-[#19706A] border-[#19706A]'
                 : 'bg-white text-[#6B8886] border-[#E0EDEC]'
             }`}
           >

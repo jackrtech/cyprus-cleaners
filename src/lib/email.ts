@@ -96,105 +96,36 @@ export async function sendPasswordResetEmail({
   return sendEmail({ to, subject, html })
 }
 
-// ─── 1. New introduction → cleaner ───────────────────────────────────────────
+// ─── 1. New message → the other party's first notification for a thread ─────
 
-export async function sendNewIntroEmail({
-  cleanerEmail, cleanerLocale, customerName, message, dashboardUrl,
+export async function sendNewMessageEmail({
+  recipientEmail, recipientLocale, senderName, message, dashboardUrl,
 }: {
-  cleanerEmail:  string
-  cleanerLocale: string | null
-  customerName:  string
-  message:       string
-  dashboardUrl:  string
+  recipientEmail:  string
+  recipientLocale: string | null
+  senderName:      string
+  message:         string
+  dashboardUrl:    string
 }) {
-  const isEl = cleanerLocale === 'el'
+  const isEl = recipientLocale === 'el'
 
   const subject = isEl
-    ? 'Έχετε νέο αίτημα επικοινωνίας'
-    : 'You have a new introduction request'
+    ? 'Έχετε νέο μήνυμα'
+    : 'You have a new message'
 
   const html = layout(isEl
-    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Νέο αίτημα επικοινωνίας</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${customerName}</strong> θέλει να επικοινωνήσει μαζί σας:</p>
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Νέο μήνυμα</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${senderName}</strong> σας έστειλε μήνυμα:</p>
        <blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;font-style:italic;line-height:1.6;">${message}</blockquote>
-       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:0;">Συνδεθείτε στον πίνακα ελέγχου για να αποδεχτείτε ή να απορρίψετε το αίτημα.</p>
-       ${cta('Προβολή αιτήματος', dashboardUrl)}`
-    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">New introduction request</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${customerName}</strong> sent you a message:</p>
+       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:0;">Συνδεθείτε στον πίνακα ελέγχου για να απαντήσετε.</p>
+       ${cta('Προβολή μηνύματος', dashboardUrl)}`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">You have a new message</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${senderName}</strong> sent you a message:</p>
        <blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;font-style:italic;line-height:1.6;">${message}</blockquote>
-       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:0;">Log in to your dashboard to approve or decline this request.</p>
-       ${cta('View request', dashboardUrl)}`)
+       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:0;">Log in to your dashboard to reply.</p>
+       ${cta('View message', dashboardUrl)}`)
 
-  return sendEmail({ to: cleanerEmail, subject, html })
-}
-
-// ─── 2. Intro approved → customer ────────────────────────────────────────────
-
-export async function sendIntroApprovedEmail({
-  customerEmail, customerLocale, cleanerName, cleanerPhone, cleanerEmail: cleanerEmailAddr, dashboardUrl,
-}: {
-  customerEmail:  string
-  customerLocale: string | null
-  cleanerName:    string
-  cleanerPhone:   string | null
-  cleanerEmail:   string | null
-  dashboardUrl:   string
-}) {
-  const isEl = customerLocale === 'el'
-
-  const subject = isEl ? 'Το αίτημά σας εγκρίθηκε' : 'Your introduction was approved'
-
-  const contactRows = [
-    cleanerPhone
-      ? `<p style="margin:6px 0;color:#0D1F1E;font-size:14px;">&#128222; ${cleanerPhone}</p>`
-      : '',
-    cleanerEmailAddr
-      ? `<p style="margin:6px 0;color:#0D1F1E;font-size:14px;">&#9993; ${cleanerEmailAddr}</p>`
-      : '',
-  ].join('')
-
-  const contactBlock = contactRows
-    ? `<div style="background:#F7FAF9;border:1px solid #E0EDEC;border-radius:8px;padding:16px;margin:16px 0;">${contactRows}</div>`
-    : ''
-
-  const html = layout(isEl
-    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Το αίτημά σας εγκρίθηκε!</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Ο/Η <strong>${cleanerName}</strong> αποδέχτηκε το αίτημά σας. Τα στοιχεία επικοινωνίας:</p>
-       ${contactBlock}
-       ${cta('Προβολή στον πίνακα ελέγχου', dashboardUrl)}`
-    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Your introduction was approved!</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;"><strong>${cleanerName}</strong> accepted your request. Here are their contact details:</p>
-       ${contactBlock}
-       ${cta('View in dashboard', dashboardUrl)}`)
-
-  return sendEmail({ to: customerEmail, subject, html })
-}
-
-// ─── 3. Intro declined → customer ────────────────────────────────────────────
-
-export async function sendIntroDeclinedEmail({
-  customerEmail, customerLocale, cleanerName, dashboardUrl,
-}: {
-  customerEmail:  string
-  customerLocale: string | null
-  cleanerName:    string
-  dashboardUrl:   string
-}) {
-  const isEl = customerLocale === 'el'
-
-  const subject = isEl
-    ? `Ενημέρωση για το αίτημά σας προς ${cleanerName}`
-    : `Update on your introduction to ${cleanerName}`
-
-  const html = layout(isEl
-    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Ενημέρωση αιτήματος</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 16px;">Ο/Η <strong>${cleanerName}</strong> δεν είναι διαθέσιμος/η αυτή τη στιγμή. Ελέγξτε άλλους καθαριστές.</p>
-       ${cta('Περιηγηθείτε σε καθαριστές', dashboardUrl)}`
-    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Introduction update</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 16px;"><strong>${cleanerName}</strong> is not available right now. Browse other cleaners.</p>
-       ${cta('Browse cleaners', dashboardUrl)}`)
-
-  return sendEmail({ to: customerEmail, subject, html })
+  return sendEmail({ to: recipientEmail, subject, html })
 }
 
 // ─── 4. New booking request → cleaner ────────────────────────────────────────

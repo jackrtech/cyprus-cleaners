@@ -6,6 +6,7 @@ import { Link } from '@/navigation'
 import type { MockCleaner } from '@/lib/mockCleaners'
 import CleanerCard from '@/components/cleaners/CleanerCard'
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/cleaners/FilterBar'
+import Footer from '@/components/Footer'
 
 type SortKey = 'top-rated' | 'price-asc' | 'price-desc' | 'most-reviews' | 'most-jobs'
 
@@ -15,6 +16,7 @@ interface DbCleanerRow {
   display_name:          string
   bio:                   string | null
   photo_url:             string | null
+  cover_photo_url:       string | null
   city:                  string | null
   cities:                string[] | null
   hourly_rate_eur:       number
@@ -83,6 +85,7 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
     unique_customer_count:  row.unique_customer_count,
     bio:                    row.bio ?? '',
     photo_url:              row.photo_url,
+    cover_photo_url:        row.cover_photo_url,
   }
 }
 
@@ -107,8 +110,8 @@ export default function CleanersPage() {
     let r = [...cleaners]
 
     if (filters.cities.length) r = r.filter(c => filters.cities.some(fc => c.cities.includes(fc)))
-    if (filters.maxRate < 40) r = r.filter(c => c.hourly_rate_eur <= filters.maxRate)
-    if (filters.minRating !== null) r = r.filter(c => c.avg_rating >= filters.minRating!)
+    if (filters.maxRate < 60) r = r.filter(c => c.hourly_rate_eur <= filters.maxRate)
+    if (filters.minRating > 0) r = r.filter(c => c.avg_rating >= filters.minRating)
     if (filters.gender !== 'any') r = r.filter(c => c.gender === null || c.gender === filters.gender)
     if (filters.languages.length) r = r.filter(c => filters.languages.every(l => c.languages.includes(l)))
     if (filters.availability.length) r = r.filter(c => filters.availability.every(a => (c.availability as string[]).includes(a)))
@@ -125,25 +128,23 @@ export default function CleanersPage() {
     return r
   }, [filters, sort, cleaners])
 
-  const verifiedCount = cleaners.filter(c => c.verified).length
-
   return (
     <div className="min-h-screen bg-[#F7FAF9]">
       {/* Page header */}
-      <div className="bg-white border-b border-[#E0EDEC] px-10 pt-7 pb-0">
+      <div className="bg-white border-b border-[#E0EDEC] px-4 sm:px-10 pt-7 pb-0">
         <nav className="flex items-center gap-1.5 text-[12px] text-[#6B8886] mb-2">
           <Link href="/" className="text-[#19706A] hover:underline">{t('breadcrumbHome')}</Link>
           <span>›</span>
           <span>{t('title')}</span>
         </nav>
         <h1 className="text-[28px] font-medium text-[#0D1F1E] tracking-tight mb-1">{t('title')}</h1>
-        <p className="text-[13px] text-[#6B8886] mb-5">{t('subtitle', { count: verifiedCount })}</p>
+        <p className="text-[13px] text-[#6B8886] mb-5">{t('subtitle', { count: cleaners.length })}</p>
       </div>
 
-      <FilterBar filters={filters} onChange={setFilters} />
-
-      {/* Results */}
-      <div className="px-10 py-6">
+      <FilterBar filters={filters} onChange={setFilters}>
+      {/* Results — nested inside FilterBar so its sticky bar has room to stay
+          pinned for the full scroll height of the list (see FilterBar.tsx) */}
+      <div className="px-4 sm:px-10 py-6">
         <div className="flex justify-between items-center mb-5">
           <span className="text-[13px] text-[#6B8886]">{t('found', { count: results.length })}</span>
           <select
@@ -164,7 +165,7 @@ export default function CleanersPage() {
             {error}
           </p>
         ) : loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="bg-white border border-[#E0EDEC] rounded-[16px] overflow-hidden animate-pulse">
                 <div className="h-[120px] bg-[#E0EDEC]" />
@@ -177,7 +178,7 @@ export default function CleanersPage() {
             ))}
           </div>
         ) : results.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {results.map(cleaner => (
               <CleanerCard key={cleaner.id} cleaner={cleaner} />
             ))}
@@ -199,6 +200,8 @@ export default function CleanersPage() {
           </div>
         )}
       </div>
+      </FilterBar>
+      <Footer />
     </div>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Link } from '@/navigation'
+import Footer from '@/components/Footer'
 
 export default function ForgotPasswordPage() {
   const [email,     setEmail]     = useState('')
@@ -26,6 +27,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-[#F7FAF9] flex items-center justify-center px-4">
       <div className="w-full max-w-[480px]">
         <div className="card p-8">
@@ -71,5 +73,7 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   )
 }

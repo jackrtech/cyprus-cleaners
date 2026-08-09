@@ -9,7 +9,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('cleaner_profiles')
     .select(`
-      id, slug, display_name, bio, photo_url, city, cities,
+      id, slug, display_name, bio, photo_url, cover_photo_url, city, cities,
       hourly_rate_eur, services, languages, cleaner_type,
       gender, verified, avg_rating, review_count,
       unique_customer_count, total_jobs_count, availability,

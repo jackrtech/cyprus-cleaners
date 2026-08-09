@@ -89,6 +89,7 @@ export default function ForCleanersPage() {
           .fc-hide-mobile  { display: none !important; }
           .fc-arch-png     { height: 260px !important; }
           .fc-arch-section { clip-path: inset(0 round 120px 120px 0 0) !important; }
+          .fc-header-cta   { padding: 8px 14px !important; font-size: 13px !important; }
         }
       `}</style>
 
@@ -119,12 +120,12 @@ export default function ForCleanersPage() {
             style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0, textDecoration: 'none' }}
           >
             {LOGO_SVG}
-            <span style={{ fontSize: '16px', fontWeight: 500, color: '#19706A', letterSpacing: '-0.01em' }}>
+            <span className="fc-hide-mobile" style={{ fontSize: '16px', fontWeight: 500, color: '#19706A', letterSpacing: '-0.01em' }}>
               Cyprus Cleaners
             </span>
           </Link>
 
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+          <nav className="fc-hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
             <Link href="/cleaners" style={{ fontSize: '14px', color: '#6B8886', textDecoration: 'none' }}>
               {t('navCustomers')}
             </Link>
@@ -135,7 +136,7 @@ export default function ForCleanersPage() {
 
           <Link
             href="/register/cleaner"
-            className="btn-primary"
+            className="btn-primary fc-header-cta"
             style={{ fontSize: '14px', padding: '10px 22px', flexShrink: 0 }}
           >
             {t('heroCta')}

@@ -105,10 +105,10 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient()
 
-  // The introduction must be APPROVED and belong to this customer
+  // The introduction thread must exist and belong to this customer
   const { data: intro, error: introError } = await supabase
     .from('introductions')
-    .select('id, customer_id, cleaner_profile_id, status')
+    .select('id, customer_id, cleaner_profile_id')
     .eq('id', introduction_id)
     .single()
 
@@ -117,9 +117,6 @@ export async function POST(req: NextRequest) {
   }
   if (intro.customer_id !== session.user.id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-  if (intro.status !== 'APPROVED') {
-    return NextResponse.json({ error: 'Introduction must be approved before requesting a booking' }, { status: 409 })
   }
 
   // service_type is no longer a form field — derive it from what the cleaner offers

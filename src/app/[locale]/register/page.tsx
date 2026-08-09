@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
+import Footer from '@/components/Footer'
 
 export default function RegisterPage() {
   const t = useTranslations('auth')
@@ -54,6 +55,7 @@ export default function RegisterPage() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-[#F7FAF9] flex items-center justify-center px-4">
       <div className="w-full max-w-[400px]">
         <div className="card p-8">
@@ -190,5 +192,7 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   )
 }

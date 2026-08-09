@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
+import Footer from '@/components/Footer'
 
 const CITIES: { key: string; value: string }[] = [
   { key: 'nicosia',   value: 'Nicosia' },
@@ -88,6 +89,7 @@ export default function RegisterCleanerPage() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-[#F7FAF9] py-10 px-4">
       <div className="w-full max-w-[480px] mx-auto">
         <div className="card p-8">
@@ -294,5 +296,7 @@ export default function RegisterCleanerPage() {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   )
 }

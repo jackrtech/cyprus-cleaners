@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
 
   const formData = await req.formData()
   const file = formData.get('photo')
+  const photoType = formData.get('type') === 'cover' ? 'cover' : 'avatar'
 
   if (!file || !(file instanceof File)) {
     return NextResponse.json({ error: 'No photo provided' }, { status: 400 })
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient()
-  const path = `${session.user.id}/avatar.jpg`
+  const path = `${session.user.id}/${photoType}.jpg`
 
   const arrayBuffer = await file.arrayBuffer()
   const { error } = await supabase.storage

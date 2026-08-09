@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
+import { sendNewMessageEmail } from '@/lib/email'
+
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
@@ -170,6 +173,65 @@ export async function POST(req: NextRequest) {
   if (error || !data) {
     console.error('POST message error:', error)
     return NextResponse.json({ error: 'Failed to send message' }, { status: 500 })
+  }
+
+  // First-message-in-thread notification — one-time "you have a new
+  // conversation" email, not a per-message notification. Non-blocking,
+  // errors are swallowed.
+  try {
+    const { data: intro } = await supabase
+      .from('introductions')
+      .select('customer_id, cleaner_profile_id, last_emailed_at')
+      .eq('id', introduction_id)
+      .single()
+
+    if (intro && !intro.last_emailed_at) {
+      const recipientIsCleaner = session.user.id === intro.customer_id
+      let recipientEmail: string | null = null
+      let dashboardUrl = ''
+
+      if (recipientIsCleaner) {
+        const { data: cleanerProfile } = await supabase
+          .from('cleaner_profiles')
+          .select('user_id')
+          .eq('id', intro.cleaner_profile_id)
+          .single()
+        if (cleanerProfile) {
+          const { data: cleanerUser } = await supabase
+            .from('users')
+            .select('email')
+            .eq('id', cleanerProfile.user_id)
+            .single()
+          recipientEmail = cleanerUser?.email ?? null
+        }
+        dashboardUrl = `${BASE_URL}/dashboard/cleaner`
+      } else {
+        const { data: customerUser } = await supabase
+          .from('users')
+          .select('email')
+          .eq('id', intro.customer_id)
+          .single()
+        recipientEmail = customerUser?.email ?? null
+        dashboardUrl = `${BASE_URL}/dashboard`
+      }
+
+      if (recipientEmail) {
+        await sendNewMessageEmail({
+          recipientEmail,
+          recipientLocale: null, // locale not stored in users table — defaults to EN
+          senderName:      session.user.name ?? session.user.email,
+          message:         messageBody.length > 0 ? messageBody : '📷 Photo',
+          dashboardUrl,
+        })
+
+        await supabase
+          .from('introductions')
+          .update({ last_emailed_at: new Date().toISOString() })
+          .eq('id', introduction_id)
+      }
+    }
+  } catch (emailErr) {
+    console.error('Email send error (new message):', emailErr)
   }
 
   const [signed] = await signPhotoUrls(supabase, [data])

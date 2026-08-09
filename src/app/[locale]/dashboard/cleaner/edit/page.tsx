@@ -34,6 +34,7 @@ export default function EditProfilePage() {
   const router  = useRouter()
   const { data: session, status: sessionStatus } = useSession()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const coverFileInputRef = useRef<HTMLInputElement>(null)
 
   const [loading,      setLoading]      = useState(true)
   const [saving,       setSaving]       = useState(false)
@@ -42,6 +43,8 @@ export default function EditProfilePage() {
   const [fetchError,   setFetchError]   = useState<string | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [newPhotoFile, setNewPhotoFile] = useState<File | null>(null)
+  const [coverPhotoPreview, setCoverPhotoPreview] = useState<string | null>(null)
+  const [newCoverPhotoFile, setNewCoverPhotoFile] = useState<File | null>(null)
   const [profileSlug,  setProfileSlug]  = useState<string | null>(null)
 
   const [displayName,  setDisplayName]  = useState('')
@@ -76,6 +79,7 @@ export default function EditProfilePage() {
         setLanguages((data.languages as string[]) ?? [])
         setAvailability((data.availability as string[]) ?? [])
         if (data.photo_url) setPhotoPreview(data.photo_url as string)
+        if (data.cover_photo_url) setCoverPhotoPreview(data.cover_photo_url as string)
       })
       .catch(() => setFetchError('Failed to load profile. Please refresh.'))
       .finally(() => setLoading(false))
@@ -112,6 +116,13 @@ export default function EditProfilePage() {
     setPhotoPreview(URL.createObjectURL(file))
   }
 
+  function handleCoverPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setNewCoverPhotoFile(file)
+    setCoverPhotoPreview(URL.createObjectURL(file))
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setFormError(null)
@@ -123,6 +134,7 @@ export default function EditProfilePage() {
     setSaving(true)
     try {
       let photoUrl: string | undefined
+      let coverPhotoUrl: string | undefined
 
       if (newPhotoFile) {
         const fd = new FormData()
@@ -137,6 +149,20 @@ export default function EditProfilePage() {
         photoUrl = url
       }
 
+      if (newCoverPhotoFile) {
+        const fd = new FormData()
+        fd.append('photo', newCoverPhotoFile)
+        fd.append('type', 'cover')
+        const uploadRes = await fetch('/api/cleaner-profiles/upload-photo', { method: 'POST', body: fd })
+        if (!uploadRes.ok) {
+          const uploadData = await uploadRes.json()
+          console.error('Cover photo upload error:', uploadData)
+          throw new Error('Cover photo upload failed. Please try again.')
+        }
+        const { url } = await uploadRes.json()
+        coverPhotoUrl = url
+      }
+
       const body: Record<string, unknown> = {
         display_name:    displayName,
         bio:             bio.trim() || null,
@@ -148,6 +174,7 @@ export default function EditProfilePage() {
         availability,
       }
       if (photoUrl) body.photo_url = photoUrl
+      if (coverPhotoUrl) body.cover_photo_url = coverPhotoUrl
 
       const res = await fetch('/api/cleaner-profiles/me', {
         method:  'PATCH',
@@ -162,6 +189,7 @@ export default function EditProfilePage() {
 
       setSuccess(true)
       setNewPhotoFile(null)
+      setNewCoverPhotoFile(null)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Something went wrong')
@@ -222,7 +250,34 @@ export default function EditProfilePage() {
               </div>
             )}
 
-            {/* 1. Profile photo */}
+            {/* 1. Cover photo — shown behind the avatar on your search card and profile */}
+            <div>
+              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
+                {t('coverPhoto')}
+              </label>
+              <div
+                className="relative h-28 rounded-[10px] bg-[#E8F4F3] bg-cover bg-center overflow-hidden"
+                style={coverPhotoPreview ? { backgroundImage: `url(${coverPhotoPreview})` } : undefined}
+              >
+                <input
+                  ref={coverFileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleCoverPhotoSelect}
+                />
+                <button
+                  type="button"
+                  onClick={() => coverFileInputRef.current?.click()}
+                  className="absolute bottom-2.5 right-2.5 btn-secondary rounded-full px-4 py-1.5 text-[12px] shadow-sm"
+                >
+                  {t('uploadCoverPhoto')}
+                </button>
+              </div>
+              <p className="text-[11px] text-[#6B8886] mt-1.5">{t('coverPhotoHint')}</p>
+            </div>
+
+            {/* 2. Profile photo */}
             <div>
               <label className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
                 {t('profilePhoto')}
@@ -253,7 +308,7 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            {/* 2. Display name */}
+            {/* 3. Display name */}
             <div>
               <label className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
                 {t('displayName')}

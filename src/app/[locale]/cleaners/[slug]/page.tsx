@@ -8,7 +8,8 @@ import { Link, useRouter } from '@/navigation'
 import type { MockCleaner } from '@/lib/mockCleaners'
 import ReviewItem from '@/components/cleaners/ReviewItem'
 import { useCity } from '@/hooks/useCity'
-import SendIntroModal from '@/components/introductions/SendIntroModal'
+import ChatModal from '@/components/chat/ChatModal'
+import Footer from '@/components/Footer'
 
 interface DbCleanerRow {
   id:                    string
@@ -16,6 +17,7 @@ interface DbCleanerRow {
   display_name:          string
   bio:                   string | null
   photo_url:             string | null
+  cover_photo_url:       string | null
   city:                  string | null
   cities:                string[] | null
   hourly_rate_eur:       number
@@ -31,6 +33,7 @@ interface DbCleanerRow {
   availability:          Record<string, boolean> | null
   is_mock:               boolean
   is_company:            boolean
+  is_own_profile:        boolean
 }
 
 interface DbReviewRow {
@@ -103,6 +106,7 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
     unique_customer_count:  row.unique_customer_count,
     bio:                    row.bio ?? '',
     photo_url:              row.photo_url,
+    cover_photo_url:        row.cover_photo_url,
   }
 }
 
@@ -137,15 +141,18 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
   const locale = useLocale()
   const getCityName = useCity()
   const { data: session } = useSession()
-  const [modalOpen,      setModalOpen]      = useState(false)
+  const [threadId,       setThreadId]       = useState<string | null>(null)
+  const [chatOpen,       setChatOpen]       = useState(false)
+  const [creatingThread, setCreatingThread] = useState(false)
   const [cleanerToast,   setCleanerToast]   = useState(false)
-  const [hasActiveIntro, setHasActiveIntro] = useState(false)
+  const [chatError,      setChatError]      = useState(false)
   const router = useRouter()
 
   const [cleaner,        setCleaner]       = useState<MockCleaner | null>(null)
   const [cleanerLoading, setCleanerLoading] = useState(true)
   const [cleanerError,   setCleanerError]   = useState(false)
   const [notFoundFlag,   setNotFoundFlag]   = useState(false)
+  const [isOwnProfile,   setIsOwnProfile]   = useState(false)
 
   const [reviews,        setReviews]        = useState<ProfileReview[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(true)
@@ -157,7 +164,12 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
         if (!r.ok) throw new Error()
         return r.json()
       })
-      .then((row: DbCleanerRow | null) => { if (row) setCleaner(mapCleaner(row)) })
+      .then((row: DbCleanerRow | null) => {
+        if (row) {
+          setCleaner(mapCleaner(row))
+          setIsOwnProfile(row.is_own_profile)
+        }
+      })
       .catch(() => setCleanerError(true))
       .finally(() => setCleanerLoading(false))
   }, [params.slug])
@@ -170,23 +182,21 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
       .finally(() => setReviewsLoading(false))
   }, [params.slug])
 
-  // Check for an existing active introduction with this cleaner (CUSTOMER only)
+  // Check for an existing thread with this cleaner (CUSTOMER only) — purely
+  // for button-label purposes ("Message" vs "Open chat"), never gates access.
   useEffect(() => {
     const userRole = (session?.user as { role?: string } | undefined)?.role
     if (!cleaner || !session || userRole !== 'CUSTOMER') {
-      setHasActiveIntro(false)
+      setThreadId(null)
       return
     }
     let cancelled = false
     fetch('/api/introductions')
       .then(r => r.ok ? r.json() : [])
-      .then((intros: { status: string; cleaner_profiles: { id: string } | null }[]) => {
+      .then((intros: { id: string; cleaner_profiles: { id: string } | null }[]) => {
         if (cancelled) return
-        const active = intros.some(i =>
-          i.cleaner_profiles?.id === cleaner.id &&
-          (i.status === 'PENDING' || i.status === 'APPROVED')
-        )
-        setHasActiveIntro(active)
+        const existing = intros.find(i => i.cleaner_profiles?.id === cleaner.id)
+        setThreadId(existing?.id ?? null)
       })
       .catch(() => {})
     return () => { cancelled = true }
@@ -197,7 +207,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
   if (cleanerLoading) {
     return (
       <div className="min-h-screen bg-[#F7FAF9]">
-        <div className="bg-white border-b border-[#E0EDEC] px-10 py-6">
+        <div className="bg-white border-b border-[#E0EDEC] px-4 sm:px-10 py-6">
           <div className="h-4 w-40 bg-[#E0EDEC] rounded animate-pulse mb-5" />
           <div className="flex items-start gap-6">
             <div className="w-[88px] h-[88px] rounded-full bg-[#E0EDEC] animate-pulse shrink-0" />
@@ -208,7 +218,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 px-10 py-7">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 px-4 sm:px-10 py-7">
           <div className="bg-white border border-[#E0EDEC] rounded-[16px] p-6 h-[200px] animate-pulse" />
           <div className="bg-white border border-[#E0EDEC] rounded-[16px] p-6 h-[300px] animate-pulse" />
         </div>
@@ -232,18 +242,38 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
   // Auth-aware intro button
   const role = (session?.user as { role?: string } | undefined)?.role
 
-  function handleIntroClick() {
+  async function handleIntroClick() {
     if (!cleaner) return
     if (!session) {
       router.push(`/login?return=/cleaners/${cleaner.slug}`)
       return
     }
-    if (role === 'CUSTOMER') {
-      setModalOpen(true)
+    if (role !== 'CUSTOMER') {
+      setCleanerToast(true)
+      setTimeout(() => setCleanerToast(false), 3000)
       return
     }
-    setCleanerToast(true)
-    setTimeout(() => setCleanerToast(false), 3000)
+    if (threadId) {
+      setChatOpen(true)
+      return
+    }
+    setCreatingThread(true)
+    try {
+      const res = await fetch('/api/introductions', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ cleaner_profile_id: cleaner.id }),
+      })
+      if (!res.ok) throw new Error()
+      const data: { id: string } = await res.json()
+      setThreadId(data.id)
+      setChatOpen(true)
+    } catch {
+      setChatError(true)
+      setTimeout(() => setChatError(false), 3000)
+    } finally {
+      setCreatingThread(false)
+    }
   }
 
   // Gendered / locale-aware labels
@@ -254,14 +284,6 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
         ? t('messageBtnMale', { name: firstName })
         : t('messageBtnCompany', { name: firstName })
     : t('messageBtn', { name: firstName })
-
-  const unlockNote = locale === 'el'
-    ? cleaner.gender === 'female'
-      ? t('unlockNoteFemale', { name: firstName })
-      : cleaner.gender === 'male'
-        ? t('unlockNoteMale', { name: firstName })
-        : t('unlockNoteCompany', { name: firstName })
-    : t('unlockNote', { name: firstName })
 
   const verifiedLabel = locale === 'el'
     ? cleaner.gender === 'female'
@@ -285,19 +307,39 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
 
   return (
     <div className="min-h-screen bg-[#F7FAF9]">
-      {/* Page header */}
-      <div className="bg-white border-b border-[#E0EDEC] px-10 py-6">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-[12px] text-[#6B8886] mb-5">
-          <Link href="/" className="text-[#19706A] hover:underline">{t('breadcrumbHome')}</Link>
-          <span>›</span>
-          <Link href="/cleaners" className="text-[#19706A] hover:underline">{t('breadcrumbFind')}</Link>
-          <span>›</span>
-          <span>{cleaner.display_name}</span>
-        </nav>
+      {/* Cover photo — only shown once the cleaner has set one */}
+      {cleaner.cover_photo_url && (
+        <div className="h-32 sm:h-44 w-full">
+          <img src={cleaner.cover_photo_url} alt="" className="w-full h-full object-cover" />
+        </div>
+      )}
 
-        {/* Profile top row */}
-        <div className="flex items-start gap-6">
+      {/* Page header */}
+      <div className="bg-white border-b border-[#E0EDEC] px-4 sm:px-10 py-6">
+        {/* Breadcrumb — replaced with a preview banner + one-tap exit when a
+            cleaner is looking at their own public profile, so it reads as
+            "previewing" rather than "I've wandered into the live site" */}
+        {isOwnProfile ? (
+          <div className="flex items-center justify-between gap-3 flex-wrap bg-[#E8F4F3] border border-[#19706A]/20 rounded-[10px] px-4 py-2.5 mb-5">
+            <span className="text-[13px] text-[#19706A] font-medium">{t('previewingOwnProfile')}</span>
+            <Link href="/dashboard/cleaner" className="text-[13px] font-medium text-[#19706A] hover:underline whitespace-nowrap shrink-0">
+              {t('backToDashboard')}
+            </Link>
+          </div>
+        ) : (
+          <nav className="flex items-center gap-1.5 text-[12px] text-[#6B8886] mb-5">
+            <Link href="/" className="text-[#19706A] hover:underline">{t('breadcrumbHome')}</Link>
+            <span>›</span>
+            <Link href="/cleaners" className="text-[#19706A] hover:underline">{t('breadcrumbFind')}</Link>
+            <span>›</span>
+            <span>{cleaner.display_name}</span>
+          </nav>
+        )}
+
+        {/* Profile top row — stacks on mobile (avatar, then name/meta, then rate/CTA) since
+            the fixed horizontal row squeezed all three into overlapping, wrapped-to-uselessness
+            content below ~640px */}
+        <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
           {/* Avatar */}
           <div className="relative shrink-0">
             {cleaner.photo_url ? (
@@ -335,7 +377,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
                 <span key={city} className="bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2.5 py-0.5 text-[12px] font-medium">{getCityName(city)}</span>
               ))}
             </div>
-            <div className="flex gap-4 items-center flex-wrap text-[13px] text-[#6B8886] mb-3">
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:gap-4 sm:items-center sm:flex-wrap text-[13px] text-[#6B8886] mb-3">
               <button
                 onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
                 className="flex items-center gap-1.5 hover:opacity-70 transition-opacity cursor-pointer group"
@@ -345,9 +387,9 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
                   {cleaner.avg_rating} · {t('reviewsCount', { count: cleaner.review_count })}
                 </span>
               </button>
-              <span>·</span>
+              <span className="hidden sm:inline">·</span>
               <span>{t('jobsDone', { count: cleaner.total_jobs_count })}</span>
-              <span>·</span>
+              <span className="hidden sm:inline">·</span>
               <span>{t('uniqueCustomers', { count: uniqueCustomers })}</span>
             </div>
             <div className="flex gap-1.5 flex-wrap">
@@ -360,25 +402,31 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
             </div>
           </div>
 
-          {/* Rate + CTA */}
-          <div className="flex flex-col items-end gap-2 shrink-0">
-            <p className="text-[12px] text-[#6B8886]">{t('hourlyRate')}</p>
-            <p className="text-[26px] font-medium text-[#0D1F1E] leading-none">
-              €{cleaner.hourly_rate_eur}<span className="text-[14px] text-[#6B8886] font-normal">{tCommon('perHour')}</span>
-            </p>
-            {hasActiveIntro ? (
-              <Link
-                href="/dashboard"
-                className="btn-primary rounded-full px-6 py-3 text-[14px] whitespace-nowrap"
+          {/* Rate + CTA — a horizontal bar on mobile (price left, button right), the
+              original right-aligned stack from sm: up */}
+          <div className="flex flex-row items-center justify-between sm:flex-col sm:items-end gap-2 shrink-0 w-full sm:w-auto">
+            <div className="sm:text-right">
+              <p className="text-[12px] text-[#6B8886]">{t('hourlyRate')}</p>
+              <p className="text-[20px] sm:text-[26px] font-medium text-[#0D1F1E] leading-none">
+                €{cleaner.hourly_rate_eur}<span className="text-[14px] text-[#6B8886] font-normal">{tCommon('perHour')}</span>
+              </p>
+            </div>
+            {isOwnProfile ? (
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                className="btn-primary rounded-full px-6 py-3 text-[14px] whitespace-nowrap opacity-40 cursor-not-allowed"
               >
-                {t('openChat')} →
-              </Link>
+                {messageLabel} →
+              </button>
             ) : (
               <button
                 onClick={handleIntroClick}
-                className="btn-primary rounded-full px-6 py-3 text-[14px] whitespace-nowrap"
+                disabled={creatingThread}
+                className="btn-primary rounded-full px-6 py-3 text-[14px] whitespace-nowrap disabled:opacity-60"
               >
-                {messageLabel} →
+                {threadId ? t('openChat') : messageLabel} →
               </button>
             )}
           </div>
@@ -386,7 +434,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
       </div>
 
       {/* Body: left + right */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 px-10 py-7">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 px-4 sm:px-10 py-7">
         {/* Left column */}
         <div>
           {/* About */}
@@ -453,25 +501,24 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
 
             <div className="border-t border-[#E0EDEC] my-4" />
 
-            {hasActiveIntro ? (
-              <Link
-                href="/dashboard"
-                className="btn-primary w-full rounded-full py-3 text-[14px]"
-              >
-                {t('openChat')} →
-              </Link>
-            ) : (
+            {isOwnProfile ? (
               <button
-                onClick={handleIntroClick}
-                className="btn-primary w-full rounded-full py-3 text-[14px]"
+                type="button"
+                disabled
+                aria-disabled="true"
+                className="btn-primary w-full rounded-full py-3 text-[14px] opacity-40 cursor-not-allowed"
               >
                 {messageLabel} →
               </button>
+            ) : (
+              <button
+                onClick={handleIntroClick}
+                disabled={creatingThread}
+                className="btn-primary w-full rounded-full py-3 text-[14px] disabled:opacity-60"
+              >
+                {threadId ? t('openChat') : messageLabel} →
+              </button>
             )}
-
-            <p className="text-[11px] text-[#6B8886] text-center mt-3 leading-relaxed">
-              {unlockNote}
-            </p>
           </div>
         </div>
       </div>
@@ -480,13 +527,23 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           {t('cleanerCannotIntro')}
         </div>
       )}
-      <SendIntroModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        cleanerProfileId={cleaner.id}
-        firstName={firstName}
-        heading={messageLabel}
-      />
+      {chatError && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] bg-[#0D1F1E] text-white text-[13px] px-5 py-3 rounded-full shadow-lg whitespace-nowrap">
+          {t('startChatError')}
+        </div>
+      )}
+      {threadId && (
+        <ChatModal
+          isOpen={chatOpen}
+          onClose={() => setChatOpen(false)}
+          introductionId={threadId}
+          currentUserId={session!.user.id}
+          currentUserRole="CUSTOMER"
+          otherPartyName={cleaner.display_name}
+          otherPartyAvatar={cleaner.photo_url ?? null}
+        />
+      )}
+      <Footer />
     </div>
   )
 }

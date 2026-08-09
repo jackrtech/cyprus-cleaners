@@ -27,27 +27,20 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
       href={`/cleaners/${cleaner.slug}`}
       className="group block bg-white border border-[#E0EDEC] rounded-[16px] overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(25,112,106,0.14)]"
     >
-      {/* Photo area */}
+      {/* Cover photo — falls back to a plain colour when the cleaner hasn't set one */}
       <div
-        className="h-[120px] relative flex items-center justify-center"
-        style={{ background: cleaner.avatarColor }}
+        className="h-[120px] relative"
+        style={cleaner.cover_photo_url ? undefined : { background: cleaner.avatarColor }}
       >
-        {cleaner.photo_url ? (
+        {cleaner.cover_photo_url && (
           <img
-            src={cleaner.photo_url}
-            alt={cleaner.display_name}
-            className="w-14 h-14 rounded-full object-cover border-[3px] border-white"
+            src={cleaner.cover_photo_url}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
           />
-        ) : (
-          <div
-            className="w-14 h-14 rounded-full border-[3px] border-white flex items-center justify-center text-[20px] font-medium bg-white"
-            style={{ color: cleaner.avatarText }}
-          >
-            {cleaner.initials}
-          </div>
         )}
         {cleaner.verified && (
-          <div className="absolute top-2 right-2 flex items-center gap-1 bg-[#19706A] rounded-full px-2 py-0.5">
+          <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-[#19706A] rounded-full px-2 py-0.5">
             <span className="w-1 h-1 rounded-full bg-white shrink-0" />
             <span className="text-[9px] font-medium text-white">{t('verified')}</span>
           </div>
@@ -55,7 +48,28 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
       </div>
 
       {/* Card body */}
-      <div className="p-3 pb-3.5">
+      <div className="px-3 pb-3.5">
+        {/* Avatar — overlaps the boundary between the cover photo and the body.
+            Biggest on mobile (single-column cards have the most room), a
+            bit smaller on desktop grid columns, but still clearly bigger
+            than the original 56px which read as too small there too. */}
+        <div className="-mt-10 sm:-mt-8 mb-2 relative z-10">
+          {cleaner.photo_url ? (
+            <img
+              src={cleaner.photo_url}
+              alt={cleaner.display_name}
+              className="w-20 h-20 sm:w-16 sm:h-16 rounded-full object-cover border-[3px] border-white shadow-sm"
+            />
+          ) : (
+            <div
+              className="w-20 h-20 sm:w-16 sm:h-16 rounded-full border-[3px] border-white shadow-sm flex items-center justify-center text-[26px] sm:text-[22px] font-medium bg-white"
+              style={{ color: cleaner.avatarText }}
+            >
+              {cleaner.initials}
+            </div>
+          )}
+        </div>
+
         <div className="flex justify-between items-start mb-0.5">
           <span className="text-[13px] font-medium text-[#0D1F1E] leading-snug">{cleaner.display_name}</span>
           <span className="text-right shrink-0 ml-1.5">

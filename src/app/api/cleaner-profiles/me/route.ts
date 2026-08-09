@@ -24,7 +24,7 @@ export async function GET() {
 }
 
 const ALLOWED_FIELDS = new Set([
-  'display_name', 'bio', 'photo_url', 'cities',
+  'display_name', 'bio', 'photo_url', 'cover_photo_url', 'cities',
   'hourly_rate_eur', 'cleaner_type', 'gender', 'languages', 'availability',
 ])
 

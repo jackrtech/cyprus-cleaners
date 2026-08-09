@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Link } from '@/navigation'
+import Footer from '@/components/Footer'
 
 type Status = 'checking' | 'invalid' | 'form' | 'success'
 
@@ -86,6 +87,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-[#F7FAF9] flex items-center justify-center px-4">
       <div className="card max-w-[480px] w-full p-10 flex flex-col items-center text-center gap-5">
 
@@ -205,5 +207,7 @@ export default function ResetPasswordPage() {
         )}
       </div>
     </div>
+    <Footer />
+    </>
   )
 }
