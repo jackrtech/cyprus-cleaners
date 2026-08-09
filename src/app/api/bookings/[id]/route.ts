@@ -34,7 +34,7 @@ export async function PATCH(
 
   const { data: booking, error: fetchError } = await supabase
     .from('bookings')
-    .select('id, customer_id, cleaner_profile_id, status, date, start_time, duration_hours, created_at, photo_paths')
+    .select('id, introduction_id, customer_id, cleaner_profile_id, status, date, start_time, duration_hours, created_at, photo_paths')
     .eq('id', params.id)
     .single()
 
@@ -120,6 +120,24 @@ export async function PATCH(
   if (error || !data) {
     console.error('Booking update error:', error)
     return NextResponse.json({ error: 'Failed to update booking' }, { status: 500 })
+  }
+
+  // System message announcing the event in the chat thread — derived from the
+  // action taken, not just the resulting status, since DECLINE and CANCEL
+  // both resolve to CANCELLED but should read differently in chat.
+  try {
+    const systemEvent = action === 'CONFIRM' ? 'CONFIRMED'
+      : action === 'DECLINE' ? 'DECLINED'
+      : action === 'CANCEL'  ? 'CANCELLED'
+      : 'COMPLETED'
+    await supabase.from('messages').insert({
+      introduction_id: booking.introduction_id,
+      sender_id:       session.user.id,
+      booking_id:      booking.id,
+      system_event:    systemEvent,
+    })
+  } catch (msgErr) {
+    console.error(`System message insert error (booking ${action.toLowerCase()}):`, msgErr)
   }
 
   // Notify the customer on confirm/complete — non-blocking, errors are swallowed

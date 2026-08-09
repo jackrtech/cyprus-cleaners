@@ -24,9 +24,18 @@ interface IntroUser {
 }
 
 interface LastMessage {
-  body:       string | null
-  photo_path: string | null
-  created_at: string
+  body:         string | null
+  photo_path:   string | null
+  system_event: string | null
+  created_at:   string
+}
+
+const SYSTEM_EVENT_KEY: Record<string, string> = {
+  REQUESTED: 'systemRequested',
+  CONFIRMED: 'systemConfirmed',
+  DECLINED:  'systemDeclined',
+  CANCELLED: 'systemCancelled',
+  COMPLETED: 'systemCompleted',
 }
 
 interface Introduction {
@@ -71,7 +80,7 @@ function hoursLeftToRespond(createdAt: string): number {
 interface IntroCardProps {
   intro:                Introduction
   tReceivedOn:          string
-  tPhotoMessage:        string
+  previewText:          string
   dateFormatter:        Intl.DateTimeFormat
   currentUserId:        string
   isChatOpen:           boolean
@@ -79,11 +88,10 @@ interface IntroCardProps {
 }
 
 function IntroCard({
-  intro, tReceivedOn, tPhotoMessage, dateFormatter,
+  intro, tReceivedOn, previewText, dateFormatter,
   currentUserId, isChatOpen, onToggleChat,
 }: IntroCardProps) {
   const customerName = intro.users?.full_name ?? '—'
-  const previewText = intro.last_message?.body ?? tPhotoMessage
 
   return (
     <div className="card overflow-hidden">
@@ -564,7 +572,11 @@ export default function CleanerDashboardPage() {
                   key={intro.id}
                   intro={intro}
                   tReceivedOn={t('receivedOn')}
-                  tPhotoMessage={tChat('photoMessage')}
+                  previewText={
+                    intro.last_message?.system_event
+                      ? tBooking(SYSTEM_EVENT_KEY[intro.last_message.system_event] ?? 'systemUnknown')
+                      : intro.last_message?.body ?? tChat('photoMessage')
+                  }
                   dateFormatter={dateFormatter}
                   currentUserId={session.user.id}
                   isChatOpen={openChatId === intro.id}

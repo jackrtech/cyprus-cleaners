@@ -16,18 +16,34 @@ type AdminClient = ReturnType<typeof createAdminClient>
 // Cleaners have RESPONSE_WINDOW_MS to confirm/decline a REQUESTED booking.
 // There's no cron job in this app, so expiry is enforced lazily here: any
 // REQUESTED row past its deadline is flipped to CANCELLED on the next read.
-async function expireOverdueRequests<T extends { id: string; status: string; created_at: string }>(
+async function expireOverdueRequests<T extends { id: string; introduction_id: string; customer_id: string; status: string; created_at: string }>(
   supabase: AdminClient,
   rows: T[]
 ): Promise<T[]> {
   const now = Date.now()
-  const overdueIds = rows
-    .filter(r => r.status === 'REQUESTED' && now - new Date(r.created_at).getTime() > RESPONSE_WINDOW_MS)
-    .map(r => r.id)
+  const overdue = rows.filter(r => r.status === 'REQUESTED' && now - new Date(r.created_at).getTime() > RESPONSE_WINDOW_MS)
 
-  if (overdueIds.length === 0) return rows
+  if (overdue.length === 0) return rows
 
+  const overdueIds = overdue.map(r => r.id)
   await supabase.from('bookings').update({ status: 'CANCELLED' }).in('id', overdueIds)
+
+  // System message per expired booking — no acting user for an automatic
+  // expiry, so the customer (a valid party in the thread) is the sender;
+  // rendering doesn't attribute system messages to anyone anyway. Non-blocking:
+  // a message-insert hiccup shouldn't fail the whole bookings list fetch.
+  try {
+    await supabase.from('messages').insert(
+      overdue.map(r => ({
+        introduction_id: r.introduction_id,
+        sender_id:       r.customer_id,
+        booking_id:      r.id,
+        system_event:    'CANCELLED',
+      }))
+    )
+  } catch (msgErr) {
+    console.error('System message insert error (booking auto-expired):', msgErr)
+  }
 
   return rows.map(r => overdueIds.includes(r.id) ? { ...r, status: 'CANCELLED' } : r)
 }
@@ -58,7 +74,7 @@ async function signPhotoUrls<T extends { id: string; photo_paths: string[] }>(
 
 // Combines the two post-fetch steps above into a single call so TypeScript
 // can infer the row shape once instead of losing it across a chained call.
-async function processBookingRows<T extends { id: string; status: string; created_at: string; photo_paths: string[] }>(
+async function processBookingRows<T extends { id: string; introduction_id: string; customer_id: string; status: string; created_at: string; photo_paths: string[] }>(
   supabase: AdminClient,
   rows: T[]
 ) {
@@ -157,6 +173,19 @@ export async function POST(req: NextRequest) {
   if (error || !data) {
     console.error('Booking insert error:', error)
     return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
+  }
+
+  // System message announcing the request in the chat thread — non-blocking,
+  // errors swallowed so a message-insert hiccup never fails the booking itself
+  try {
+    await supabase.from('messages').insert({
+      introduction_id,
+      sender_id:    session.user.id,
+      booking_id:   data.id,
+      system_event: 'REQUESTED',
+    })
+  } catch (msgErr) {
+    console.error('System message insert error (booking requested):', msgErr)
   }
 
   // Notify the cleaner — non-blocking, errors are swallowed

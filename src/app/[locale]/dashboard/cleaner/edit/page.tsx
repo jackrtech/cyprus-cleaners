@@ -5,19 +5,9 @@ import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import { compressImage } from '@/lib/utils/compressImage'
+import { CITIES } from '@/lib/cities'
 
 const MAX_BIO = 500
-
-const CITIES: { key: string; value: string }[] = [
-  { key: 'nicosia',   value: 'Nicosia' },
-  { key: 'limassol',  value: 'Limassol' },
-  { key: 'larnaca',   value: 'Larnaca' },
-  { key: 'paphos',    value: 'Paphos' },
-  { key: 'famagusta', value: 'Famagusta' },
-  { key: 'paralimni', value: 'Paralimni' },
-  { key: 'ayiaNapa',  value: 'Ayia Napa' },
-  { key: 'protaras',  value: 'Protaras' },
-]
 
 const LANGUAGES = [
   { code: 'EN', label: 'English' },

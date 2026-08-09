@@ -116,6 +116,24 @@ create index idx_bookings_cleaner  on bookings (cleaner_profile_id);
 create index idx_bookings_status   on bookings (status);
 create index idx_bookings_date     on bookings (date);
 
+-- ─── ADDRESSES ───────────────────────────────────────────────
+-- A customer's saved addresses, offered as a picker on the booking form.
+-- Bookings store a free-text snapshot of whichever address was selected
+-- (see bookings.address) rather than a FK, so editing/deleting a saved
+-- address here never rewrites a past booking's record.
+
+create table addresses (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references users(id) on delete cascade,
+  label         text,  -- optional friendly name, e.g. "Home", "Office"
+  line1         text not null,  -- street + number
+  city          text not null,
+  postal_code   text,
+  created_at    timestamptz not null default now()
+);
+
+create index idx_addresses_user on addresses (user_id);
+
 -- ─── MESSAGES ────────────────────────────────────────────────
 
 create table messages (
@@ -124,14 +142,17 @@ create table messages (
   sender_id         uuid not null references users(id) on delete cascade,
   body              text,
   photo_path        text,  -- Private storage path in 'chat-photos' bucket; signed URL generated at read time
+  booking_id        uuid references bookings(id) on delete set null,  -- Set only on auto-generated booking-event messages
+  system_event      text check (system_event in ('REQUESTED','CONFIRMED','DECLINED','CANCELLED','COMPLETED')),
   read_at           timestamptz,
   created_at        timestamptz not null default now(),
-  constraint messages_body_or_photo check (body is not null or photo_path is not null)
+  constraint messages_content_present check (body is not null or photo_path is not null or system_event is not null)
 );
 
-create index idx_messages_intro  on messages (introduction_id, created_at);
-create index idx_messages_sender on messages (sender_id);
-create index idx_messages_unread on messages (read_at) where read_at is null;
+create index idx_messages_intro   on messages (introduction_id, created_at);
+create index idx_messages_sender  on messages (sender_id);
+create index idx_messages_unread  on messages (read_at) where read_at is null;
+create index idx_messages_booking on messages (booking_id);
 
 -- ─── REVIEWS ─────────────────────────────────────────────────
 
@@ -231,6 +252,7 @@ alter table users               enable row level security;
 alter table cleaner_profiles    enable row level security;
 alter table introductions       enable row level security;
 alter table bookings            enable row level security;
+alter table addresses           enable row level security;
 alter table messages            enable row level security;
 alter table reviews             enable row level security;
 alter table chat_notifications  enable row level security;
@@ -238,6 +260,12 @@ alter table chat_notifications  enable row level security;
 -- Users: can only see and edit own record
 create policy "users_select_own" on users for select using (auth.uid()::text = id::text);
 create policy "users_update_own" on users for update using (auth.uid()::text = id::text);
+
+-- Addresses: fully owner-only — no public read, no editing (delete + re-add
+-- instead), just select/insert/delete scoped to the owning user
+create policy "addresses_select_own" on addresses for select using (auth.uid()::text = user_id::text);
+create policy "addresses_insert_own" on addresses for insert with check (auth.uid()::text = user_id::text);
+create policy "addresses_delete_own" on addresses for delete using (auth.uid()::text = user_id::text);
 
 -- Cleaner profiles: public read for ACTIVE profiles, plus the owner can
 -- always read their own profile regardless of status (e.g. while PENDING)

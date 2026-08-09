@@ -4,9 +4,10 @@ import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
 
 interface LastMessage {
-  body:       string | null
-  photo_path: string | null
-  created_at: string
+  body:         string | null
+  photo_path:   string | null
+  system_event: string | null
+  created_at:   string
 }
 
 // Batches a single query for the most recent message per introduction, and
@@ -21,7 +22,7 @@ async function attachLastMessages<T extends { id: string }>(
 
   const { data: recentMessages } = await supabase
     .from('messages')
-    .select('introduction_id, body, photo_path, created_at, sender_id, read_at')
+    .select('introduction_id, body, photo_path, system_event, created_at, sender_id, read_at')
     .in('introduction_id', intros.map(i => i.id))
     .order('created_at', { ascending: false })
 
@@ -29,7 +30,7 @@ async function attachLastMessages<T extends { id: string }>(
   const unreadIntroIds = new Set<string>()
   for (const m of recentMessages ?? []) {
     if (!lastByIntro.has(m.introduction_id)) {
-      lastByIntro.set(m.introduction_id, { body: m.body, photo_path: m.photo_path, created_at: m.created_at })
+      lastByIntro.set(m.introduction_id, { body: m.body, photo_path: m.photo_path, system_event: m.system_event, created_at: m.created_at })
     }
     // Unread = sent by the other party and never opened (GET /api/messages
     // marks the other party's messages read as soon as you open that chat)

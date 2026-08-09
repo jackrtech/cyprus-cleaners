@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { extractErrorMessage, estimateCleaningHours } from '@/lib/utils'
 import { compressImage } from '@/lib/utils/compressImage'
 import BookingDetailModal from '@/components/dashboard/BookingDetailModal'
+import AddressFormModal, { type SavedAddress } from '@/components/addresses/AddressFormModal'
 import type { BookingStatus, CleaningType } from '@/types'
 
 interface Message {
@@ -16,8 +17,28 @@ interface Message {
   body:             string | null
   photo_path:       string | null
   photo_url:        string | null
+  booking_id:       string | null
+  system_event:     string | null
   read_at:          string | null
   created_at:       string
+}
+
+// Auto-generated on every booking lifecycle event (see /api/bookings and
+// /api/bookings/[id]) — rendered as a clickable pill instead of a normal
+// bubble, opening BookingDetailModal for that booking.
+const SYSTEM_EVENT_KEY: Record<string, string> = {
+  REQUESTED: 'systemRequested',
+  CONFIRMED: 'systemConfirmed',
+  DECLINED:  'systemDeclined',
+  CANCELLED: 'systemCancelled',
+  COMPLETED: 'systemCompleted',
+}
+const SYSTEM_EVENT_BADGE: Record<string, string> = {
+  REQUESTED: 'badge-gold',
+  CONFIRMED: 'badge-teal',
+  DECLINED:  'bg-red-50 text-red-600',
+  CANCELLED: 'bg-red-50 text-red-600',
+  COMPLETED: 'badge-blue',
 }
 
 const PHOTO_ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
@@ -39,15 +60,6 @@ interface Booking {
   photo_urls:      string[]
 }
 
-const MIN_COMPLETION_PHOTOS = 4
-
-const BOOKING_STATUS_BADGE: Record<BookingStatus, string> = {
-  REQUESTED: 'badge-gold',
-  CONFIRMED: 'badge-teal',
-  COMPLETED: 'badge-blue',
-  CANCELLED: 'bg-red-50 text-red-600',
-}
-
 // Quarter-hour slots covering a typical working day, 07:00–20:00
 const TIME_SLOTS: string[] = (() => {
   const slots: string[] = []
@@ -58,18 +70,6 @@ const TIME_SLOTS: string[] = (() => {
   }
   return slots
 })()
-
-function hoursLeftToRespond(createdAt: string): number {
-  const deadline = new Date(createdAt).getTime() + 24 * 60 * 60 * 1000
-  return Math.max(0, Math.ceil((deadline - Date.now()) / (60 * 60 * 1000)))
-}
-
-const BOOKING_STATUS_KEY: Record<BookingStatus, string> = {
-  REQUESTED: 'statusRequested',
-  CONFIRMED: 'statusConfirmed',
-  COMPLETED: 'statusCompleted',
-  CANCELLED: 'statusCancelled',
-}
 
 interface ChatPanelProps {
   introductionId:    string
@@ -95,6 +95,7 @@ export default function ChatPanel({
 }: ChatPanelProps) {
   const t        = useTranslations('chat')
   const tBooking = useTranslations('booking')
+  const tAddr    = useTranslations('address')
   const locale   = useLocale()
 
   const [messages, setMessages] = useState<Message[] | null>(null)
@@ -109,7 +110,6 @@ export default function ChatPanel({
   const [bookings,         setBookings]         = useState<Booking[] | null>(null)
   const [showBookingForm,  setShowBookingForm]  = useState(false)
   const [bookingSubmitting, setBookingSubmitting] = useState(false)
-  const [bookingActionPending, setBookingActionPending] = useState(false)
   const [bookingError,     setBookingError]     = useState<string | null>(null)
 
   const [bedrooms,       setBedrooms]       = useState('1')
@@ -120,7 +120,13 @@ export default function ChatPanel({
   const [durationHours,  setDurationHours]  = useState(String(estimateCleaningHours(1, 1, 'STANDARD')))
   const [durationTouched, setDurationTouched] = useState(false)
   const [bookingNotes,   setBookingNotes]   = useState('')
-  const [bookingAddress, setBookingAddress] = useState('')
+
+  const ADD_NEW_ADDRESS = '__add_new__'
+  const [savedAddresses,   setSavedAddresses]   = useState<SavedAddress[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState('')
+  const [showAddressModal, setShowAddressModal] = useState(false)
+
+  const selectedAddress = savedAddresses.find(a => a.id === selectedAddressId) ?? null
 
   // Pre-fill the duration estimate as room count/type change, but stop
   // overwriting it once the customer has edited it themselves
@@ -129,22 +135,28 @@ export default function ChatPanel({
     setDurationHours(String(estimateCleaningHours(Number(bedrooms) || 0, Number(bathrooms) || 0, cleaningType)))
   }, [bedrooms, bathrooms, cleaningType, durationTouched])
 
-  // Pre-fill the address from the most recent booking with this same cleaner
-  // that had one — a nicer default than a blank field every time, without an
-  // extra request (the data's already loaded). Never overwrites something the
-  // customer's already typed.
+  // Fetch the customer's saved addresses once the booking form opens — with
+  // exactly one on file, pre-select it; with zero or several, leave it
+  // unselected so a customer with multiple properties has to pick explicitly
+  // rather than risk a cleaner going to the wrong address.
   useEffect(() => {
-    if (bookings === null) return
-    const priorAddress = bookings.find(b => b.address)?.address
-    if (priorAddress) setBookingAddress(prev => prev || priorAddress)
-  }, [bookings])
+    if (!showBookingForm || currentUserRole !== 'CUSTOMER') return
+    let cancelled = false
+    fetch('/api/addresses')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((data: SavedAddress[]) => {
+        if (cancelled) return
+        setSavedAddresses(data)
+        if (data.length === 1) setSelectedAddressId(prev => prev || data[0].id)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [showBookingForm, currentUserRole])
 
-  const [showHistory, setShowHistory] = useState(false)
   const [viewingBookingId, setViewingBookingId] = useState<string | null>(null)
 
   const latestBooking   = bookings && bookings.length > 0 ? bookings[0] : null
   const activeBooking   = latestBooking && (latestBooking.status === 'REQUESTED' || latestBooking.status === 'CONFIRMED') ? latestBooking : null
-  const historyBookings = activeBooking ? (bookings ?? []).slice(1) : (bookings ?? [])
   const canRequestNew   = !activeBooking
   const todayStr        = new Date().toISOString().slice(0, 10)
   const bookingDateFmt  = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
@@ -152,10 +164,6 @@ export default function ChatPanel({
   const messageListRef = useRef<HTMLDivElement>(null)
   const textareaRef   = useRef<HTMLTextAreaElement>(null)
   const fileInputRef  = useRef<HTMLInputElement>(null)
-  const completionFileInputRef = useRef<HTMLInputElement>(null)
-
-  const [completionPhotoUploading, setCompletionPhotoUploading] = useState(false)
-  const [completionPhotoError,     setCompletionPhotoError]     = useState<string | null>(null)
 
   const [showSecret, setShowSecret] = useState(false)
   const canvasRef     = useRef<HTMLCanvasElement>(null)
@@ -486,7 +494,7 @@ export default function ChatPanel({
 
   async function handleBookingSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!bookingDate || !startTime || !bookingAddress.trim() || bookingSubmitting) return
+    if (!bookingDate || !startTime || !selectedAddress || bookingSubmitting) return
 
     setBookingSubmitting(true)
     setBookingError(null)
@@ -503,7 +511,7 @@ export default function ChatPanel({
           start_time:       startTime,
           duration_hours:   Number(durationHours),
           notes:            bookingNotes.trim() || undefined,
-          address:          bookingAddress.trim(),
+          address:          `${selectedAddress.line1}, ${selectedAddress.city}`,
         }),
       })
       if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('submitError')))
@@ -522,64 +530,6 @@ export default function ChatPanel({
       setBookingError(err instanceof Error ? err.message : tBooking('submitError'))
     } finally {
       setBookingSubmitting(false)
-    }
-  }
-
-  async function handleBookingAction(action: 'CONFIRM' | 'DECLINE' | 'CANCEL' | 'COMPLETE') {
-    if (!activeBooking || bookingActionPending) return
-
-    setBookingActionPending(true)
-    setBookingError(null)
-    try {
-      const res = await fetch(`/api/bookings/${activeBooking.id}`, {
-        method:  'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ action }),
-      })
-      if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('actionError')))
-
-      const updated: Booking = await res.json()
-      setBookings(prev => {
-        // The PATCH response doesn't re-sign photo URLs — carry the existing ones over
-        const previousUrls = prev?.find(b => b.id === updated.id)?.photo_urls ?? []
-        const merged = { ...updated, photo_urls: previousUrls }
-        return [merged, ...(prev ?? []).filter(b => b.id !== updated.id)]
-      })
-    } catch (err) {
-      setBookingError(err instanceof Error ? err.message : tBooking('actionError'))
-    } finally {
-      setBookingActionPending(false)
-    }
-  }
-
-  async function handleCompletionPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || !activeBooking || completionPhotoUploading) return
-
-    setCompletionPhotoUploading(true)
-    setCompletionPhotoError(null)
-    try {
-      const compressed = await compressImage(file)
-      const formData = new FormData()
-      formData.append('photo', compressed)
-
-      const res = await fetch(`/api/bookings/${activeBooking.id}/photos`, {
-        method: 'POST',
-        body:   formData,
-      })
-      if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('photoUploadError')))
-
-      const result: { photo_paths: string[]; new_photo_url: string | null } = await res.json()
-      setBookings(prev => (prev ?? []).map(b => b.id !== activeBooking.id ? b : {
-        ...b,
-        photo_paths: result.photo_paths,
-        photo_urls: result.new_photo_url ? [...b.photo_urls, result.new_photo_url] : b.photo_urls,
-      }))
-    } catch (err) {
-      setCompletionPhotoError(err instanceof Error ? err.message : tBooking('photoUploadError'))
-    } finally {
-      setCompletionPhotoUploading(false)
-      e.target.value = ''
     }
   }
 
@@ -630,175 +580,46 @@ export default function ChatPanel({
       </div>
 
       {/* Booking */}
-      {bookings !== null && (activeBooking || (currentUserRole === 'CUSTOMER' && canRequestNew)) && (
+      {/* Booking status/history/actions live only in the dashboard's Bookings
+          tab now (see BookingDetailModal + each dashboard's booking cards) —
+          this section is just the "request a new booking" entry point,
+          surfaced as a system-message pill in the stream below once it
+          exists. Keeping several bookings straight in one thread got messy
+          when the full status card was pinned here. */}
+      {bookings !== null && currentUserRole === 'CUSTOMER' && canRequestNew && (
         <div className="border-b border-[#E0EDEC] px-4 py-3">
-          {activeBooking && (
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
-                <span className={`inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full ${BOOKING_STATUS_BADGE[activeBooking.status]}`}>
-                  {tBooking(BOOKING_STATUS_KEY[activeBooking.status])}
-                </span>
-                {activeBooking.status === 'REQUESTED' && (
-                  <span className="text-[11px] text-[#6B8886] ml-2">
-                    {hoursLeftToRespond(activeBooking.created_at) > 0
-                      ? tBooking('timeLeftToRespond', { hours: hoursLeftToRespond(activeBooking.created_at) })
-                      : tBooking('lessThanHourLeft')}
-                  </span>
-                )}
-                <p className="text-[13px] text-[#0D1F1E] mt-1.5">
-                  {tBooking(activeBooking.duration_hours == null ? 'summaryNoDuration' : 'summary', {
-                    cleaningType: tBooking(activeBooking.cleaning_type === 'DEEP' ? 'deepClean' : 'standardClean'),
-                    bedrooms:  activeBooking.bedrooms ?? '—',
-                    bathrooms: activeBooking.bathrooms ?? '—',
-                    date:     bookingDateFmt.format(new Date(`${activeBooking.date}T00:00:00`)),
-                    time:     activeBooking.start_time.slice(0, 5),
-                    duration: activeBooking.duration_hours ?? undefined,
-                  })}
+          {bookingError && <p className="text-[12px] text-red-600 mb-2">{bookingError}</p>}
+
+          {!showBookingForm && (
+            latestBooking ? (
+              <>
+                <p className="text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+                  {tBooking(latestBooking.status === 'CANCELLED' ? 'bookingCancelledNudge' : 'bookingCompletedNudge')}
                 </p>
-                <p className="text-[12px] text-[#0D1F1E] mt-1">
-                  📍 {activeBooking.address ?? tBooking('noAddressProvided')}
-                </p>
-                {activeBooking.notes && (
-                  <p className="text-[12px] text-[#6B8886] mt-1">{activeBooking.notes}</p>
-                )}
                 <button
                   type="button"
-                  onClick={() => setViewingBookingId(activeBooking.id)}
-                  className="block text-[12px] font-medium text-[#19706A] hover:underline mt-1"
+                  onClick={() => setShowBookingForm(true)}
+                  className="btn-primary !px-4 !py-2 text-[13px] rounded-full"
                 >
-                  {tBooking('viewDetails')}
+                  {tBooking('bookAgain')}
                 </button>
-
-                {currentUserRole === 'CLEANER' && activeBooking.status === 'CONFIRMED' && (
-                  <div className="mt-2">
-                    <p className="text-[11px] text-[#B8860B] bg-[#FDF8E1] rounded-md px-2.5 py-1.5 mb-2">
-                      {tBooking('photoReminder')}
-                    </p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {activeBooking.photo_urls.map((url, i) => (
-                        <img key={i} src={url} alt="" className="w-12 h-12 rounded-md object-cover border border-[#E0EDEC]" />
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => completionFileInputRef.current?.click()}
-                        disabled={completionPhotoUploading}
-                        aria-label="Add photo"
-                        className="w-12 h-12 rounded-md border border-dashed border-[#E0EDEC] flex items-center justify-center text-[#6B8886] hover:text-[#19706A] hover:border-[#19706A] transition-colors disabled:opacity-50 text-[18px] leading-none"
-                      >
-                        {completionPhotoUploading ? '…' : '+'}
-                      </button>
-                      <input
-                        ref={completionFileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleCompletionPhotoSelect}
-                        className="hidden"
-                      />
-                    </div>
-                    <p className="text-[11px] text-[#6B8886] mt-1">
-                      {tBooking('photoCount', { count: activeBooking.photo_urls.length, min: MIN_COMPLETION_PHOTOS })}
-                    </p>
-                    {completionPhotoError && (
-                      <p className="text-[11px] text-red-600 mt-1">{completionPhotoError}</p>
-                    )}
-                  </div>
-                )}
-
-              </div>
-
-              <div className="flex gap-2 shrink-0">
-                {currentUserRole === 'CLEANER' && activeBooking.status === 'REQUESTED' && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => handleBookingAction('CONFIRM')}
-                      disabled={bookingActionPending}
-                      className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
-                    >
-                      {tBooking('confirm')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleBookingAction('DECLINE')}
-                      disabled={bookingActionPending}
-                      className="btn-ghost !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
-                    >
-                      {tBooking('decline')}
-                    </button>
-                  </>
-                )}
-                {currentUserRole === 'CLEANER' && activeBooking.status === 'CONFIRMED' && (
-                  activeBooking.date <= todayStr && activeBooking.photo_urls.length >= MIN_COMPLETION_PHOTOS ? (
-                    <button
-                      type="button"
-                      onClick={() => handleBookingAction('COMPLETE')}
-                      disabled={bookingActionPending}
-                      className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
-                    >
-                      {tBooking('markComplete')}
-                    </button>
-                  ) : activeBooking.date > todayStr ? (
-                    <span className="text-[12px] text-[#6B8886] self-center">
-                      {tBooking('notYetDue', { date: bookingDateFmt.format(new Date(`${activeBooking.date}T00:00:00`)) })}
-                    </span>
-                  ) : (
-                    <span className="text-[12px] text-[#6B8886] self-center">
-                      {tBooking('needMorePhotos', { count: MIN_COMPLETION_PHOTOS - activeBooking.photo_urls.length })}
-                    </span>
-                  )
-                )}
-                {currentUserRole === 'CUSTOMER' && (activeBooking.status === 'REQUESTED' || activeBooking.status === 'CONFIRMED') && (
-                  <button
-                    type="button"
-                    onClick={() => handleBookingAction('CANCEL')}
-                    disabled={bookingActionPending}
-                    className="btn-ghost !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
-                  >
-                    {tBooking('cancelBooking')}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {bookingError && <p className="text-[12px] text-red-600 mt-2">{bookingError}</p>}
-
-          {currentUserRole === 'CUSTOMER' && canRequestNew && !showBookingForm && (
-            // A resolved previous booking (COMPLETED/CANCELLED) gets a more
-            // prominent "book again" prompt than the first-ever nudge — this
-            // was previously an easy-to-miss muted line sitting right where
-            // the Cancel button had just been.
-            <div className={activeBooking ? 'mt-3' : ''}>
-              {latestBooking ? (
-                <>
-                  <p className="text-[13px] font-medium text-[#0D1F1E] mb-1.5">
-                    {tBooking(latestBooking.status === 'CANCELLED' ? 'bookingCancelledNudge' : 'bookingCompletedNudge')}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setShowBookingForm(true)}
-                    className="btn-primary !px-4 !py-2 text-[13px] rounded-full"
-                  >
-                    {tBooking('bookAgain')}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p className="text-[11px] text-[#6B8886] mb-1.5">{tBooking('bookingNudge')}</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowBookingForm(true)}
-                    className="btn-secondary !px-4 !py-2 text-[13px] rounded-full"
-                  >
-                    {tBooking('requestBtn')}
-                  </button>
-                </>
-              )}
-            </div>
+              </>
+            ) : (
+              <>
+                <p className="text-[11px] text-[#6B8886] mb-1.5">{tBooking('bookingNudge')}</p>
+                <button
+                  type="button"
+                  onClick={() => setShowBookingForm(true)}
+                  className="btn-secondary !px-4 !py-2 text-[13px] rounded-full"
+                >
+                  {tBooking('requestBtn')}
+                </button>
+              </>
+            )
           )}
 
           {showBookingForm && (
-            <form onSubmit={handleBookingSubmit} className={`space-y-2 ${activeBooking ? 'mt-3' : ''}`}>
+            <form onSubmit={handleBookingSubmit} className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('cleaningType')}</label>
@@ -883,14 +704,23 @@ export default function ChatPanel({
               </div>
               <div>
                 <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('address')}</label>
-                <input
-                  type="text"
-                  value={bookingAddress}
-                  onChange={e => setBookingAddress(e.target.value.slice(0, 200))}
-                  placeholder={tBooking('addressPlaceholder')}
-                  className="input !py-2 text-[13px] w-full"
+                <select
+                  value={selectedAddressId}
+                  onChange={e => {
+                    if (e.target.value === ADD_NEW_ADDRESS) { setShowAddressModal(true); return }
+                    setSelectedAddressId(e.target.value)
+                  }}
+                  className="input !py-2 text-[13px]"
                   required
-                />
+                >
+                  <option value="" disabled>{tAddr('selectAddress')}</option>
+                  {savedAddresses.map(a => (
+                    <option key={a.id} value={a.id}>
+                      {a.label ? `${a.label} — ${a.line1}, ${a.city}` : `${a.line1}, ${a.city}`}
+                    </option>
+                  ))}
+                  <option value={ADD_NEW_ADDRESS}>{tAddr('addNewOption')}</option>
+                </select>
               </div>
               <div>
                 <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('notes')}</label>
@@ -905,7 +735,7 @@ export default function ChatPanel({
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  disabled={bookingSubmitting || !bookingAddress.trim()}
+                  disabled={bookingSubmitting || !selectedAddress}
                   className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
                 >
                   {tBooking('submit')}
@@ -920,39 +750,23 @@ export default function ChatPanel({
               </div>
             </form>
           )}
-
-          {historyBookings.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-[#E0EDEC]">
-              <button
-                type="button"
-                onClick={() => setShowHistory(prev => !prev)}
-                className="text-[12px] text-[#19706A] hover:underline"
-              >
-                {showHistory ? tBooking('hideHistory') : tBooking('viewHistory', { count: historyBookings.length })}
-              </button>
-              {showHistory && (
-                <div className="mt-2 space-y-1.5">
-                  {historyBookings.map(b => (
-                    <button
-                      key={b.id}
-                      type="button"
-                      onClick={() => setViewingBookingId(b.id)}
-                      className="flex items-center justify-between gap-2 text-[12px] w-full text-left hover:bg-[#F7FAF9] rounded-md px-1.5 py-1 -mx-1.5 transition-colors"
-                    >
-                      <span className={`inline-block text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0 ${BOOKING_STATUS_BADGE[b.status]}`}>
-                        {tBooking(BOOKING_STATUS_KEY[b.status])}
-                      </span>
-                      <span className="text-[#6B8886] text-right">
-                        {bookingDateFmt.format(new Date(`${b.date}T00:00:00`))} · {b.start_time.slice(0, 5)}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </div>
       )}
+
+      <AddressFormModal
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        addresses={savedAddresses}
+        onSelect={address => {
+          setSavedAddresses(prev => prev.some(a => a.id === address.id) ? prev : [...prev, address])
+          setSelectedAddressId(address.id)
+          setShowAddressModal(false)
+        }}
+        onDeleted={id => {
+          setSavedAddresses(prev => prev.filter(a => a.id !== id))
+          setSelectedAddressId(prev => prev === id ? '' : prev)
+        }}
+      />
 
       {/* Message list — fills the available height on mobile (where the panel
           is a full-screen takeover), capped to a fixed height on desktop (where
@@ -973,6 +787,22 @@ export default function ChatPanel({
         ) : (
           <>
             {messages.map(m => {
+              if (m.system_event) {
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setViewingBookingId(m.booking_id)}
+                    className="w-full flex justify-center mb-3"
+                  >
+                    <span className={`inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity ${SYSTEM_EVENT_BADGE[m.system_event] ?? 'bg-[#F7FAF9] text-[#6B8886]'}`}>
+                      {tBooking(SYSTEM_EVENT_KEY[m.system_event] ?? 'systemUnknown')}
+                      <span className="opacity-70">· {timeFormatter.format(new Date(m.created_at))}</span>
+                    </span>
+                  </button>
+                )
+              }
+
               const isMine = m.sender_id === currentUserId
               return (
                 <div key={m.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} mb-3`}>

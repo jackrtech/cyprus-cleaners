@@ -8,7 +8,7 @@ import ChatPanel from '@/components/chat/ChatPanel'
 import ReviewPrompt from '@/components/reviews/ReviewPrompt'
 import DashboardTabs from '@/components/dashboard/DashboardTabs'
 import BookingDetailModal from '@/components/dashboard/BookingDetailModal'
-import { groupBookingsByPriority } from '@/lib/utils'
+import { groupBookingsByPriority, extractErrorMessage } from '@/lib/utils'
 import type { BookingStatus, CleaningType } from '@/types'
 
 interface CleanerProfile {
@@ -21,9 +21,18 @@ interface CleanerProfile {
 }
 
 interface LastMessage {
-  body:       string | null
-  photo_path: string | null
-  created_at: string
+  body:         string | null
+  photo_path:   string | null
+  system_event: string | null
+  created_at:   string
+}
+
+const SYSTEM_EVENT_KEY: Record<string, string> = {
+  REQUESTED: 'systemRequested',
+  CONFIRMED: 'systemConfirmed',
+  DECLINED:  'systemDeclined',
+  CANCELLED: 'systemCancelled',
+  COMPLETED: 'systemCompleted',
 }
 
 interface Introduction {
@@ -78,6 +87,8 @@ export default function DashboardPage() {
 
   const [bookings,        setBookings]        = useState<Booking[]>([])
   const [bookingsLoading, setBookingsLoading]  = useState(true)
+  const [bookingActionPendingId, setBookingActionPendingId] = useState<string | null>(null)
+  const [bookingActionError,     setBookingActionError]     = useState<string | null>(null)
 
   const [emailVerified, setEmailVerified] = useState<boolean | null>(null)
   const [resending,     setResending]     = useState(false)
@@ -148,6 +159,28 @@ export default function DashboardPage() {
   const threads       = intros.filter(i => i.last_message !== null)
   const bookingGroups = groupBookingsByPriority(bookings)
 
+  // Cancel used to only be reachable from chat — now it's on the card itself,
+  // reaching parity with the cleaner dashboard's own booking actions.
+  async function handleCancelBooking(bookingId: string) {
+    if (bookingActionPendingId) return
+    setBookingActionPendingId(bookingId)
+    setBookingActionError(null)
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action: 'CANCEL' }),
+      })
+      if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('actionError')))
+      const updated: Booking = await res.json()
+      setBookings(prev => prev.map(b => b.id === updated.id ? { ...b, ...updated } : b))
+    } catch (err) {
+      setBookingActionError(err instanceof Error ? err.message : tBooking('actionError'))
+    } finally {
+      setBookingActionPendingId(null)
+    }
+  }
+
   function renderBookingCard(booking: Booking) {
     const cp = booking.cleaner_profiles
     const bookingSummary = tBooking(booking.duration_hours == null ? 'summaryNoDuration' : 'summary', {
@@ -209,6 +242,16 @@ export default function DashboardPage() {
                     className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#19706A] hover:underline"
                   >
                     {tBooking('bookAgain')}
+                  </button>
+                )}
+                {(booking.status === 'REQUESTED' || booking.status === 'CONFIRMED') && (
+                  <button
+                    type="button"
+                    onClick={() => handleCancelBooking(booking.id)}
+                    disabled={bookingActionPendingId === booking.id}
+                    className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B8886] hover:text-red-600 transition-colors disabled:opacity-50"
+                  >
+                    {tBooking('cancelBooking')}
                   </button>
                 )}
               </div>
@@ -315,6 +358,11 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-8">
+                  {bookingActionError && (
+                    <p className="text-[12px] text-red-600 bg-red-50 border border-red-200 rounded-[10px] px-4 py-3">
+                      {bookingActionError}
+                    </p>
+                  )}
                   {bookingGroups.requested.length > 0 && (
                     <div>
                       <h3 className="text-[12px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">
@@ -371,7 +419,9 @@ export default function DashboardPage() {
                     const name      = cp?.display_name ?? '—'
                     const initials  = getInitials(name)
                     const isChatOpen = openChatId === intro.id
-                    const previewText = intro.last_message?.body ?? tChat('photoMessage')
+                    const previewText = intro.last_message?.system_event
+                      ? tBooking(SYSTEM_EVENT_KEY[intro.last_message.system_event] ?? 'systemUnknown')
+                      : intro.last_message?.body ?? tChat('photoMessage')
 
                     return (
                       <div key={intro.id} className="card overflow-hidden">

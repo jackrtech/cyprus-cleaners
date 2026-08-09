@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('messages')
-    .select('id, introduction_id, sender_id, body, photo_path, read_at, created_at')
+    .select('id, introduction_id, sender_id, body, photo_path, booking_id, system_event, read_at, created_at')
     .eq('introduction_id', introductionId)
     .order('created_at', { ascending: true })
 
@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
       body:      messageBody.length > 0 ? messageBody : null,
       photo_path,
     })
-    .select('id, introduction_id, sender_id, body, photo_path, read_at, created_at')
+    .select('id, introduction_id, sender_id, body, photo_path, booking_id, system_event, read_at, created_at')
     .single()
 
   if (error || !data) {
