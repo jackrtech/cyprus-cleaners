@@ -11,7 +11,6 @@ create extension if not exists "pgcrypto";
 create type user_role as enum ('CUSTOMER', 'CLEANER', 'ADMIN');
 create type cleaner_status as enum ('ACTIVE', 'PAUSED', 'SUSPENDED');
 create type service_type as enum ('HOUSE', 'APARTMENT');
-create type introduction_status as enum ('PENDING', 'APPROVED', 'DECLINED');
 create type booking_status as enum ('REQUESTED', 'CONFIRMED', 'COMPLETED', 'CANCELLED');
 create type cleaning_type as enum ('STANDARD', 'DEEP');
 create type locale_type as enum ('en', 'el');
@@ -45,6 +44,7 @@ create table cleaner_profiles (
   bio                   text not null default '',
   bio_el                text,
   photo_url             text,
+  cover_photo_url       text,
   city                  text not null,
   neighbourhoods        text[] not null default '{}',
   hourly_rate_eur       numeric(6,2) not null,
@@ -73,22 +73,21 @@ create index idx_cleaner_rating   on cleaner_profiles (avg_rating desc);
 create index idx_cleaner_services on cleaner_profiles using gin (services);
 
 -- ─── INTRODUCTIONS ───────────────────────────────────────────
+-- One messaging thread per customer/cleaner pair — no approval gate,
+-- messages and bookings hang off this record's id.
 
 create table introductions (
   id                  uuid primary key default gen_random_uuid(),
   customer_id         uuid not null references users(id) on delete cascade,
   cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
-  message             text not null,
-  status              introduction_status not null default 'PENDING',
-  approved_at         timestamptz,
+  last_emailed_at     timestamptz,
   created_at          timestamptz not null default now(),
-  -- One active introduction per customer-cleaner pair
+  -- One thread per customer-cleaner pair
   unique (customer_id, cleaner_profile_id)
 );
 
 create index idx_intros_customer on introductions (customer_id);
 create index idx_intros_cleaner  on introductions (cleaner_profile_id);
-create index idx_intros_status   on introductions (status);
 
 -- ─── BOOKINGS ────────────────────────────────────────────────
 
@@ -239,9 +238,12 @@ alter table chat_notifications  enable row level security;
 create policy "users_select_own" on users for select using (auth.uid()::text = id::text);
 create policy "users_update_own" on users for update using (auth.uid()::text = id::text);
 
--- Cleaner profiles: public read for ACTIVE profiles
+-- Cleaner profiles: public read for ACTIVE profiles, plus the owner can
+-- always read their own profile regardless of status (e.g. while PENDING)
 create policy "cleaner_profiles_public_read" on cleaner_profiles
   for select using (status = 'ACTIVE');
+create policy "cleaner_profiles_select_own" on cleaner_profiles
+  for select using (auth.uid()::text = user_id::text);
 
 -- Introductions: visible to the two parties only
 create policy "intros_own_parties" on introductions
@@ -252,13 +254,12 @@ create policy "intros_own_parties" on introductions
     )
   );
 
--- Messages: visible only within approved introductions to the two parties
+-- Messages: visible to the two parties of the thread
 create policy "messages_own_thread" on messages
   for select using (
     exists (
       select 1 from introductions i
       where i.id = introduction_id
-        and i.status = 'APPROVED'
         and (
           auth.uid()::text = i.customer_id::text or
           auth.uid()::text = (

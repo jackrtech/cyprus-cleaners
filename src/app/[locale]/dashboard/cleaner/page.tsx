@@ -5,8 +5,9 @@ import { useSession, signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { extractErrorMessage } from '@/lib/utils'
+import { extractErrorMessage, groupBookingsByPriority } from '@/lib/utils'
 import ChatPanel from '@/components/chat/ChatPanel'
+import DashboardTabs from '@/components/dashboard/DashboardTabs'
 import type { BookingStatus, CleaningType } from '@/types'
 
 interface CleanerProfile {
@@ -20,12 +21,18 @@ interface IntroUser {
   full_name: string
 }
 
-interface Introduction {
-  id:         string
-  status:     'PENDING' | 'APPROVED' | 'DECLINED'
-  message:    string
+interface LastMessage {
+  body:       string | null
+  photo_path: string | null
   created_at: string
-  users:      IntroUser | null
+}
+
+interface Introduction {
+  id:           string
+  created_at:   string
+  users:        IntroUser | null
+  last_message: LastMessage | null
+  has_unread:   boolean
 }
 
 interface Booking {
@@ -46,12 +53,6 @@ interface Booking {
 
 const MIN_COMPLETION_PHOTOS = 4
 
-const STATUS_PILL: Record<Introduction['status'], string> = {
-  PENDING:  'bg-[#F0F0F0] text-[#6B8886]',
-  APPROVED: 'bg-[#E8F4F3] text-[#19706A]',
-  DECLINED: 'bg-red-50 text-red-600',
-}
-
 const BOOKING_STATUS_BADGE: Record<BookingStatus, string> = {
   REQUESTED: 'badge-gold',
   CONFIRMED: 'badge-teal',
@@ -66,8 +67,8 @@ function hoursLeftToRespond(createdAt: string): number {
 
 interface IntroCardProps {
   intro:                Introduction
-  statusLabel:          string
   tReceivedOn:          string
+  tPhotoMessage:        string
   dateFormatter:        Intl.DateTimeFormat
   currentUserId:        string
   isChatOpen:           boolean
@@ -75,28 +76,26 @@ interface IntroCardProps {
 }
 
 function IntroCard({
-  intro, statusLabel, tReceivedOn, dateFormatter,
+  intro, tReceivedOn, tPhotoMessage, dateFormatter,
   currentUserId, isChatOpen, onToggleChat,
 }: IntroCardProps) {
   const customerName = intro.users?.full_name ?? '—'
+  const previewText = intro.last_message?.body ?? tPhotoMessage
 
   return (
-    <>
-      <div className="card p-5">
+    <div className="card overflow-hidden">
+      <div className="p-5">
         <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap mb-1">
               <p className="text-[15px] font-medium text-[#0D1F1E]">{customerName}</p>
-              <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full ${STATUS_PILL[intro.status]}`}>
-                {statusLabel}
-              </span>
             </div>
             <p className="text-[12px] text-[#6B8886]">
               {tReceivedOn} {dateFormatter.format(new Date(intro.created_at))}
             </p>
           </div>
 
-          <div className="flex gap-2 shrink-0">
+          <div className="flex gap-2 shrink-0 flex-wrap">
             <button
               type="button"
               onClick={onToggleChat}
@@ -109,22 +108,23 @@ function IntroCard({
           </div>
         </div>
 
-        <p className="text-[13px] text-[#6B8886] leading-relaxed">{intro.message}</p>
+        {!isChatOpen && (
+          <p className="text-[13px] text-[#6B8886] leading-relaxed line-clamp-2">{previewText}</p>
+        )}
       </div>
 
       {isChatOpen && (
-        <div className="mt-2 transition-all duration-200">
-          <ChatPanel
-            introductionId={intro.id}
-            currentUserId={currentUserId}
-            currentUserRole="CLEANER"
-            otherPartyName={intro.users?.full_name ?? 'Customer'}
-            otherPartyAvatar={null}
-            onClose={onToggleChat}
-          />
-        </div>
+        <ChatPanel
+          embedded
+          introductionId={intro.id}
+          currentUserId={currentUserId}
+          currentUserRole="CLEANER"
+          otherPartyName={intro.users?.full_name ?? 'Customer'}
+          otherPartyAvatar={null}
+          onClose={onToggleChat}
+        />
       )}
-    </>
+    </div>
   )
 }
 
@@ -133,6 +133,7 @@ export default function CleanerDashboardPage() {
   const t        = useTranslations('dashboard')
   const tAuth    = useTranslations('auth')
   const tBooking = useTranslations('booking')
+  const tChat    = useTranslations('chat')
   const locale   = useLocale()
   const router   = useRouter()
 
@@ -156,6 +157,7 @@ export default function CleanerDashboardPage() {
   const [resendResult,  setResendResult]  = useState<'sent' | 'rate_limited' | null>(null)
 
   const [openChatId, setOpenChatId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'bookings' | 'messages'>('bookings')
 
   // Auth guard
   useEffect(() => {
@@ -247,17 +249,22 @@ export default function CleanerDashboardPage() {
   useEffect(() => {
     if (sessionStatus !== 'authenticated' || session?.user.role !== 'CLEANER') return
 
-    const supabase = createClient()
-
+    // A token is required so RLS's cleaner_profiles_select_own policy can
+    // resolve auth.uid() — otherwise only ACTIVE profiles are visible, which
+    // silently hides the profile for cleaners still pending approval.
     Promise.all([
       fetch('/api/introductions')
         .then(r => { if (!r.ok) throw new Error(); return r.json() }),
-      supabase
-        .from('cleaner_profiles')
-        .select('slug, bio, photo_url, cities')
-        .eq('user_id', session.user.id)
-        .single()
-        .then(({ data }) => data),
+      fetch('/api/supabase-token')
+        .then(r => { if (!r.ok) throw new Error(); return r.json() })
+        .then(({ token }: { token: string }) =>
+          createClient(token)
+            .from('cleaner_profiles')
+            .select('slug, bio, photo_url, cities')
+            .eq('user_id', session.user.id)
+            .single()
+            .then(({ data }) => data)
+        ),
     ])
       .then(([introData, profileData]) => {
         if (Array.isArray(introData)) setIntros(introData)
@@ -288,10 +295,129 @@ export default function CleanerDashboardPage() {
     day: 'numeric', month: 'short', year: 'numeric',
   })
 
-  const statusLabels: Record<Introduction['status'], string> = {
-    PENDING:  t('pending'),
-    APPROVED: t('approved'),
-    DECLINED: t('declined'),
+  const threads       = intros.filter(i => i.last_message !== null)
+  const bookingGroups = groupBookingsByPriority(bookings)
+
+  function renderBookingCard(booking: Booking) {
+    const todayStr = new Date().toISOString().slice(0, 10)
+    const dateReached = booking.date <= todayStr
+    const hasEnoughPhotos = booking.photo_urls.length >= MIN_COMPLETION_PHOTOS
+    const isPending = bookingActionPendingId === booking.id
+    const isUploadingPhoto = photoUploadingId === booking.id
+
+    return (
+      <div key={booking.id} className="card p-5">
+        <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-[14px] font-medium text-[#0D1F1E]">
+              {tBooking('with', { name: booking.users?.full_name ?? '—' })}
+            </p>
+            <span className={`inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full ${BOOKING_STATUS_BADGE[booking.status]}`}>
+              {tBooking(
+                booking.status === 'REQUESTED' ? 'statusRequested'
+                : booking.status === 'CONFIRMED' ? 'statusConfirmed'
+                : booking.status === 'COMPLETED' ? 'statusCompleted'
+                : 'statusCancelled'
+              )}
+            </span>
+            {booking.status === 'REQUESTED' && (
+              <span className="text-[11px] text-[#6B8886]">
+                {hoursLeftToRespond(booking.created_at) > 0
+                  ? tBooking('timeLeftToRespond', { hours: hoursLeftToRespond(booking.created_at) })
+                  : tBooking('lessThanHourLeft')}
+              </span>
+            )}
+          </div>
+
+          {booking.status === 'REQUESTED' && (
+            <div className="flex gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleBookingAction(booking.id, 'CONFIRM')}
+                disabled={isPending}
+                className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
+              >
+                {tBooking('confirm')}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBookingAction(booking.id, 'DECLINE')}
+                disabled={isPending}
+                className="btn-ghost !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
+              >
+                {tBooking('decline')}
+              </button>
+            </div>
+          )}
+          {booking.status === 'CONFIRMED' && (
+            dateReached && hasEnoughPhotos ? (
+              <button
+                type="button"
+                onClick={() => handleBookingAction(booking.id, 'COMPLETE')}
+                disabled={isPending}
+                className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50 shrink-0"
+              >
+                {tBooking('markComplete')}
+              </button>
+            ) : !dateReached ? (
+              <span className="text-[12px] text-[#6B8886] shrink-0">
+                {tBooking('notYetDue', {
+                  date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${booking.date}T00:00:00`)),
+                })}
+              </span>
+            ) : (
+              <span className="text-[12px] text-[#6B8886] shrink-0">
+                {tBooking('needMorePhotos', { count: MIN_COMPLETION_PHOTOS - booking.photo_urls.length })}
+              </span>
+            )
+          )}
+        </div>
+        <p className="text-[13px] text-[#6B8886]">
+          {tBooking(booking.duration_hours == null ? 'summaryNoDuration' : 'summary', {
+            cleaningType: tBooking(booking.cleaning_type === 'DEEP' ? 'deepClean' : 'standardClean'),
+            bedrooms: booking.bedrooms ?? '—',
+            bathrooms: booking.bathrooms ?? '—',
+            date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${booking.date}T00:00:00`)),
+            time: booking.start_time.slice(0, 5),
+            duration: booking.duration_hours ?? undefined,
+          })}
+        </p>
+        {booking.notes && (
+          <p className="text-[12px] text-[#6B8886] mt-1">{booking.notes}</p>
+        )}
+        {booking.status === 'CONFIRMED' && (
+          <div className="mt-2">
+            <p className="text-[11px] text-[#B8860B] bg-[#FDF8E1] rounded-md px-2.5 py-1.5 mb-2">
+              {tBooking('photoReminder')}
+            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {booking.photo_urls.map((url, i) => (
+                <img key={i} src={url} alt="" className="w-12 h-12 rounded-md object-cover border border-[#E0EDEC]" />
+              ))}
+              <button
+                type="button"
+                onClick={() => handlePhotoAddClick(booking.id)}
+                disabled={isUploadingPhoto}
+                aria-label="Add photo"
+                className="w-12 h-12 rounded-md border border-dashed border-[#E0EDEC] flex items-center justify-center text-[#6B8886] hover:text-[#19706A] hover:border-[#19706A] transition-colors disabled:opacity-50 text-[18px] leading-none"
+              >
+                {isUploadingPhoto ? '…' : '+'}
+              </button>
+            </div>
+            <p className="text-[11px] text-[#6B8886] mt-1">
+              {tBooking('photoCount', { count: booking.photo_urls.length, min: MIN_COMPLETION_PHOTOS })}
+            </p>
+          </div>
+        )}
+        {booking.status === 'COMPLETED' && booking.photo_urls.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap mt-2">
+            {booking.photo_urls.map((url, i) => (
+              <img key={i} src={url} alt="" className="w-12 h-12 rounded-md object-cover border border-[#E0EDEC]" />
+            ))}
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -338,6 +464,38 @@ export default function CleanerDashboardPage() {
           </div>
         )}
 
+        {/* Profile quick actions — moved near the top so they're reachable without scrolling past bookings */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Link
+            href="/dashboard/cleaner/edit"
+            className="card p-5 flex items-center gap-3 hover:shadow-md transition-shadow"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6B8886" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M11.5 2a1.5 1.5 0 0 1 2.12 2.12L4.5 13.24l-3 .75.75-3L11.5 2z" />
+            </svg>
+            <span className="text-[14px] text-[#0D1F1E]">{t('editProfile')}</span>
+          </Link>
+
+          {profile?.slug ? (
+            <Link
+              href={`/cleaners/${profile.slug}`}
+              className="card p-5 flex items-center gap-3 hover:shadow-md transition-shadow"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6B8886" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M6.5 2.5H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9.5M9.5 1H15v5.5M15 1l-7 7" />
+              </svg>
+              <span className="text-[14px] text-[#0D1F1E]">{t('viewPublicProfile')}</span>
+            </Link>
+          ) : (
+            <div className="card p-5 flex items-center gap-3 opacity-40 cursor-not-allowed select-none">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6B8886" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M6.5 2.5H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9.5M9.5 1H15v5.5M15 1l-7 7" />
+              </svg>
+              <span className="text-[14px] text-[#0D1F1E]">{t('viewPublicProfile')}</span>
+            </div>
+          )}
+        </div>
+
         {/* Inline error */}
         {error && (
           <p className="text-[13px] text-red-600 bg-red-50 border border-red-200 rounded-[10px] px-4 py-3">
@@ -345,24 +503,32 @@ export default function CleanerDashboardPage() {
           </p>
         )}
 
-        {/* SECTION 2 — Introduction requests */}
-        <section>
-          <div className="flex items-center gap-2.5 mb-4">
-            <h2 className="text-[17px] font-medium text-[#0D1F1E]">{t('introRequests')}</h2>
-            {!loading && intros.length > 0 && (
-              <span className="text-[12px] font-medium bg-[#E8F4F3] text-[#19706A] px-2 py-0.5 rounded-full">
-                {intros.length}
-              </span>
-            )}
-          </div>
+        {/* Tabs: Bookings / Messages */}
+        <DashboardTabs
+          idPrefix="cleaner-dashboard"
+          ariaLabel={t('sectionsLabel')}
+          activeKey={activeTab}
+          onChange={key => setActiveTab(key as 'bookings' | 'messages')}
+          tabs={[
+            { key: 'bookings', label: tBooking('bookingRequests'), count: bookingGroups.requested.length },
+            { key: 'messages', label: t('messagesTab'), count: threads.filter(i => i.has_unread).length },
+          ]}
+        />
 
+        {/* Messages panel */}
+        <section
+          role="tabpanel"
+          id="cleaner-dashboard-panel-messages"
+          aria-labelledby="cleaner-dashboard-tab-messages"
+          hidden={activeTab !== 'messages'}
+        >
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map(i => (
                 <div key={i} className="card p-5 h-[100px] animate-pulse" />
               ))}
             </div>
-          ) : intros.length === 0 && !error ? (
+          ) : threads.length === 0 && !error ? (
             <div className="card p-10 flex flex-col items-center text-center gap-5">
               <div className="w-16 h-16 rounded-full bg-[#E8F4F3] flex items-center justify-center">
                 <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#19706A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -376,12 +542,12 @@ export default function CleanerDashboardPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {intros.map(intro => (
+              {threads.map(intro => (
                 <IntroCard
                   key={intro.id}
                   intro={intro}
-                  statusLabel={statusLabels[intro.status]}
                   tReceivedOn={t('receivedOn')}
+                  tPhotoMessage={tChat('photoMessage')}
                   dateFormatter={dateFormatter}
                   currentUserId={session.user.id}
                   isChatOpen={openChatId === intro.id}
@@ -392,17 +558,13 @@ export default function CleanerDashboardPage() {
           )}
         </section>
 
-        {/* SECTION 2.5 — Bookings */}
-        <section>
-          <div className="flex items-center gap-2.5 mb-4">
-            <h2 className="text-[17px] font-medium text-[#0D1F1E]">{tBooking('bookingRequests')}</h2>
-            {!bookingsLoading && bookings.length > 0 && (
-              <span className="text-[12px] font-medium bg-[#E8F4F3] text-[#19706A] px-2 py-0.5 rounded-full">
-                {bookings.length}
-              </span>
-            )}
-          </div>
-
+        {/* Bookings panel */}
+        <section
+          role="tabpanel"
+          id="cleaner-dashboard-panel-bookings"
+          aria-labelledby="cleaner-dashboard-tab-bookings"
+          hidden={activeTab !== 'bookings'}
+        >
           {bookingsLoading ? (
             <div className="space-y-3">
               {[1, 2].map(i => (
@@ -415,133 +577,36 @@ export default function CleanerDashboardPage() {
               <p className="text-[13px] text-[#6B8886]">{tBooking('noBookingsBodyCleaner')}</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-8">
               {bookingActionError && (
                 <p className="text-[12px] text-red-600 bg-red-50 border border-red-200 rounded-[10px] px-4 py-3">
                   {bookingActionError}
                 </p>
               )}
-              {bookings.map(booking => {
-                const todayStr = new Date().toISOString().slice(0, 10)
-                const dateReached = booking.date <= todayStr
-                const hasEnoughPhotos = booking.photo_urls.length >= MIN_COMPLETION_PHOTOS
-                const isPending = bookingActionPendingId === booking.id
-                const isUploadingPhoto = photoUploadingId === booking.id
-
-                return (
-                  <div key={booking.id} className="card p-5">
-                    <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-[14px] font-medium text-[#0D1F1E]">
-                          {tBooking('with', { name: booking.users?.full_name ?? '—' })}
-                        </p>
-                        <span className={`inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full ${BOOKING_STATUS_BADGE[booking.status]}`}>
-                          {tBooking(
-                            booking.status === 'REQUESTED' ? 'statusRequested'
-                            : booking.status === 'CONFIRMED' ? 'statusConfirmed'
-                            : booking.status === 'COMPLETED' ? 'statusCompleted'
-                            : 'statusCancelled'
-                          )}
-                        </span>
-                        {booking.status === 'REQUESTED' && (
-                          <span className="text-[11px] text-[#6B8886]">
-                            {hoursLeftToRespond(booking.created_at) > 0
-                              ? tBooking('timeLeftToRespond', { hours: hoursLeftToRespond(booking.created_at) })
-                              : tBooking('lessThanHourLeft')}
-                          </span>
-                        )}
-                      </div>
-
-                      {booking.status === 'REQUESTED' && (
-                        <div className="flex gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleBookingAction(booking.id, 'CONFIRM')}
-                            disabled={isPending}
-                            className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
-                          >
-                            {tBooking('confirm')}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleBookingAction(booking.id, 'DECLINE')}
-                            disabled={isPending}
-                            className="btn-ghost !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
-                          >
-                            {tBooking('decline')}
-                          </button>
-                        </div>
-                      )}
-                      {booking.status === 'CONFIRMED' && (
-                        dateReached && hasEnoughPhotos ? (
-                          <button
-                            type="button"
-                            onClick={() => handleBookingAction(booking.id, 'COMPLETE')}
-                            disabled={isPending}
-                            className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50 shrink-0"
-                          >
-                            {tBooking('markComplete')}
-                          </button>
-                        ) : !dateReached ? (
-                          <span className="text-[12px] text-[#6B8886] shrink-0">
-                            {tBooking('notYetDue', {
-                              date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${booking.date}T00:00:00`)),
-                            })}
-                          </span>
-                        ) : (
-                          <span className="text-[12px] text-[#6B8886] shrink-0">
-                            {tBooking('needMorePhotos', { count: MIN_COMPLETION_PHOTOS - booking.photo_urls.length })}
-                          </span>
-                        )
-                      )}
-                    </div>
-                    <p className="text-[13px] text-[#6B8886]">
-                      {tBooking(booking.duration_hours == null ? 'summaryNoDuration' : 'summary', {
-                        cleaningType: tBooking(booking.cleaning_type === 'DEEP' ? 'deepClean' : 'standardClean'),
-                        bedrooms: booking.bedrooms ?? '—',
-                        bathrooms: booking.bathrooms ?? '—',
-                        date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${booking.date}T00:00:00`)),
-                        time: booking.start_time.slice(0, 5),
-                        duration: booking.duration_hours ?? undefined,
-                      })}
-                    </p>
-                    {booking.notes && (
-                      <p className="text-[12px] text-[#6B8886] mt-1">{booking.notes}</p>
-                    )}
-                    {booking.status === 'CONFIRMED' && (
-                      <div className="mt-2">
-                        <p className="text-[11px] text-[#B8860B] bg-[#FDF8E1] rounded-md px-2.5 py-1.5 mb-2">
-                          {tBooking('photoReminder')}
-                        </p>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {booking.photo_urls.map((url, i) => (
-                            <img key={i} src={url} alt="" className="w-12 h-12 rounded-md object-cover border border-[#E0EDEC]" />
-                          ))}
-                          <button
-                            type="button"
-                            onClick={() => handlePhotoAddClick(booking.id)}
-                            disabled={isUploadingPhoto}
-                            aria-label="Add photo"
-                            className="w-12 h-12 rounded-md border border-dashed border-[#E0EDEC] flex items-center justify-center text-[#6B8886] hover:text-[#19706A] hover:border-[#19706A] transition-colors disabled:opacity-50 text-[18px] leading-none"
-                          >
-                            {isUploadingPhoto ? '…' : '+'}
-                          </button>
-                        </div>
-                        <p className="text-[11px] text-[#6B8886] mt-1">
-                          {tBooking('photoCount', { count: booking.photo_urls.length, min: MIN_COMPLETION_PHOTOS })}
-                        </p>
-                      </div>
-                    )}
-                    {booking.status === 'COMPLETED' && booking.photo_urls.length > 0 && (
-                      <div className="flex items-center gap-2 flex-wrap mt-2">
-                        {booking.photo_urls.map((url, i) => (
-                          <img key={i} src={url} alt="" className="w-12 h-12 rounded-md object-cover border border-[#E0EDEC]" />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+              {bookingGroups.requested.length > 0 && (
+                <div>
+                  <h3 className="text-[12px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">
+                    {tBooking('needsResponse')}
+                  </h3>
+                  <div className="space-y-3">{bookingGroups.requested.map(renderBookingCard)}</div>
+                </div>
+              )}
+              {bookingGroups.confirmed.length > 0 && (
+                <div>
+                  <h3 className="text-[12px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">
+                    {tBooking('upcoming')}
+                  </h3>
+                  <div className="space-y-3">{bookingGroups.confirmed.map(renderBookingCard)}</div>
+                </div>
+              )}
+              {bookingGroups.history.length > 0 && (
+                <div>
+                  <h3 className="text-[12px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">
+                    {tBooking('bookingHistory')}
+                  </h3>
+                  <div className="space-y-3">{bookingGroups.history.map(renderBookingCard)}</div>
+                </div>
+              )}
               {photoUploadError && (
                 <p className="text-[12px] text-red-600 bg-red-50 border border-red-200 rounded-[10px] px-4 py-3">
                   {photoUploadError}
@@ -558,48 +623,15 @@ export default function CleanerDashboardPage() {
           )}
         </section>
 
-        {/* SECTION 3 — Quick links */}
-        <section>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Link
-              href="/dashboard/cleaner/edit"
-              className="card p-5 flex items-center gap-3 hover:shadow-md transition-shadow"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6B8886" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M11.5 2a1.5 1.5 0 0 1 2.12 2.12L4.5 13.24l-3 .75.75-3L11.5 2z" />
-              </svg>
-              <span className="text-[14px] text-[#0D1F1E]">{t('editProfile')}</span>
-            </Link>
-
-            {profile?.slug ? (
-              <Link
-                href={`/cleaners/${profile.slug}`}
-                className="card p-5 flex items-center gap-3 hover:shadow-md transition-shadow"
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6B8886" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M6.5 2.5H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9.5M9.5 1H15v5.5M15 1l-7 7" />
-                </svg>
-                <span className="text-[14px] text-[#0D1F1E]">{t('viewPublicProfile')}</span>
-              </Link>
-            ) : (
-              <div className="card p-5 flex items-center gap-3 opacity-40 cursor-not-allowed select-none">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6B8886" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M6.5 2.5H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9.5M9.5 1H15v5.5M15 1l-7 7" />
-                </svg>
-                <span className="text-[14px] text-[#0D1F1E]">{t('viewPublicProfile')}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="text-[13px] text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
-            >
-              {t('signOut')}
-            </button>
-          </div>
-        </section>
+        {/* Sign out */}
+        <div className="text-center">
+          <button
+            onClick={() => signOut({ callbackUrl: '/' })}
+            className="text-[13px] text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+          >
+            {t('signOut')}
+          </button>
+        </div>
 
       </div>
     </div>

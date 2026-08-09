@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
+import type { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { extractErrorMessage, estimateCleaningHours } from '@/lib/utils'
 import type { BookingStatus, CleaningType } from '@/types'
@@ -75,6 +76,10 @@ interface ChatPanelProps {
   otherPartyAvatar:  string | null
   onClose?:          () => void
   onMessageSent?:    (message: Message) => void
+  // When true, renders without its own header/border/rounded box — for
+  // nesting inside a parent card that already shows the name/status header
+  // and provides its own close control.
+  embedded?:         boolean
 }
 
 function getInitials(name: string): string {
@@ -83,7 +88,7 @@ function getInitials(name: string): string {
 
 export default function ChatPanel({
   introductionId, currentUserId, currentUserRole, otherPartyName, otherPartyAvatar,
-  onClose, onMessageSent,
+  onClose, onMessageSent, embedded = false,
 }: ChatPanelProps) {
   const t        = useTranslations('chat')
   const tBooking = useTranslations('booking')
@@ -129,7 +134,7 @@ export default function ChatPanel({
   const todayStr        = new Date().toISOString().slice(0, 10)
   const bookingDateFmt  = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
 
-  const bottomRef     = useRef<HTMLDivElement>(null)
+  const messageListRef = useRef<HTMLDivElement>(null)
   const textareaRef   = useRef<HTMLTextAreaElement>(null)
   const fileInputRef  = useRef<HTMLInputElement>(null)
   const completionFileInputRef = useRef<HTMLInputElement>(null)
@@ -164,35 +169,75 @@ export default function ChatPanel({
     return () => { cancelled = true }
   }, [introductionId])
 
-  // Realtime subscription
+  // Realtime subscription — RLS on `messages` requires auth.uid() to resolve,
+  // which needs a Supabase-compatible access token (NextAuth sessions alone
+  // don't provide one). See /api/supabase-token and lib/supabase/authToken.ts.
   useEffect(() => {
-    const supabase = createClient()
+    let cancelled = false
+    let supabase: SupabaseClient | null = null
+    let channel: RealtimeChannel | null = null
 
-    const channel = supabase
-      .channel(`chat:${introductionId}`)
-      .on('postgres_changes', {
-        event:  'INSERT',
-        schema: 'public',
-        table:  'messages',
-        filter: `introduction_id=eq.${introductionId}`,
-      }, (payload) => {
-        const incoming = payload.new as Message
-        setMessages(prev => {
-          if (prev?.some(m => m.id === incoming.id)) return prev
-          return [...(prev ?? []), incoming]
+    async function connect() {
+      const res = await fetch('/api/supabase-token')
+      if (!res.ok || cancelled) return
+      const { token } = (await res.json()) as { token: string }
+      if (cancelled) return
+
+      supabase = createClient(token)
+      supabase.realtime.setAuth(token)
+
+      channel = supabase
+        .channel(`chat:${introductionId}`)
+        .on('postgres_changes', {
+          event:  'INSERT',
+          schema: 'public',
+          table:  'messages',
+          filter: `introduction_id=eq.${introductionId}`,
+        }, (payload) => {
+          const incoming = payload.new as Message
+          setMessages(prev => {
+            if (prev?.some(m => m.id === incoming.id)) return prev
+            return [...(prev ?? []), incoming]
+          })
         })
-      })
-      .subscribe()
+        .subscribe()
+    }
+
+    connect()
 
     return () => {
-      supabase.removeChannel(channel)
+      cancelled = true
+      if (supabase && channel) supabase.removeChannel(channel)
     }
   }, [introductionId])
 
-  // Auto-scroll to bottom on new messages / initial load
+  // Auto-scroll to bottom on new messages / initial load — scoped to the
+  // message list's own scroll container so it never drags the page/window.
+  // The initial load jumps instantly (no visible scroll animation once the
+  // fetch resolves); only messages arriving after that animate smoothly.
+  const hasScrolledInitially = useRef(false)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = messageListRef.current
+    if (!el) return
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const isInitialLoad = messages !== null && !hasScrolledInitially.current
+    el.scrollTo({ top: el.scrollHeight, behavior: (isInitialLoad || reduceMotion) ? 'auto' : 'smooth' })
+    if (messages !== null) hasScrolledInitially.current = true
   }, [messages])
+
+  // Message photos load asynchronously and can grow the scroll container
+  // after the effect above already ran, leaving the view short of the true
+  // bottom. Re-snap once each image finishes loading — but only if the user
+  // was already near the bottom, so scrolling up to browse old photos isn't
+  // fought.
+  function handlePhotoInMessageLoad() {
+    const el = messageListRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    if (distanceFromBottom < 300) {
+      el.scrollTop = el.scrollHeight
+    }
+  }
 
   // Auto-expand textarea up to 4 rows
   useEffect(() => {
@@ -522,40 +567,44 @@ export default function ChatPanel({
 
   return (
     <>
-    <div className="flex flex-col bg-white border border-[#E0EDEC] rounded-[16px] overflow-hidden">
+    <div className={embedded ? 'flex flex-col' : 'flex flex-col bg-white border border-[#E0EDEC] rounded-[16px] overflow-hidden'}>
 
-      {/* Header */}
-      <div className="border-b border-[#E0EDEC]">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            {otherPartyAvatar ? (
-              <img
-                src={otherPartyAvatar}
-                alt={otherPartyName}
-                className="w-8 h-8 rounded-full object-cover shrink-0"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-[#19706A] flex items-center justify-center text-white text-[12px] font-medium shrink-0">
-                {getInitials(otherPartyName)}
-              </div>
-            )}
-            <span className="text-[14px] font-medium text-[#0D1F1E] truncate">{otherPartyName}</span>
-          </div>
+      {/* Header — suppressed when embedded, the parent card shows name/status/close itself */}
+      {embedded ? (
+        <div className="border-t border-[#E0EDEC]" />
+      ) : (
+        <div className="border-b border-[#E0EDEC]">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {otherPartyAvatar ? (
+                <img
+                  src={otherPartyAvatar}
+                  alt={otherPartyName}
+                  className="w-8 h-8 rounded-full object-cover shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-[#19706A] flex items-center justify-center text-white text-[12px] font-medium shrink-0">
+                  {getInitials(otherPartyName)}
+                </div>
+              )}
+              <span className="text-[14px] font-medium text-[#0D1F1E] truncate">{otherPartyName}</span>
+            </div>
 
-          <div className="flex items-center gap-2 shrink-0 ml-2">
-            {onClose && (
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Close"
-                className="text-[#6B8886] hover:text-[#0D1F1E] transition-colors text-[20px] leading-none"
-              >
-                ×
-              </button>
-            )}
+            <div className="flex items-center gap-2 shrink-0 ml-2">
+              {onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close"
+                  className="text-[#6B8886] hover:text-[#0D1F1E] transition-colors text-[20px] leading-none"
+                >
+                  ×
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Booking */}
       {bookings !== null && (activeBooking || (currentUserRole === 'CUSTOMER' && canRequestNew)) && (
@@ -689,13 +738,16 @@ export default function ChatPanel({
           {bookingError && <p className="text-[12px] text-red-600 mt-2">{bookingError}</p>}
 
           {currentUserRole === 'CUSTOMER' && canRequestNew && !showBookingForm && (
-            <button
-              type="button"
-              onClick={() => setShowBookingForm(true)}
-              className={`btn-secondary !px-4 !py-2 text-[13px] rounded-full ${activeBooking ? 'mt-3' : ''}`}
-            >
-              {tBooking('requestBtn')}
-            </button>
+            <div className={activeBooking ? 'mt-3' : ''}>
+              <p className="text-[11px] text-[#6B8886] mb-1.5">{tBooking('bookingNudge')}</p>
+              <button
+                type="button"
+                onClick={() => setShowBookingForm(true)}
+                className="btn-secondary !px-4 !py-2 text-[13px] rounded-full"
+              >
+                {tBooking('requestBtn')}
+              </button>
+            </div>
           )}
 
           {showBookingForm && (
@@ -840,7 +892,7 @@ export default function ChatPanel({
       )}
 
       {/* Message list */}
-      <div className="max-h-[400px] overflow-y-auto px-4 py-4">
+      <div ref={messageListRef} className="max-h-[400px] overflow-y-auto px-4 py-4">
         {messages === null ? (
           <div className="space-y-3">
             {[0, 1, 2].map(i => (
@@ -864,6 +916,7 @@ export default function ChatPanel({
                       <img
                         src={m.photo_url}
                         alt=""
+                        onLoad={handlePhotoInMessageLoad}
                         className="max-w-[220px] max-h-[220px] rounded-[16px] object-cover border border-[#E0EDEC]"
                       />
                     </a>
@@ -887,7 +940,6 @@ export default function ChatPanel({
             })}
           </>
         )}
-        <div ref={bottomRef} />
       </div>
 
       {/* Input */}
