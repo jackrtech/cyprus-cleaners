@@ -7,7 +7,7 @@ import { Link, useRouter } from '@/navigation'
 import ChatPanel from '@/components/chat/ChatPanel'
 import ReviewPrompt from '@/components/reviews/ReviewPrompt'
 import DashboardTabs from '@/components/dashboard/DashboardTabs'
-import BookingPhotoViewer from '@/components/dashboard/BookingPhotoViewer'
+import BookingDetailModal from '@/components/dashboard/BookingDetailModal'
 import { groupBookingsByPriority } from '@/lib/utils'
 import type { BookingStatus, CleaningType } from '@/types'
 
@@ -84,7 +84,7 @@ export default function DashboardPage() {
   const [openChatId, setOpenChatId] = useState<string | null>(null)
   const [skippedReviewIds, setSkippedReviewIds] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<'bookings' | 'messages'>('bookings')
-  const [viewingPhotosBookingId, setViewingPhotosBookingId] = useState<string | null>(null)
+  const [viewingBookingId, setViewingBookingId] = useState<string | null>(null)
 
   // Auth guard
   useEffect(() => {
@@ -179,22 +179,17 @@ export default function DashboardPage() {
                 </span>
               </div>
               <p className="text-[13px] text-[#6B8886]">{bookingSummary}</p>
-              {booking.status === 'COMPLETED' && booking.photo_urls.length > 0 && (
-                // Photos aren't fetched into the DOM until this is clicked —
-                // see BookingPhotoViewer.
-                <button
-                  type="button"
-                  onClick={() => setViewingPhotosBookingId(booking.id)}
-                  className="inline-flex items-center gap-1.5 mt-2 text-[12px] font-medium text-[#19706A] hover:underline"
-                >
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <rect x="1.5" y="4" width="13" height="10" rx="1.5" />
-                    <path d="M5 4l1.2-2h3.6L11 4" />
-                    <circle cx="8" cy="9" r="2.25" />
-                  </svg>
-                  {tBooking('viewPhotos', { count: booking.photo_urls.length })}
-                </button>
-              )}
+              {/* Photos aren't fetched into the DOM until this is clicked —
+                  see BookingDetailModal. Every booking gets this, not just
+                  completed ones with photos, so the full detail view is
+                  reachable consistently from any booking of any status. */}
+              <button
+                type="button"
+                onClick={() => setViewingBookingId(booking.id)}
+                className="inline-flex items-center gap-1.5 mt-2 text-[12px] font-medium text-[#19706A] hover:underline"
+              >
+                {tBooking('viewDetails')}
+              </button>
             </div>
           </div>
         </div>
@@ -446,11 +441,25 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <BookingPhotoViewer
-        isOpen={!!viewingPhotosBookingId}
-        onClose={() => setViewingPhotosBookingId(null)}
-        photoUrls={bookings.find(b => b.id === viewingPhotosBookingId)?.photo_urls ?? []}
-        title={tBooking('with', { name: bookings.find(b => b.id === viewingPhotosBookingId)?.cleaner_profiles?.display_name ?? '—' })}
+      <BookingDetailModal
+        isOpen={!!viewingBookingId}
+        onClose={() => setViewingBookingId(null)}
+        booking={(() => {
+          const b = bookings.find(b => b.id === viewingBookingId)
+          if (!b) return null
+          return {
+            otherPartyName: b.cleaner_profiles?.display_name ?? '—',
+            status:         b.status,
+            date:           b.date,
+            start_time:     b.start_time,
+            duration_hours: b.duration_hours,
+            bedrooms:       b.bedrooms,
+            bathrooms:      b.bathrooms,
+            cleaning_type:  b.cleaning_type,
+            notes:          b.notes,
+            photo_urls:     b.photo_urls,
+          }
+        })()}
       />
     </div>
   )

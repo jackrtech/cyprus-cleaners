@@ -6,6 +6,7 @@ import type { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { extractErrorMessage, estimateCleaningHours } from '@/lib/utils'
 import { compressImage } from '@/lib/utils/compressImage'
+import BookingDetailModal from '@/components/dashboard/BookingDetailModal'
 import type { BookingStatus, CleaningType } from '@/types'
 
 interface Message {
@@ -127,6 +128,7 @@ export default function ChatPanel({
   }, [bedrooms, bathrooms, cleaningType, durationTouched])
 
   const [showHistory, setShowHistory] = useState(false)
+  const [viewingBookingId, setViewingBookingId] = useState<string | null>(null)
 
   const latestBooking   = bookings && bookings.length > 0 ? bookings[0] : null
   const activeBooking   = latestBooking && (latestBooking.status === 'REQUESTED' || latestBooking.status === 'CONFIRMED') ? latestBooking : null
@@ -601,7 +603,7 @@ export default function ChatPanel({
                 type="button"
                 onClick={onClose}
                 aria-label="Close"
-                className="text-[#6B8886] hover:text-[#0D1F1E] transition-colors text-[20px] leading-none"
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] border border-[#E0EDEC] text-[#6B8886] hover:text-[#0D1F1E] hover:border-[#19706A] transition-colors text-[20px] leading-none"
               >
                 ×
               </button>
@@ -639,6 +641,13 @@ export default function ChatPanel({
                 {activeBooking.notes && (
                   <p className="text-[12px] text-[#6B8886] mt-1">{activeBooking.notes}</p>
                 )}
+                <button
+                  type="button"
+                  onClick={() => setViewingBookingId(activeBooking.id)}
+                  className="block text-[12px] font-medium text-[#19706A] hover:underline mt-1"
+                >
+                  {tBooking('viewDetails')}
+                </button>
 
                 {currentUserRole === 'CLEANER' && activeBooking.status === 'CONFIRMED' && (
                   <div className="mt-2">
@@ -675,13 +684,6 @@ export default function ChatPanel({
                   </div>
                 )}
 
-                {activeBooking.status === 'COMPLETED' && activeBooking.photo_urls.length > 0 && (
-                  <div className="flex items-center gap-2 flex-wrap mt-2">
-                    {activeBooking.photo_urls.map((url, i) => (
-                      <img key={i} src={url} alt="" className="w-12 h-12 rounded-md object-cover border border-[#E0EDEC]" />
-                    ))}
-                  </div>
-                )}
               </div>
 
               <div className="flex gap-2 shrink-0">
@@ -879,14 +881,19 @@ export default function ChatPanel({
               {showHistory && (
                 <div className="mt-2 space-y-1.5">
                   {historyBookings.map(b => (
-                    <div key={b.id} className="flex items-center justify-between gap-2 text-[12px]">
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setViewingBookingId(b.id)}
+                      className="flex items-center justify-between gap-2 text-[12px] w-full text-left hover:bg-[#F7FAF9] rounded-md px-1.5 py-1 -mx-1.5 transition-colors"
+                    >
                       <span className={`inline-block text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0 ${BOOKING_STATUS_BADGE[b.status]}`}>
                         {tBooking(BOOKING_STATUS_KEY[b.status])}
                       </span>
                       <span className="text-[#6B8886] text-right">
                         {bookingDateFmt.format(new Date(`${b.date}T00:00:00`))} · {b.start_time.slice(0, 5)}
                       </span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -1023,6 +1030,27 @@ export default function ChatPanel({
         </div>
       </div>
     </div>
+
+    <BookingDetailModal
+      isOpen={!!viewingBookingId}
+      onClose={() => setViewingBookingId(null)}
+      booking={(() => {
+        const b = (bookings ?? []).find(b => b.id === viewingBookingId)
+        if (!b) return null
+        return {
+          otherPartyName: otherPartyName,
+          status:         b.status,
+          date:           b.date,
+          start_time:     b.start_time,
+          duration_hours: b.duration_hours,
+          bedrooms:       b.bedrooms,
+          bathrooms:      b.bathrooms,
+          cleaning_type:  b.cleaning_type,
+          notes:          b.notes,
+          photo_urls:     b.photo_urls,
+        }
+      })()}
+    />
 
     {showSecret && (
       <div
