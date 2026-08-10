@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
-import { Link, useRouter } from '@/navigation'
+import { Link, useRouter, usePathname } from '@/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { extractErrorMessage, groupBookingsByPriority } from '@/lib/utils'
 import { compressImage } from '@/lib/utils/compressImage'
@@ -153,6 +153,7 @@ export default function CleanerDashboardPage() {
   const tChat    = useTranslations('chat')
   const locale   = useLocale()
   const router   = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const [profile, setProfile] = useState<CleanerProfile | null>(null)
@@ -175,9 +176,7 @@ export default function CleanerDashboardPage() {
   const [resendResult,  setResendResult]  = useState<'sent' | 'rate_limited' | null>(null)
 
   const [openChatId, setOpenChatId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'bookings' | 'messages'>(
-    searchParams.get('tab') === 'messages' ? 'messages' : 'bookings'
-  )
+  const activeTab = searchParams.get('tab') === 'messages' ? 'messages' : 'bookings'
   const [viewingBookingId, setViewingBookingId] = useState<string | null>(null)
 
   // Auth guard
@@ -328,7 +327,17 @@ export default function CleanerDashboardPage() {
     const isUploadingPhoto = photoUploadingId === booking.id
 
     return (
-      <div key={booking.id} className="card p-5">
+      <div
+        key={booking.id}
+        role="button"
+        tabIndex={0}
+        onClick={() => setViewingBookingId(booking.id)}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViewingBookingId(booking.id) }
+        }}
+        aria-label={tBooking('with', { name: booking.users?.full_name ?? '—' })}
+        className="card p-5 cursor-pointer"
+      >
         <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-[14px] font-medium text-[#0D1F1E]">
@@ -355,7 +364,7 @@ export default function CleanerDashboardPage() {
             <div className="flex gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => handleBookingAction(booking.id, 'CONFIRM')}
+                onClick={e => { e.stopPropagation(); handleBookingAction(booking.id, 'CONFIRM') }}
                 disabled={isPending}
                 className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
               >
@@ -363,7 +372,7 @@ export default function CleanerDashboardPage() {
               </button>
               <button
                 type="button"
-                onClick={() => handleBookingAction(booking.id, 'DECLINE')}
+                onClick={e => { e.stopPropagation(); handleBookingAction(booking.id, 'DECLINE') }}
                 disabled={isPending}
                 className="btn-ghost !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
               >
@@ -375,7 +384,7 @@ export default function CleanerDashboardPage() {
             dateReached && hasEnoughPhotos ? (
               <button
                 type="button"
-                onClick={() => handleBookingAction(booking.id, 'COMPLETE')}
+                onClick={e => { e.stopPropagation(); handleBookingAction(booking.id, 'COMPLETE') }}
                 disabled={isPending}
                 className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50 shrink-0"
               >
@@ -421,7 +430,7 @@ export default function CleanerDashboardPage() {
               ))}
               <button
                 type="button"
-                onClick={() => handlePhotoAddClick(booking.id)}
+                onClick={e => { e.stopPropagation(); handlePhotoAddClick(booking.id) }}
                 disabled={isUploadingPhoto}
                 aria-label="Add photo"
                 className="w-12 h-12 rounded-md border border-dashed border-[#E0EDEC] flex items-center justify-center text-[#6B8886] hover:text-[#19706A] hover:border-[#19706A] transition-colors disabled:opacity-50 text-[18px] leading-none"
@@ -434,17 +443,6 @@ export default function CleanerDashboardPage() {
             </p>
           </div>
         )}
-        {/* Photos aren't fetched into the DOM until this is clicked — see
-            BookingDetailModal. Shown for every booking, not just completed
-            ones, so full details are reachable consistently regardless of
-            status. */}
-        <button
-          type="button"
-          onClick={() => setViewingBookingId(booking.id)}
-          className="inline-flex items-center gap-1.5 mt-2 text-[12px] font-medium text-[#19706A] hover:underline"
-        >
-          {tBooking('viewDetails')}
-        </button>
       </div>
     )
   }
@@ -532,17 +530,20 @@ export default function CleanerDashboardPage() {
           </p>
         )}
 
-        {/* Tabs: Bookings / Messages */}
-        <DashboardTabs
-          idPrefix="cleaner-dashboard"
-          ariaLabel={t('sectionsLabel')}
-          activeKey={activeTab}
-          onChange={key => setActiveTab(key as 'bookings' | 'messages')}
-          tabs={[
-            { key: 'bookings', label: tBooking('bookingRequests'), count: bookingGroups.requested.length },
-            { key: 'messages', label: t('messagesTab'), count: threads.filter(i => i.has_unread).length },
-          ]}
-        />
+        {/* Tabs: Bookings / Messages — mobile switches via the bottom tab
+            bar instead, so this pill only shows at desktop widths */}
+        <div className="hidden md:block">
+          <DashboardTabs
+            idPrefix="cleaner-dashboard"
+            ariaLabel={t('sectionsLabel')}
+            activeKey={activeTab}
+            onChange={key => router.push(`${pathname}?tab=${key}`)}
+            tabs={[
+              { key: 'bookings', label: tBooking('bookingRequests'), count: bookingGroups.requested.length },
+              { key: 'messages', label: t('messagesTab'), count: threads.filter(i => i.has_unread).length },
+            ]}
+          />
+        </div>
 
         {/* Messages panel */}
         <section

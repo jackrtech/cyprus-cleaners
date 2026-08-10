@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
-import { Link, useRouter } from '@/navigation'
+import { Link, useRouter, usePathname } from '@/navigation'
 import ChatPanel from '@/components/chat/ChatPanel'
 import ReviewPrompt from '@/components/reviews/ReviewPrompt'
 import DashboardTabs from '@/components/dashboard/DashboardTabs'
@@ -81,6 +81,7 @@ export default function DashboardPage() {
   const tChat    = useTranslations('chat')
   const locale   = useLocale()
   const router   = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const [intros,  setIntros]  = useState<Introduction[]>([])
@@ -98,9 +99,7 @@ export default function DashboardPage() {
 
   const [openChatId, setOpenChatId] = useState<string | null>(null)
   const [skippedReviewIds, setSkippedReviewIds] = useState<Set<string>>(new Set())
-  const [activeTab, setActiveTab] = useState<'bookings' | 'messages'>(
-    searchParams.get('tab') === 'messages' ? 'messages' : 'bookings'
-  )
+  const activeTab = searchParams.get('tab') === 'messages' ? 'messages' : 'bookings'
   const [viewingBookingId, setViewingBookingId] = useState<string | null>(null)
 
   // Auth guard
@@ -201,7 +200,16 @@ export default function DashboardPage() {
 
     return (
       <div key={booking.id} className="space-y-2">
-        <div className="card p-5">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setViewingBookingId(booking.id)}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViewingBookingId(booking.id) }
+          }}
+          aria-label={tBooking('with', { name: cp?.display_name ?? '—' })}
+          className="card p-5 cursor-pointer"
+        >
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -221,44 +229,18 @@ export default function DashboardPage() {
               {booking.address && (
                 <p className="text-[12px] text-[#6B8886] line-clamp-1 mt-0.5">📍 {booking.address}</p>
               )}
-              {/* Photos aren't fetched into the DOM until this is clicked —
-                  see BookingDetailModal. Every booking gets this, not just
-                  completed ones with photos, so the full detail view is
-                  reachable consistently from any booking of any status. */}
-              <div className="flex items-center gap-3 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setViewingBookingId(booking.id)}
-                  className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#19706A] hover:underline"
-                >
-                  {tBooking('viewDetails')}
-                </button>
-                {(booking.status === 'COMPLETED' || booking.status === 'CANCELLED') && (
-                  // Rebooking itself already works (canRequestNew in ChatPanel
-                  // flips true once the latest booking resolves) — what was
-                  // missing was a way back to that chat from here.
+              {(booking.status === 'REQUESTED' || booking.status === 'CONFIRMED') && (
+                <div className="flex items-center gap-3 mt-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      setActiveTab('messages')
-                      setOpenChatId(booking.introduction_id)
-                    }}
-                    className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#19706A] hover:underline"
-                  >
-                    {tBooking('bookAgain')}
-                  </button>
-                )}
-                {(booking.status === 'REQUESTED' || booking.status === 'CONFIRMED') && (
-                  <button
-                    type="button"
-                    onClick={() => handleCancelBooking(booking.id)}
+                    onClick={e => { e.stopPropagation(); handleCancelBooking(booking.id) }}
                     disabled={bookingActionPendingId === booking.id}
                     className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B8886] hover:text-red-600 transition-colors disabled:opacity-50"
                   >
                     {tBooking('cancelBooking')}
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -330,17 +312,20 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            {/* Tabs: Bookings / Messages */}
-            <DashboardTabs
-              idPrefix="customer-dashboard"
-              ariaLabel={t('sectionsLabel')}
-              activeKey={activeTab}
-              onChange={key => setActiveTab(key as 'bookings' | 'messages')}
-              tabs={[
-                { key: 'bookings', label: tBooking('yourBookings'), count: bookingGroups.requested.length },
-                { key: 'messages', label: t('messagesTab'), count: threads.filter(i => i.has_unread).length },
-              ]}
-            />
+            {/* Tabs: Bookings / Messages — mobile switches via the bottom tab
+                bar instead, so this pill only shows at desktop widths */}
+            <div className="hidden md:block">
+              <DashboardTabs
+                idPrefix="customer-dashboard"
+                ariaLabel={t('sectionsLabel')}
+                activeKey={activeTab}
+                onChange={key => router.push(`${pathname}?tab=${key}`)}
+                tabs={[
+                  { key: 'bookings', label: tBooking('yourBookings'), count: bookingGroups.requested.length },
+                  { key: 'messages', label: t('messagesTab'), count: threads.filter(i => i.has_unread).length },
+                ]}
+              />
+            </div>
 
             {/* Bookings panel */}
             <div
@@ -515,19 +500,27 @@ export default function DashboardPage() {
           const b = bookings.find(b => b.id === viewingBookingId)
           if (!b) return null
           return {
-            otherPartyName: b.cleaner_profiles?.display_name ?? '—',
-            status:         b.status,
-            date:           b.date,
-            start_time:     b.start_time,
-            duration_hours: b.duration_hours,
-            bedrooms:       b.bedrooms,
-            bathrooms:      b.bathrooms,
-            cleaning_type:  b.cleaning_type,
-            notes:          b.notes,
-            address:        b.address,
-            photo_urls:     b.photo_urls,
+            otherPartyName:     b.cleaner_profiles?.display_name ?? '—',
+            otherPartyPhotoUrl: b.cleaner_profiles?.photo_url ?? null,
+            status:             b.status,
+            date:               b.date,
+            start_time:         b.start_time,
+            duration_hours:     b.duration_hours,
+            bedrooms:           b.bedrooms,
+            bathrooms:          b.bathrooms,
+            cleaning_type:      b.cleaning_type,
+            notes:              b.notes,
+            address:            b.address,
+            photo_urls:         b.photo_urls,
           }
         })()}
+        onBookAgain={() => {
+          const b = bookings.find(b => b.id === viewingBookingId)
+          if (!b) return
+          router.push(`${pathname}?tab=messages`)
+          setOpenChatId(b.introduction_id)
+          setViewingBookingId(null)
+        }}
       />
     </div>
   )
