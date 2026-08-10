@@ -14,6 +14,7 @@ import type { BookingStatus, CleaningType } from '@/types'
 
 interface CleanerProfile {
   id?:           string
+  slug?:         string
   display_name:  string
   photo_url:     string | null
   cities:        string[] | null
@@ -213,9 +214,19 @@ export default function DashboardPage() {
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <p className="text-[14px] font-medium text-[#0D1F1E]">
-                  {tBooking('with', { name: cp?.display_name ?? '—' })}
-                </p>
+                {cp?.slug ? (
+                  <Link
+                    href={`/cleaners/${cp.slug}`}
+                    onClick={e => e.stopPropagation()}
+                    className="text-[14px] font-medium text-[#0D1F1E] hover:text-[#19706A] hover:underline"
+                  >
+                    {tBooking('with', { name: cp.display_name })}
+                  </Link>
+                ) : (
+                  <p className="text-[14px] font-medium text-[#0D1F1E]">
+                    {tBooking('with', { name: cp?.display_name ?? '—' })}
+                  </p>
+                )}
                 <span className={`inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full ${BOOKING_STATUS_BADGE[booking.status]}`}>
                   {tBooking(
                     booking.status === 'REQUESTED' ? 'statusRequested'
@@ -502,6 +513,7 @@ export default function DashboardPage() {
           return {
             otherPartyName:     b.cleaner_profiles?.display_name ?? '—',
             otherPartyPhotoUrl: b.cleaner_profiles?.photo_url ?? null,
+            otherPartySlug:     b.cleaner_profiles?.slug ?? null,
             status:             b.status,
             date:               b.date,
             start_time:         b.start_time,

@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import type { MockCleaner } from '@/lib/mockCleaners'
 import { useCity } from '@/hooks/useCity'
+import LoadingImage from '@/components/ui/LoadingImage'
 
 function StarRow({ rating }: { rating: number }) {
   const full = Math.round(rating)
@@ -33,10 +34,10 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
         style={cleaner.cover_photo_url ? undefined : { background: cleaner.avatarColor }}
       >
         {cleaner.cover_photo_url && (
-          <img
+          <LoadingImage
             src={cleaner.cover_photo_url}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
+            wrapperClassName="absolute inset-0"
+            className="object-cover"
           />
         )}
         {cleaner.verified && (

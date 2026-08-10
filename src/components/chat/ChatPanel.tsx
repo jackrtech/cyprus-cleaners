@@ -8,6 +8,7 @@ import { extractErrorMessage, estimateCleaningHours } from '@/lib/utils'
 import { compressImage } from '@/lib/utils/compressImage'
 import BookingDetailModal from '@/components/dashboard/BookingDetailModal'
 import AddressFormModal, { type SavedAddress } from '@/components/addresses/AddressFormModal'
+import LoadingImage from '@/components/ui/LoadingImage'
 import type { BookingStatus, CleaningType } from '@/types'
 
 interface Message {
@@ -83,6 +84,9 @@ interface ChatPanelProps {
   // nesting inside a parent card that already shows the name/status header
   // and provides its own close control.
   embedded?:         boolean
+  // Opens straight into the "request a booking" form instead of the plain
+  // thread — used by the cleaner profile page's Book CTA.
+  initialShowBookingForm?: boolean
 }
 
 function getInitials(name: string): string {
@@ -91,7 +95,7 @@ function getInitials(name: string): string {
 
 export default function ChatPanel({
   introductionId, currentUserId, currentUserRole, otherPartyName, otherPartyAvatar,
-  onClose, onMessageSent, embedded = false,
+  onClose, onMessageSent, embedded = false, initialShowBookingForm = false,
 }: ChatPanelProps) {
   const t        = useTranslations('chat')
   const tBooking = useTranslations('booking')
@@ -108,7 +112,7 @@ export default function ChatPanel({
   const [photoError,   setPhotoError]   = useState<string | null>(null)
 
   const [bookings,         setBookings]         = useState<Booking[] | null>(null)
-  const [showBookingForm,  setShowBookingForm]  = useState(false)
+  const [showBookingForm,  setShowBookingForm]  = useState(initialShowBookingForm)
   const [bookingSubmitting, setBookingSubmitting] = useState(false)
   const [bookingError,     setBookingError]     = useState<string | null>(null)
 
@@ -156,8 +160,6 @@ export default function ChatPanel({
   const [viewingBookingId, setViewingBookingId] = useState<string | null>(null)
 
   const latestBooking   = bookings && bookings.length > 0 ? bookings[0] : null
-  const activeBooking   = latestBooking && (latestBooking.status === 'REQUESTED' || latestBooking.status === 'CONFIRMED') ? latestBooking : null
-  const canRequestNew   = !activeBooking
   const todayStr        = new Date().toISOString().slice(0, 10)
   const bookingDateFmt  = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
 
@@ -586,7 +588,7 @@ export default function ChatPanel({
           surfaced as a system-message pill in the stream below once it
           exists. Keeping several bookings straight in one thread got messy
           when the full status card was pinned here. */}
-      {bookings !== null && currentUserRole === 'CUSTOMER' && canRequestNew && (
+      {bookings !== null && currentUserRole === 'CUSTOMER' && (
         <div className="border-b border-[#E0EDEC] px-4 py-3">
           {bookingError && <p className="text-[12px] text-red-600 mb-2">{bookingError}</p>}
 
@@ -594,7 +596,11 @@ export default function ChatPanel({
             latestBooking ? (
               <>
                 <p className="text-[13px] font-medium text-[#0D1F1E] mb-1.5">
-                  {tBooking(latestBooking.status === 'CANCELLED' ? 'bookingCancelledNudge' : 'bookingCompletedNudge')}
+                  {tBooking(
+                    latestBooking.status === 'CANCELLED' ? 'bookingCancelledNudge'
+                    : latestBooking.status === 'COMPLETED' ? 'bookingCompletedNudge'
+                    : 'bookingActiveNudge'
+                  )}
                 </p>
                 <button
                   type="button"
@@ -808,11 +814,11 @@ export default function ChatPanel({
                 <div key={m.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} mb-3`}>
                   {m.photo_url && (
                     <a href={m.photo_url} target="_blank" rel="noopener noreferrer" className="block mb-1">
-                      <img
+                      <LoadingImage
                         src={m.photo_url}
-                        alt=""
                         onLoad={handlePhotoInMessageLoad}
-                        className="max-w-[220px] max-h-[220px] rounded-[16px] object-cover border border-[#E0EDEC]"
+                        wrapperClassName="w-[180px] h-[180px] rounded-[16px] border border-[#E0EDEC]"
+                        className="object-cover"
                       />
                     </a>
                   )}

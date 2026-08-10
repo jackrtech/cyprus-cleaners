@@ -263,6 +263,7 @@
     "stats": "Stats",
     "sendIntro": "Send introduction",
     "messageBtn": "Message {name}",
+    "bookBtn": "Book {name}",
     "languages": "Languages",
     "city": "City",
     "type": "Type",
@@ -374,7 +375,11 @@
     "deleteAddress": "Delete address",
     "deleteError": "Failed to delete address. Please try again.",
     "addNewOption": "+ Add new address",
-    "selectAddress": "Select an address"
+    "selectAddress": "Select an address",
+    "editAddress": "Edit address",
+    "cancelEdit": "Cancel",
+    "saveChanges": "Save changes",
+    "noAddressesYet": "No addresses saved yet"
   },
   "cities": {
     "nicosia": "Nicosia",
@@ -410,6 +415,7 @@
     "bookAgain": "Book again",
     "bookingCancelledNudge": "This booking was cancelled — want to request a new one?",
     "bookingCompletedNudge": "This booking is complete — ready to book another clean?",
+    "bookingActiveNudge": "You've already got a booking with this cleaner — want to schedule another one too?",
     "formTitle": "Request a booking",
     "serviceType": "Service type",
     "house": "House",

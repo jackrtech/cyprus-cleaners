@@ -277,6 +277,9 @@
     "messageBtnFemale": "Μήνυμα στην {name}",
     "messageBtnMale": "Μήνυμα στον {name}",
     "messageBtnCompany": "Μήνυμα στην {name}",
+    "bookBtnFemale": "Κλείσε ραντεβού με την {name}",
+    "bookBtnMale": "Κλείσε ραντεβού με τον {name}",
+    "bookBtnCompany": "Κλείσε ραντεβού με την {name}",
     "verifiedFemale": "Επαληθευμένη",
     "verifiedMale": "Επαληθευμένος",
     "verifiedCompany": "Επαληθευμένη",
@@ -382,7 +385,11 @@
     "deleteAddress": "Διαγραφή διεύθυνσης",
     "deleteError": "Αποτυχία διαγραφής διεύθυνσης. Παρακαλώ δοκιμάστε ξανά.",
     "addNewOption": "+ Προσθήκη νέας διεύθυνσης",
-    "selectAddress": "Επιλέξτε διεύθυνση"
+    "selectAddress": "Επιλέξτε διεύθυνση",
+    "editAddress": "Επεξεργασία διεύθυνσης",
+    "cancelEdit": "Ακύρωση",
+    "saveChanges": "Αποθήκευση αλλαγών",
+    "noAddressesYet": "Δεν έχετε αποθηκευμένες διευθύνσεις ακόμα"
   },
   "cities": {
     "nicosia": "Λευκωσία",
@@ -418,6 +425,7 @@
     "bookAgain": "Νέα κράτηση",
     "bookingCancelledNudge": "Αυτή η κράτηση ακυρώθηκε — θέλετε να ζητήσετε νέα;",
     "bookingCompletedNudge": "Αυτή η κράτηση ολοκληρώθηκε — έτοιμοι για άλλο καθαρισμό;",
+    "bookingActiveNudge": "Έχετε ήδη μια κράτηση με αυτή τη καθαρίστρια — θέλετε να κλείσετε κι άλλη;",
     "formTitle": "Αίτημα κράτησης",
     "serviceType": "Τύπος υπηρεσίας",
     "house": "Σπίτι",

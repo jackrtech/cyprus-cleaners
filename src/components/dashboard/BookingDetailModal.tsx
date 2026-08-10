@@ -1,12 +1,15 @@
 'use client'
 
 import { useTranslations, useLocale } from 'next-intl'
+import { Link } from '@/navigation'
 import type { BookingStatus, CleaningType } from '@/types'
 import FullScreenModal from '@/components/ui/FullScreenModal'
+import LoadingImage from '@/components/ui/LoadingImage'
 
 export interface BookingDetailData {
   otherPartyName:     string
   otherPartyPhotoUrl?: string | null
+  otherPartySlug?:    string | null
   status:             BookingStatus
   date:               string
   start_time:         string
@@ -92,19 +95,36 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
   if (!booking) return null
 
   const dateFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
-  const showBookAgain = !!onBookAgain && (booking.status === 'COMPLETED' || booking.status === 'CANCELLED')
+  const showBookAgain = !!onBookAgain
 
   return (
     <FullScreenModal isOpen={isOpen} onClose={onClose}>
       <div className="flex items-center gap-3 px-4 py-3 border-b border-[#E0EDEC] shrink-0">
-        <div className="shrink-0 w-10 h-10 rounded-full bg-[#19706A] flex items-center justify-center text-white text-[13px] font-medium overflow-hidden">
-          {booking.otherPartyPhotoUrl
-            ? <img src={booking.otherPartyPhotoUrl} alt="" className="w-full h-full object-cover" />
-            : getInitials(booking.otherPartyName)}
-        </div>
-        <span className="flex-1 min-w-0 text-[14px] font-medium text-[#0D1F1E] truncate">
-          {tBooking('with', { name: booking.otherPartyName })}
-        </span>
+        {(() => {
+          const avatar = (
+            <div className="shrink-0 w-10 h-10 rounded-full bg-[#19706A] flex items-center justify-center text-white text-[13px] font-medium overflow-hidden">
+              {booking.otherPartyPhotoUrl
+                ? <LoadingImage src={booking.otherPartyPhotoUrl} wrapperClassName="w-full h-full" className="object-cover" />
+                : getInitials(booking.otherPartyName)}
+            </div>
+          )
+          const name = (
+            <span className="flex-1 min-w-0 text-[14px] font-medium text-[#0D1F1E] truncate">
+              {tBooking('with', { name: booking.otherPartyName })}
+            </span>
+          )
+          return booking.otherPartySlug ? (
+            <Link href={`/cleaners/${booking.otherPartySlug}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+              {avatar}
+              {name}
+            </Link>
+          ) : (
+            <>
+              {avatar}
+              {name}
+            </>
+          )
+        })()}
         <button
           type="button"
           onClick={onClose}
@@ -160,7 +180,11 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {booking.photo_urls.map((url, i) => (
                 <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                  <img src={url} alt="" className="w-full aspect-square rounded-lg object-cover border border-[#E0EDEC]" />
+                  <LoadingImage
+                    src={url}
+                    wrapperClassName="w-full aspect-square rounded-lg border border-[#E0EDEC]"
+                    className="object-cover"
+                  />
                 </a>
               ))}
             </div>

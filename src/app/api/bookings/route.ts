@@ -232,7 +232,7 @@ export async function GET(req: NextRequest) {
       .from('bookings')
       .select(`
         *,
-        cleaner_profiles ( id, display_name, photo_url, cities ),
+        cleaner_profiles ( id, slug, display_name, photo_url, cities ),
         reviews ( id )
       `)
       .eq('customer_id', userId)

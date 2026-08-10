@@ -5,6 +5,8 @@ import { useSession, signOut } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import LanguageToggle from '@/components/layout/LanguageToggle'
+import AddressFormModal, { type SavedAddress } from '@/components/addresses/AddressFormModal'
+import LoadingImage from '@/components/ui/LoadingImage'
 
 function getInitials(name: string): string {
   return name.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -14,10 +16,14 @@ export default function ProfilePage() {
   const { data: session, status: sessionStatus } = useSession()
   const t = useTranslations('dashboard')
   const tNav = useTranslations('nav')
+  const tAddr = useTranslations('address')
   const router = useRouter()
 
   const [cleanerSlug, setCleanerSlug] = useState<string | null>(null)
   const [cleanerPhotoUrl, setCleanerPhotoUrl] = useState<string | null>(null)
+
+  const [addresses, setAddresses] = useState<SavedAddress[]>([])
+  const [showAddressModal, setShowAddressModal] = useState(false)
 
   useEffect(() => {
     if (sessionStatus === 'loading') return
@@ -35,6 +41,14 @@ export default function ProfilePage() {
       .catch(() => {})
   }, [session])
 
+  useEffect(() => {
+    if (session?.user.role !== 'CUSTOMER') return
+    fetch('/api/addresses')
+      .then(r => r.ok ? r.json() : [])
+      .then((data: SavedAddress[]) => setAddresses(data))
+      .catch(() => {})
+  }, [session])
+
   if (sessionStatus === 'loading' || !session) {
     return <div className="min-h-screen bg-[#F7FAF9]" />
   }
@@ -44,6 +58,10 @@ export default function ProfilePage() {
     : role === 'CLEANER' ? tNav('roleCleaner')
     : tNav('admin')
 
+  function formatAddress(a: SavedAddress): string {
+    return a.label ? `${a.label} — ${a.line1}, ${a.city}` : `${a.line1}, ${a.city}`
+  }
+
   return (
     <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-8 pb-tabbar md:pb-8">
       <div className="max-w-[720px] mx-auto space-y-6">
@@ -52,7 +70,7 @@ export default function ProfilePage() {
         <div className="card p-5 flex items-center gap-4">
           <div className="shrink-0 w-14 h-14 rounded-full bg-[#19706A] flex items-center justify-center text-white text-[16px] font-medium overflow-hidden">
             {cleanerPhotoUrl
-              ? <img src={cleanerPhotoUrl} alt="" className="w-full h-full object-cover" />
+              ? <LoadingImage src={cleanerPhotoUrl} wrapperClassName="w-full h-full" className="object-cover" />
               : getInitials(session.user.name ?? '')}
           </div>
           <div className="min-w-0">
@@ -84,6 +102,37 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {role === 'CUSTOMER' && (
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[14px] font-medium text-[#0D1F1E]">{tAddr('yourAddresses')}</span>
+              <button
+                type="button"
+                onClick={() => setShowAddressModal(true)}
+                className="text-[13px] font-medium text-[#19706A] hover:underline"
+              >
+                {tAddr('addNew')}
+              </button>
+            </div>
+            {addresses.length > 0 ? (
+              <div className="space-y-1.5">
+                {addresses.map(a => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setShowAddressModal(true)}
+                    className="w-full text-left text-[13px] text-[#0D1F1E] hover:text-[#19706A] transition-colors rounded-[10px] border border-[#E0EDEC] px-3 py-2.5 truncate"
+                  >
+                    {formatAddress(a)}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[13px] text-[#6B8886]">{tAddr('noAddressesYet')}</p>
+            )}
+          </div>
+        )}
+
         <div className="text-center pt-2">
           <button
             onClick={() => signOut({ callbackUrl: '/' })}
@@ -93,6 +142,21 @@ export default function ProfilePage() {
           </button>
         </div>
       </div>
+
+      {role === 'CUSTOMER' && (
+        <AddressFormModal
+          isOpen={showAddressModal}
+          onClose={() => setShowAddressModal(false)}
+          addresses={addresses}
+          mode="manage"
+          onSaved={address => {
+            setAddresses(prev => prev.some(a => a.id === address.id)
+              ? prev.map(a => a.id === address.id ? address : a)
+              : [...prev, address])
+          }}
+          onDeleted={id => setAddresses(prev => prev.filter(a => a.id !== id))}
+        />
+      )}
     </div>
   )
 }

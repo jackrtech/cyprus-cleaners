@@ -20,14 +20,21 @@ interface Props {
   addresses:  SavedAddress[]
   // Called both when an existing address row is picked and when a new one is
   // saved — either way the caller should select it and update its own list.
-  onSelect:   (address: SavedAddress) => void
+  // Only used in 'picker' mode.
+  onSelect?:  (address: SavedAddress) => void
   onDeleted:  (id: string) => void
+  // 'picker' (default): booking flow — clicking a row selects it for the
+  // booking. 'manage': Profile tab — clicking a row edits it in place instead.
+  mode?:      'picker' | 'manage'
+  // Fired on create/update in 'manage' mode so the caller can sync its list.
+  onSaved?:   (address: SavedAddress) => void
 }
 
 // Manages a customer's saved addresses: pick an existing one, delete one, or
 // add a new one in Cyprus format (street+number, city, postal code). Reached
-// from the booking form's "+ Add new address" option.
-export default function AddressFormModal({ isOpen, onClose, addresses, onSelect, onDeleted }: Props) {
+// from the booking form's "+ Add new address" option, and from the Profile
+// tab's Addresses section (in 'manage' mode, which also allows editing).
+export default function AddressFormModal({ isOpen, onClose, addresses, onSelect, onDeleted, mode = 'picker', onSaved }: Props) {
   const tAddr    = useTranslations('address')
   const tCities  = useTranslations('cities')
 
@@ -38,6 +45,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
   const [saving,     setSaving]     = useState(false)
   const [error,      setError]      = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [editingId,  setEditingId]  = useState<string | null>(null)
 
   useEffect(() => {
     if (!isOpen) return
@@ -46,7 +54,26 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
     setCity('')
     setPostalCode('')
     setError(null)
+    setEditingId(null)
   }, [isOpen])
+
+  function startEdit(a: SavedAddress) {
+    setEditingId(a.id)
+    setLabel(a.label ?? '')
+    setLine1(a.line1)
+    setCity(a.city)
+    setPostalCode(a.postal_code ?? '')
+    setError(null)
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setLabel('')
+    setLine1('')
+    setCity('')
+    setPostalCode('')
+    setError(null)
+  }
 
   function formatAddress(a: SavedAddress): string {
     return a.label ? `${a.label} — ${a.line1}, ${a.city}` : `${a.line1}, ${a.city}`
@@ -72,8 +99,8 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
     setSaving(true)
     setError(null)
     try {
-      const res = await fetch('/api/addresses', {
-        method:  'POST',
+      const res = await fetch(editingId ? `/api/addresses/${editingId}` : '/api/addresses', {
+        method:  editingId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           label:       label.trim() || undefined,
@@ -84,8 +111,13 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
       })
       if (!res.ok) throw new Error(await extractErrorMessage(res, tAddr('saveError')))
 
-      const newAddress: SavedAddress = await res.json()
-      onSelect(newAddress)
+      const saved: SavedAddress = await res.json()
+      if (mode === 'manage') {
+        onSaved?.(saved)
+        cancelEdit()
+      } else {
+        onSelect?.(saved)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : tAddr('saveError'))
     } finally {
@@ -119,7 +151,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
               >
                 <button
                   type="button"
-                  onClick={() => onSelect(a)}
+                  onClick={() => mode === 'manage' ? startEdit(a) : onSelect?.(a)}
                   className="flex-1 min-w-0 text-left text-[13px] text-[#0D1F1E] hover:text-[#19706A] transition-colors truncate"
                 >
                   {formatAddress(a)}
@@ -139,7 +171,14 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
         )}
 
         <form onSubmit={handleSave} className="space-y-3 pt-2 border-t border-[#E0EDEC]">
-          <p className="text-[13px] font-medium text-[#0D1F1E] pt-2">{tAddr('addNew')}</p>
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-[13px] font-medium text-[#0D1F1E]">{editingId ? tAddr('editAddress') : tAddr('addNew')}</p>
+            {editingId && (
+              <button type="button" onClick={cancelEdit} className="text-[12px] text-[#6B8886] hover:text-[#0D1F1E] transition-colors">
+                {tAddr('cancelEdit')}
+              </button>
+            )}
+          </div>
           <div>
             <label className="block text-[11px] text-[#6B8886] mb-1">{tAddr('label')}</label>
             <input
@@ -192,7 +231,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
             disabled={saving || !line1.trim() || !city}
             className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
           >
-            {saving ? tAddr('saving') : tAddr('save')}
+            {saving ? tAddr('saving') : editingId ? tAddr('saveChanges') : tAddr('save')}
           </button>
         </form>
       </div>

@@ -10,6 +10,7 @@ import ReviewItem from '@/components/cleaners/ReviewItem'
 import { useCity } from '@/hooks/useCity'
 import ChatModal from '@/components/chat/ChatModal'
 import Footer from '@/components/Footer'
+import LoadingImage from '@/components/ui/LoadingImage'
 
 interface DbCleanerRow {
   id:                    string
@@ -143,6 +144,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
   const { data: session } = useSession()
   const [threadId,       setThreadId]       = useState<string | null>(null)
   const [chatOpen,       setChatOpen]       = useState(false)
+  const [wantsBookingForm, setWantsBookingForm] = useState(false)
   const [creatingThread, setCreatingThread] = useState(false)
   const [cleanerToast,   setCleanerToast]   = useState(false)
   const [chatError,      setChatError]      = useState(false)
@@ -242,7 +244,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
   // Auth-aware intro button
   const role = (session?.user as { role?: string } | undefined)?.role
 
-  async function handleIntroClick() {
+  async function ensureThreadAndOpenChat(openBookingForm: boolean) {
     if (!cleaner) return
     if (!session) {
       router.push(`/login?return=/cleaners/${cleaner.slug}`)
@@ -253,6 +255,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
       setTimeout(() => setCleanerToast(false), 3000)
       return
     }
+    setWantsBookingForm(openBookingForm)
     if (threadId) {
       setChatOpen(true)
       return
@@ -276,6 +279,9 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
     }
   }
 
+  const handleIntroClick = () => ensureThreadAndOpenChat(false)
+  const handleBookClick  = () => ensureThreadAndOpenChat(true)
+
   // Gendered / locale-aware labels
   const messageLabel = locale === 'el'
     ? cleaner.gender === 'female'
@@ -284,6 +290,14 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
         ? t('messageBtnMale', { name: firstName })
         : t('messageBtnCompany', { name: firstName })
     : t('messageBtn', { name: firstName })
+
+  const bookLabel = locale === 'el'
+    ? cleaner.gender === 'female'
+      ? t('bookBtnFemale', { name: firstName })
+      : cleaner.gender === 'male'
+        ? t('bookBtnMale', { name: firstName })
+        : t('bookBtnCompany', { name: firstName })
+    : t('bookBtn', { name: firstName })
 
   const verifiedLabel = locale === 'el'
     ? cleaner.gender === 'female'
@@ -309,9 +323,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
     <div className="min-h-screen bg-[#F7FAF9] pb-tabbar md:pb-0">
       {/* Cover photo — only shown once the cleaner has set one */}
       {cleaner.cover_photo_url && (
-        <div className="h-32 sm:h-44 w-full">
-          <img src={cleaner.cover_photo_url} alt="" className="w-full h-full object-cover" />
-        </div>
+        <LoadingImage src={cleaner.cover_photo_url} wrapperClassName="h-32 sm:h-44 w-full" className="object-cover" />
       )}
 
       {/* Page header */}
@@ -343,11 +355,11 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           {/* Avatar */}
           <div className="relative shrink-0">
             {cleaner.photo_url ? (
-              <img
+              <LoadingImage
                 src={cleaner.photo_url}
                 alt={cleaner.display_name}
-                className="w-[88px] h-[88px] rounded-full object-cover border-[3px] border-white"
-                style={{ boxShadow: '0 2px 8px rgba(25,112,106,0.15)' }}
+                wrapperClassName="w-[88px] h-[88px] rounded-full border-[3px] border-white shadow-[0_2px_8px_rgba(25,112,106,0.15)]"
+                className="object-cover"
               />
             ) : (
               <div
@@ -418,16 +430,25 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
                 aria-disabled="true"
                 className="btn-primary rounded-full px-6 py-3 text-[14px] whitespace-nowrap opacity-40 cursor-not-allowed"
               >
-                {messageLabel} →
+                {bookLabel} →
               </button>
             ) : (
-              <button
-                onClick={handleIntroClick}
-                disabled={creatingThread}
-                className="btn-primary rounded-full px-6 py-3 text-[14px] whitespace-nowrap disabled:opacity-60"
-              >
-                {threadId ? t('openChat') : messageLabel} →
-              </button>
+              <div className="flex flex-col items-end gap-1.5">
+                <button
+                  onClick={handleBookClick}
+                  disabled={creatingThread}
+                  className="btn-primary rounded-full px-6 py-3 text-[14px] whitespace-nowrap disabled:opacity-60"
+                >
+                  {bookLabel} →
+                </button>
+                <button
+                  onClick={handleIntroClick}
+                  disabled={creatingThread}
+                  className="text-[12px] font-medium text-[#19706A] hover:underline disabled:opacity-60"
+                >
+                  {threadId ? t('openChat') : messageLabel}
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -508,16 +529,25 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
                 aria-disabled="true"
                 className="btn-primary w-full rounded-full py-3 text-[14px] opacity-40 cursor-not-allowed"
               >
-                {messageLabel} →
+                {bookLabel} →
               </button>
             ) : (
-              <button
-                onClick={handleIntroClick}
-                disabled={creatingThread}
-                className="btn-primary w-full rounded-full py-3 text-[14px] disabled:opacity-60"
-              >
-                {threadId ? t('openChat') : messageLabel} →
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={handleBookClick}
+                  disabled={creatingThread}
+                  className="btn-primary w-full rounded-full py-3 text-[14px] disabled:opacity-60"
+                >
+                  {bookLabel} →
+                </button>
+                <button
+                  onClick={handleIntroClick}
+                  disabled={creatingThread}
+                  className="btn-ghost w-full rounded-full py-3 text-[14px] disabled:opacity-60"
+                >
+                  {threadId ? t('openChat') : messageLabel}
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -541,6 +571,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           currentUserRole="CUSTOMER"
           otherPartyName={cleaner.display_name}
           otherPartyAvatar={cleaner.photo_url ?? null}
+          initialShowBookingForm={wantsBookingForm}
         />
       )}
       <Footer />
