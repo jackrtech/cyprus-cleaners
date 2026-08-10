@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSession, signOut } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
+import { useSearchParams } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import ChatPanel from '@/components/chat/ChatPanel'
@@ -80,6 +81,7 @@ export default function DashboardPage() {
   const tChat    = useTranslations('chat')
   const locale   = useLocale()
   const router   = useRouter()
+  const searchParams = useSearchParams()
 
   const [intros,  setIntros]  = useState<Introduction[]>([])
   const [loading, setLoading] = useState(true)
@@ -96,7 +98,9 @@ export default function DashboardPage() {
 
   const [openChatId, setOpenChatId] = useState<string | null>(null)
   const [skippedReviewIds, setSkippedReviewIds] = useState<Set<string>>(new Set())
-  const [activeTab, setActiveTab] = useState<'bookings' | 'messages'>('bookings')
+  const [activeTab, setActiveTab] = useState<'bookings' | 'messages'>(
+    searchParams.get('tab') === 'messages' ? 'messages' : 'bookings'
+  )
   const [viewingBookingId, setViewingBookingId] = useState<string | null>(null)
 
   // Auth guard
@@ -277,7 +281,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-8">
+    <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-8 pb-tabbar md:pb-8">
       <div className="max-w-[720px] mx-auto">
 
         {/* Email verification banner */}
@@ -502,15 +506,6 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Sign out */}
-        <div className="mt-10 text-center">
-          <button
-            onClick={() => signOut({ callbackUrl: '/' })}
-            className="text-[13px] text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
-          >
-            {t('signOut')}
-          </button>
-        </div>
       </div>
 
       <BookingDetailModal

@@ -306,7 +306,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
     .join(', ')
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9]">
+    <div className="min-h-screen bg-[#F7FAF9] pb-tabbar md:pb-0">
       {/* Cover photo — only shown once the cleaner has set one */}
       {cleaner.cover_photo_url && (
         <div className="h-32 sm:h-44 w-full">

@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
 import Providers from '@/components/layout/Providers'
 import Navbar from '@/components/Navbar'
+import BottomTabBar from '@/components/layout/BottomTabBar'
 import '@/styles/globals.css'
 
 const dmSans = DM_Sans({
@@ -37,6 +38,7 @@ export default async function RootLayout({
         <Providers session={session} messages={messages} locale={locale}>
           <Navbar />
           {children}
+          <BottomTabBar />
         </Providers>
       </body>
     </html>

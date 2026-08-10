@@ -1,16 +1,14 @@
 'use client'
 
-import { useLocale, useTranslations } from 'next-intl'
-import { Link, useRouter, usePathname } from '@/navigation'
-import type { Locale } from '@/navigation'
+import { useTranslations } from 'next-intl'
+import { Link, usePathname } from '@/navigation'
 import { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
+import LanguageToggle from '@/components/layout/LanguageToggle'
 
 export default function Navbar() {
   const t = useTranslations('nav')
-  const locale = useLocale()
   const pathname = usePathname()
-  const router = useRouter()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   const { data: session } = useSession()
@@ -21,10 +19,6 @@ export default function Navbar() {
     : role === 'CLEANER' ? t('roleCleaner')
     : role === 'ADMIN'   ? t('admin')
     : null
-
-  const handleLocaleSwitch = (targetLocale: Locale) => {
-    router.push(pathname, { locale: targetLocale })
-  }
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/' })
@@ -64,26 +58,8 @@ export default function Navbar() {
     }`
   }
 
-  const LanguageToggle = () => (
-    <div className="flex items-center bg-[#F7FAF9] border border-[#E0EDEC] rounded-full p-0.5 gap-0.5">
-      {(['en', 'el'] as const).map((lang) => (
-        <button
-          key={lang}
-          onClick={() => handleLocaleSwitch(lang)}
-          className={`text-xs font-medium tracking-wide px-3 py-1 rounded-full transition-all ${
-            locale === lang
-              ? 'bg-[#19706A] text-white'
-              : 'text-[#6B8886] hover:text-[#0D1F1E]'
-          }`}
-        >
-          {lang.toUpperCase()}
-        </button>
-      ))}
-    </div>
-  )
-
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-[#E0EDEC]">
+    <header className={`sticky top-0 z-50 w-full bg-white border-b border-[#E0EDEC] ${isLoggedIn ? 'hidden md:block' : ''}`}>
       <div className="px-6 lg:px-12 flex items-center justify-between h-16">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">

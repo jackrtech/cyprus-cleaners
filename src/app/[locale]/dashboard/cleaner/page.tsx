@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useSession, signOut } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
+import { useSearchParams } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -152,6 +153,7 @@ export default function CleanerDashboardPage() {
   const tChat    = useTranslations('chat')
   const locale   = useLocale()
   const router   = useRouter()
+  const searchParams = useSearchParams()
 
   const [profile, setProfile] = useState<CleanerProfile | null>(null)
   const [intros,  setIntros]  = useState<Introduction[]>([])
@@ -173,7 +175,9 @@ export default function CleanerDashboardPage() {
   const [resendResult,  setResendResult]  = useState<'sent' | 'rate_limited' | null>(null)
 
   const [openChatId, setOpenChatId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'bookings' | 'messages'>('bookings')
+  const [activeTab, setActiveTab] = useState<'bookings' | 'messages'>(
+    searchParams.get('tab') === 'messages' ? 'messages' : 'bookings'
+  )
   const [viewingBookingId, setViewingBookingId] = useState<string | null>(null)
 
   // Auth guard
@@ -446,7 +450,7 @@ export default function CleanerDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-8">
+    <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-8 pb-tabbar md:pb-8">
       <div className="max-w-[720px] mx-auto space-y-8">
 
         {/* Email verification banner */}
@@ -651,16 +655,6 @@ export default function CleanerDashboardPage() {
             </div>
           )}
         </section>
-
-        {/* Sign out */}
-        <div className="text-center">
-          <button
-            onClick={() => signOut({ callbackUrl: '/' })}
-            className="text-[13px] text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
-          >
-            {t('signOut')}
-          </button>
-        </div>
 
       </div>
 

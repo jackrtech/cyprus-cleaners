@@ -35,7 +35,13 @@
     "workAsACleaner": "Work as a cleaner",
     "admin": "Admin",
     "roleCustomer": "Customer",
-    "roleCleaner": "Cleaner"
+    "roleCleaner": "Cleaner",
+    "homeTab": "Home",
+    "searchTab": "Search",
+    "bookingsTab": "Bookings",
+    "messagesTab": "Messages",
+    "profileTab": "Profile",
+    "primaryNavigation": "Primary navigation"
   },
   "home": {
     "hero": {
@@ -335,6 +341,7 @@
     "atLeastOneLanguage": "Please select at least one language",
     "completeProfileBanner": "Complete your profile to attract more customers",
     "editProfile": "Edit profile",
+    "yourAccount": "Your account",
     "saveChanges": "Save changes",
     "profileSaved": "Profile saved",
     "bio": "About you",

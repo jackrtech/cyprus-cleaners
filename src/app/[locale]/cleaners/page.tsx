@@ -129,7 +129,7 @@ export default function CleanersPage() {
   }, [filters, sort, cleaners])
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9]">
+    <div className="min-h-screen bg-[#F7FAF9] pb-tabbar md:pb-0">
       {/* Page header */}
       <div className="bg-white border-b border-[#E0EDEC] px-4 sm:px-10 pt-7 pb-0">
         <nav className="flex items-center gap-1.5 text-[12px] text-[#6B8886] mb-2">

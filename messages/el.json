@@ -35,7 +35,13 @@
     "workAsACleaner": "Εργαστείτε ως καθαριστής",
     "admin": "Διαχείριση",
     "roleCustomer": "Πελάτης",
-    "roleCleaner": "Καθαρίστρια"
+    "roleCleaner": "Καθαρίστρια",
+    "homeTab": "Αρχική",
+    "searchTab": "Αναζήτηση",
+    "bookingsTab": "Κρατήσεις",
+    "messagesTab": "Μηνύματα",
+    "profileTab": "Προφίλ",
+    "primaryNavigation": "Κύρια πλοήγηση"
   },
   "home": {
     "hero": {
@@ -343,6 +349,7 @@
     "atLeastOneLanguage": "Παρακαλώ επιλέξτε τουλάχιστον μία γλώσσα",
     "completeProfileBanner": "Συμπληρώστε το προφίλ σας για να προσελκύσετε περισσότερους πελάτες",
     "editProfile": "Επεξεργασία προφίλ",
+    "yourAccount": "Ο λογαριασμός σου",
     "saveChanges": "Αποθήκευση αλλαγών",
     "profileSaved": "Το προφίλ αποθηκεύτηκε",
     "bio": "Σχετικά με εσάς",
