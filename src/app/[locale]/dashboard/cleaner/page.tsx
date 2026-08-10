@@ -491,38 +491,6 @@ export default function CleanerDashboardPage() {
           </div>
         )}
 
-        {/* Profile quick actions — moved near the top so they're reachable without scrolling past bookings */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Link
-            href="/dashboard/cleaner/edit"
-            className="card p-5 flex items-center gap-3 hover:shadow-md transition-shadow"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6B8886" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M11.5 2a1.5 1.5 0 0 1 2.12 2.12L4.5 13.24l-3 .75.75-3L11.5 2z" />
-            </svg>
-            <span className="text-[14px] text-[#0D1F1E]">{t('editProfile')}</span>
-          </Link>
-
-          {profile?.slug ? (
-            <Link
-              href={`/cleaners/${profile.slug}`}
-              className="card p-5 flex items-center gap-3 hover:shadow-md transition-shadow"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6B8886" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M6.5 2.5H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9.5M9.5 1H15v5.5M15 1l-7 7" />
-              </svg>
-              <span className="text-[14px] text-[#0D1F1E]">{t('viewPublicProfile')}</span>
-            </Link>
-          ) : (
-            <div className="card p-5 flex items-center gap-3 opacity-40 cursor-not-allowed select-none">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6B8886" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M6.5 2.5H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9.5M9.5 1H15v5.5M15 1l-7 7" />
-              </svg>
-              <span className="text-[14px] text-[#0D1F1E]">{t('viewPublicProfile')}</span>
-            </div>
-          )}
-        </div>
-
         {/* Inline error */}
         {error && (
           <p className="text-[13px] text-red-600 bg-red-50 border border-red-200 rounded-[10px] px-4 py-3">

@@ -17,6 +17,7 @@ export default function ProfilePage() {
   const router = useRouter()
 
   const [cleanerSlug, setCleanerSlug] = useState<string | null>(null)
+  const [cleanerPhotoUrl, setCleanerPhotoUrl] = useState<string | null>(null)
 
   useEffect(() => {
     if (sessionStatus === 'loading') return
@@ -27,7 +28,10 @@ export default function ProfilePage() {
     if (session?.user.role !== 'CLEANER') return
     fetch('/api/cleaner-profiles/me')
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.slug) setCleanerSlug(d.slug) })
+      .then(d => {
+        if (d?.slug) setCleanerSlug(d.slug)
+        if (d?.photo_url) setCleanerPhotoUrl(d.photo_url)
+      })
       .catch(() => {})
   }, [session])
 
@@ -46,8 +50,10 @@ export default function ProfilePage() {
         <h1 className="text-[24px] font-medium text-[#0D1F1E]">{t('yourAccount')}</h1>
 
         <div className="card p-5 flex items-center gap-4">
-          <div className="shrink-0 w-14 h-14 rounded-full bg-[#19706A] flex items-center justify-center text-white text-[16px] font-medium">
-            {getInitials(session.user.name ?? '')}
+          <div className="shrink-0 w-14 h-14 rounded-full bg-[#19706A] flex items-center justify-center text-white text-[16px] font-medium overflow-hidden">
+            {cleanerPhotoUrl
+              ? <img src={cleanerPhotoUrl} alt="" className="w-full h-full object-cover" />
+              : getInitials(session.user.name ?? '')}
           </div>
           <div className="min-w-0">
             <p className="text-[16px] font-medium text-[#0D1F1E] truncate">{session.user.name}</p>
