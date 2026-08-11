@@ -311,6 +311,7 @@
     "reject": "Απόρριψη",
     "idDocument": "Έγγραφο ταυτότητας",
     "selfiePhoto": "Selfie",
+    "viewProfile": "Προβολή προφίλ καθαριστή ↗",
     "cancellationsTitle": "Ακυρώσεις",
     "cancellationsSubtitle": "Ακυρωμένες κρατήσεις με καταγεγραμμένο λόγο.",
     "cancellationsLoadError": "Αποτυχία φόρτωσης ακυρώσεων. Ανανεώστε τη σελίδα.",

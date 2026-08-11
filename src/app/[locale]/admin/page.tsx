@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
-import { useRouter } from '@/navigation'
+import { Link, useRouter } from '@/navigation'
 import { extractErrorMessage } from '@/lib/utils'
 import AdminNav from '@/components/admin/AdminNav'
 
@@ -25,10 +25,6 @@ interface VerificationCleaner {
   selfie_photo_url: string | null
   created_at: string
   users: VerificationUser | null
-}
-
-function getInitials(name: string): string {
-  return name.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase()
 }
 
 export default function AdminPage() {
@@ -126,19 +122,8 @@ export default function AdminPage() {
               const city = cleaner.cities?.[0] ?? cleaner.city
               return (
                 <li key={cleaner.id} className="card p-5">
-                  <div className="flex gap-4">
-                    {cleaner.photo_url ? (
-                      <img
-                        src={cleaner.photo_url}
-                        alt=""
-                        className="w-16 h-16 rounded-full object-cover shrink-0"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center font-medium shrink-0">
-                        {getInitials(cleaner.display_name)}
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-medium text-teal-900">{cleaner.display_name}</p>
                         {city && <span className="badge badge-teal">{city}</span>}
@@ -149,39 +134,42 @@ export default function AdminPage() {
                       {cleaner.users?.phone && (
                         <p className="text-muted text-sm">{cleaner.users.phone}</p>
                       )}
-                      {cleaner.bio && (
-                        <p className="text-body text-teal-900 mt-2 line-clamp-3">{cleaner.bio}</p>
-                      )}
-                      <p className="text-label uppercase tracking-widest text-muted mt-3">
-                        {t('submitted', { date: dateFormatter.format(new Date(cleaner.id_submitted_at)) })}
-                      </p>
                     </div>
+                    <Link
+                      href={`/cleaners/${cleaner.slug}`}
+                      target="_blank"
+                      className="btn-ghost !px-4 !py-2 text-[13px] shrink-0"
+                    >
+                      {t('viewProfile')}
+                    </Link>
                   </div>
+                  {cleaner.bio && (
+                    <p className="text-body text-teal-900 mt-2 line-clamp-3">{cleaner.bio}</p>
+                  )}
+                  <p className="text-label uppercase tracking-widest text-muted mt-3">
+                    {t('submitted', { date: dateFormatter.format(new Date(cleaner.id_submitted_at)) })}
+                  </p>
                   {(cleaner.id_photo_url || cleaner.selfie_photo_url) && (
                     <div className="grid grid-cols-2 gap-3 mt-4">
                       {cleaner.id_photo_url && (
-                        <div>
-                          <p className="text-label uppercase tracking-widest text-muted mb-1">{t('idDocument')}</p>
-                          <a href={cleaner.id_photo_url} target="_blank" rel="noopener noreferrer">
-                            <img
-                              src={cleaner.id_photo_url}
-                              alt=""
-                              className="w-full aspect-[4/3] object-cover rounded-lg border border-border"
-                            />
-                          </a>
-                        </div>
+                        <a
+                          href={cleaner.id_photo_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-secondary !py-2 text-[13px] justify-center"
+                        >
+                          {t('idDocument')} ↗
+                        </a>
                       )}
                       {cleaner.selfie_photo_url && (
-                        <div>
-                          <p className="text-label uppercase tracking-widest text-muted mb-1">{t('selfiePhoto')}</p>
-                          <a href={cleaner.selfie_photo_url} target="_blank" rel="noopener noreferrer">
-                            <img
-                              src={cleaner.selfie_photo_url}
-                              alt=""
-                              className="w-full aspect-[4/3] object-cover rounded-lg border border-border"
-                            />
-                          </a>
-                        </div>
+                        <a
+                          href={cleaner.selfie_photo_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-secondary !py-2 text-[13px] justify-center"
+                        >
+                          {t('selfiePhoto')} ↗
+                        </a>
                       )}
                     </div>
                   )}

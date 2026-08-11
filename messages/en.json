@@ -301,6 +301,7 @@
     "reject": "Reject",
     "idDocument": "ID document",
     "selfiePhoto": "Selfie",
+    "viewProfile": "View cleaner profile ↗",
     "cancellationsTitle": "Cancellations",
     "cancellationsSubtitle": "Cancelled bookings with a reason on file.",
     "cancellationsLoadError": "Failed to load cancellations. Please refresh.",
