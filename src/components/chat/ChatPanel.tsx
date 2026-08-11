@@ -9,6 +9,7 @@ import { compressImage } from '@/lib/utils/compressImage'
 import BookingDetailModal from '@/components/dashboard/BookingDetailModal'
 import AddressFormModal, { type SavedAddress } from '@/components/addresses/AddressFormModal'
 import LoadingImage from '@/components/ui/LoadingImage'
+import BookingPaymentElement, { type BookingPaymentHandle } from '@/components/chat/BookingPaymentElement'
 import type { BookingStatus, CleaningType } from '@/types'
 
 interface Message {
@@ -130,6 +131,9 @@ export default function ChatPanel({
   const [selectedAddressId, setSelectedAddressId] = useState('')
   const [showAddressModal, setShowAddressModal] = useState(false)
 
+  const [setupClientSecret, setSetupClientSecret] = useState<string | null>(null)
+  const paymentHandleRef = useRef<BookingPaymentHandle | null>(null)
+
   const selectedAddress = savedAddresses.find(a => a.id === selectedAddressId) ?? null
 
   // Pre-fill the duration estimate as room count/type change, but stop
@@ -153,6 +157,20 @@ export default function ChatPanel({
         setSavedAddresses(data)
         if (data.length === 1) setSelectedAddressId(prev => prev || data[0].id)
       })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [showBookingForm, currentUserRole])
+
+  // Fetch a SetupIntent to save a card once the booking form opens — the
+  // customer's payment method has to be on file before submitting, since
+  // charging happens later when the cleaner confirms (they aren't present
+  // for that step).
+  useEffect(() => {
+    if (!showBookingForm || currentUserRole !== 'CUSTOMER') return
+    let cancelled = false
+    fetch('/api/stripe/setup-intent', { method: 'POST' })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((data: { clientSecret: string }) => { if (!cancelled) setSetupClientSecret(data.clientSecret) })
       .catch(() => {})
     return () => { cancelled = true }
   }, [showBookingForm, currentUserRole])
@@ -497,10 +515,16 @@ export default function ChatPanel({
   async function handleBookingSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!bookingDate || !startTime || !selectedAddress || bookingSubmitting) return
+    if (!paymentHandleRef.current) {
+      setBookingError(tBooking('paymentNotReady'))
+      return
+    }
 
     setBookingSubmitting(true)
     setBookingError(null)
     try {
+      const paymentMethodId = await paymentHandleRef.current.confirmCard()
+
       const res = await fetch('/api/bookings', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -514,6 +538,7 @@ export default function ChatPanel({
           duration_hours:   Number(durationHours),
           notes:            bookingNotes.trim() || undefined,
           address:          `${selectedAddress.line1}, ${selectedAddress.city}`,
+          payment_method_id: paymentMethodId,
         }),
       })
       if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('submitError')))
@@ -528,6 +553,7 @@ export default function ChatPanel({
       setStartTime('')
       setDurationTouched(false)
       setBookingNotes('')
+      setSetupClientSecret(null)
     } catch (err) {
       setBookingError(err instanceof Error ? err.message : tBooking('submitError'))
     } finally {
@@ -738,10 +764,21 @@ export default function ChatPanel({
                   className="input !py-2 text-[13px] resize-none w-full"
                 />
               </div>
+              <div>
+                <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('paymentMethod')}</label>
+                {setupClientSecret ? (
+                  <BookingPaymentElement
+                    clientSecret={setupClientSecret}
+                    onReady={handle => { paymentHandleRef.current = handle }}
+                  />
+                ) : (
+                  <p className="text-[12px] text-[#6B8886]">{tBooking('loadingPayment')}</p>
+                )}
+              </div>
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  disabled={bookingSubmitting || !selectedAddress}
+                  disabled={bookingSubmitting || !selectedAddress || !setupClientSecret}
                   className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
                 >
                   {tBooking('submit')}

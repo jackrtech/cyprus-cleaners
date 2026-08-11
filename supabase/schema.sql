@@ -28,6 +28,7 @@ create table users (
   email_verified    boolean not null default false,
   avatar_url        text,
   locale            locale_type not null default 'en',
+  stripe_customer_id text,
   created_at        timestamptz not null default now()
 );
 
@@ -133,6 +134,7 @@ create table payments (
   status                      payment_status not null default 'PENDING',
   provider                    text not null default 'stripe',
   provider_payment_intent_id  text,
+  provider_payment_method_id  text,  -- saved off-session, at booking request time
   paid_at                     timestamptz,
   refunded_at                 timestamptz,
   created_at                  timestamptz not null default now()

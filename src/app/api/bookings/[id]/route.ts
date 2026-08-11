@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
 import { sendBookingConfirmedEmail, sendBookingCompletedEmail } from '@/lib/email'
+import Stripe from 'stripe'
+import { stripe } from '@/lib/stripe'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
@@ -10,6 +12,7 @@ const VALID_ACTIONS = ['CONFIRM', 'DECLINE', 'CANCEL', 'COMPLETE'] as const
 type Action = typeof VALID_ACTIONS[number]
 const RESPONSE_WINDOW_MS = 24 * 60 * 60 * 1000
 const MIN_COMPLETION_PHOTOS = 4
+const CANCELLATION_REFUND_WINDOW_MS = 24 * 60 * 60 * 1000
 
 export async function PATCH(
   req: NextRequest,
@@ -67,13 +70,69 @@ export async function PATCH(
   let newStatus: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED'
 
   switch (action) {
-    case 'CONFIRM':
+    case 'CONFIRM': {
       if (!isCleaner) return NextResponse.json({ error: 'Only the cleaner can confirm a booking' }, { status: 403 })
       if (booking.status !== 'REQUESTED') {
         return NextResponse.json({ error: 'Only a requested booking can be confirmed' }, { status: 409 })
       }
+
+      // Charge the customer's saved card now — they aren't present for this
+      // step (the cleaner is the one confirming), so this has to be an
+      // off-session charge against the payment method saved at request time.
+      const { data: payment, error: paymentFetchError } = await supabase
+        .from('payments')
+        .select('id, amount_eur, status, provider_payment_method_id')
+        .eq('booking_id', booking.id)
+        .single()
+
+      if (paymentFetchError || !payment || !payment.provider_payment_method_id) {
+        return NextResponse.json({ error: 'No payment method on file for this booking' }, { status: 409 })
+      }
+      if (payment.status !== 'PENDING') {
+        return NextResponse.json({ error: `This booking's payment is already ${payment.status.toLowerCase()}` }, { status: 409 })
+      }
+
+      const { data: customerUser } = await supabase
+        .from('users')
+        .select('stripe_customer_id')
+        .eq('id', booking.customer_id)
+        .single()
+
+      if (!customerUser?.stripe_customer_id) {
+        return NextResponse.json({ error: 'No payment account on file for this customer' }, { status: 409 })
+      }
+
+      try {
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount:   Math.round(payment.amount_eur * 100),
+          currency: 'eur',
+          customer: customerUser.stripe_customer_id,
+          payment_method: payment.provider_payment_method_id,
+          off_session: true,
+          confirm: true,
+        })
+
+        if (paymentIntent.status !== 'succeeded') {
+          throw new Error(`Unexpected PaymentIntent status: ${paymentIntent.status}`)
+        }
+
+        await supabase.from('payments').update({
+          status: 'PAID',
+          provider_payment_intent_id: paymentIntent.id,
+          paid_at: new Date().toISOString(),
+        }).eq('id', payment.id)
+      } catch (chargeErr) {
+        console.error('Booking confirm — charge failed:', chargeErr)
+        await supabase.from('payments').update({ status: 'FAILED' }).eq('id', payment.id)
+        const message = chargeErr instanceof Stripe.errors.StripeError
+          ? chargeErr.message
+          : 'Payment failed — please ask the customer to update their payment method'
+        return NextResponse.json({ error: message }, { status: 402 })
+      }
+
       newStatus = 'CONFIRMED'
       break
+    }
 
     case 'DECLINE':
       if (!isCleaner) return NextResponse.json({ error: 'Only the cleaner can decline a booking' }, { status: 403 })
@@ -127,6 +186,38 @@ export async function PATCH(
   if (error || !data) {
     console.error('Booking update error:', error)
     return NextResponse.json({ error: 'Failed to update booking' }, { status: 500 })
+  }
+
+  // Refund on cancellation — only relevant for CANCEL (DECLINE only ever
+  // applies to a REQUESTED booking, which was never charged). Full refund
+  // if cancelled 24h+ before the booking's start time, none inside that
+  // window — the whole point of charging at confirm-time is to discourage
+  // last-minute cancellations.
+  if (action === 'CANCEL') {
+    try {
+      const { data: payment } = await supabase
+        .from('payments')
+        .select('id, status, provider_payment_intent_id')
+        .eq('booking_id', booking.id)
+        .single()
+
+      if (payment?.status === 'PAID' && payment.provider_payment_intent_id) {
+        const bookingStartMs = new Date(`${booking.date}T${booking.start_time}`).getTime()
+        const isEligible = bookingStartMs - Date.now() >= CANCELLATION_REFUND_WINDOW_MS
+
+        if (isEligible) {
+          await stripe.refunds.create({ payment_intent: payment.provider_payment_intent_id })
+          await supabase.from('payments').update({
+            status: 'REFUNDED',
+            refunded_at: new Date().toISOString(),
+          }).eq('id', payment.id)
+        }
+      }
+    } catch (refundErr) {
+      // A failed refund shouldn't block the cancellation itself — this needs
+      // manual follow-up via the Stripe dashboard, logged here for that.
+      console.error('Booking cancel — refund failed:', refundErr)
+    }
   }
 
   // System message announcing the event in the chat thread — derived from the

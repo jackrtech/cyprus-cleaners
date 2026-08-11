@@ -89,10 +89,13 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { introduction_id, bedrooms, bathrooms, cleaning_type, date, start_time, duration_hours, notes, address } = body
+  const { introduction_id, bedrooms, bathrooms, cleaning_type, date, start_time, duration_hours, notes, address, payment_method_id } = body
 
   if (!introduction_id || typeof introduction_id !== 'string') {
     return NextResponse.json({ error: 'introduction_id is required' }, { status: 400 })
+  }
+  if (!payment_method_id || typeof payment_method_id !== 'string') {
+    return NextResponse.json({ error: 'A saved payment method is required' }, { status: 400 })
   }
   if (typeof bedrooms !== 'number' || !Number.isInteger(bedrooms) || bedrooms < 0 || bedrooms > 10) {
     return NextResponse.json({ error: 'bedrooms must be an integer between 0 and 10' }, { status: 400 })
@@ -144,11 +147,15 @@ export async function POST(req: NextRequest) {
   // service_type is no longer a form field — derive it from what the cleaner offers
   const { data: cleanerProfile } = await supabase
     .from('cleaner_profiles')
-    .select('services, user_id')
+    .select('services, user_id, hourly_rate_eur')
     .eq('id', intro.cleaner_profile_id)
     .single()
 
   const service_type = cleanerProfile?.services?.[0] ?? 'HOUSE'
+
+  if (!cleanerProfile?.hourly_rate_eur) {
+    return NextResponse.json({ error: 'This cleaner has no rate set — cannot create a booking' }, { status: 409 })
+  }
 
   const { data, error } = await supabase
     .from('bookings')
@@ -173,6 +180,22 @@ export async function POST(req: NextRequest) {
   if (error || !data) {
     console.error('Booking insert error:', error)
     return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
+  }
+
+  // Payment isn't charged yet (that happens when the cleaner confirms — see
+  // /api/bookings/[id] CONFIRM) — this just records the saved card against
+  // the booking so the amount is locked in at the rate quoted now.
+  const { error: paymentError } = await supabase.from('payments').insert({
+    booking_id: data.id,
+    amount_eur: Math.round(cleanerProfile.hourly_rate_eur * duration_hours * 100) / 100,
+    status: 'PENDING',
+    provider: 'stripe',
+    provider_payment_method_id: payment_method_id,
+  })
+  if (paymentError) {
+    console.error('Payment row insert error:', paymentError)
+    await supabase.from('bookings').delete().eq('id', data.id)
+    return NextResponse.json({ error: 'Failed to save payment details for this booking' }, { status: 500 })
   }
 
   // System message announcing the request in the chat thread — non-blocking,

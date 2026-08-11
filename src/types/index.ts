@@ -108,6 +108,7 @@ export interface Payment {
   status: PaymentStatus
   provider: string
   provider_payment_intent_id: string | null
+  provider_payment_method_id: string | null
   paid_at: string | null
   refunded_at: string | null
   created_at: string
