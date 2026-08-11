@@ -12,35 +12,43 @@ interface DisputeCustomer {
   email: string
 }
 
-interface DisputeCancelledByUser {
-  id: string
-  full_name: string
-  role: string
-}
-
 interface DisputeCleaner {
   id: string
   display_name: string
   user_id: string | null
 }
 
-interface Dispute {
+interface DisputeBooking {
   id: string
   date: string
   start_time: string
-  cancellation_reason: string
+  duration_hours: number | null
+  bedrooms: number | null
+  bathrooms: number | null
+  cleaning_type: string | null
+  address: string | null
+  notes: string | null
+  photo_urls: string[]
+}
+
+interface Dispute {
+  id: string
+  claim: string
+  cleaner_response: string | null
+  status: string
   created_at: string
+  resolved_at: string | null
   customer: DisputeCustomer | null
-  cancelled_by_user: DisputeCancelledByUser | null
   cleaner_profiles: DisputeCleaner | null
+  booking: DisputeBooking | null
 }
 
 export default function AdminDisputesPage() {
   const { data: session, status: sessionStatus } = useSession()
-  const t      = useTranslations('admin')
+  const t        = useTranslations('admin')
   const tBooking = useTranslations('booking')
-  const locale = useLocale()
-  const router = useRouter()
+  const locale   = useLocale()
+  const router   = useRouter()
 
   const [disputes, setDisputes] = useState<Dispute[]>([])
   const [loading,  setLoading]  = useState(true)
@@ -94,27 +102,72 @@ export default function AdminDisputesPage() {
         )}
 
         {!loading && disputes.length > 0 && (
-          <ul className="space-y-4">
-            {disputes.map(d => (
-              <li key={d.id} className="card p-5">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <p className="font-medium text-teal-900">
-                    {tBooking('with', { name: d.customer?.full_name ?? t('unknownUser') })}
-                    {' · '}
-                    {d.cleaner_profiles?.display_name ?? t('unknownUser')}
-                  </p>
-                  <span className="badge bg-red-50 text-red-600">
-                    {dateFormatter.format(new Date(`${d.date}T00:00:00`))} {d.start_time.slice(0, 5)}
-                  </span>
-                </div>
-                <p className="text-label uppercase tracking-widest text-muted mt-2">
-                  {t('cancelledBy', { name: d.cancelled_by_user?.full_name ?? t('unknownUser') })}
-                </p>
-                <p className="text-body text-teal-900 mt-2 bg-[#F7FAF9] rounded-lg p-3">
-                  {d.cancellation_reason}
-                </p>
-              </li>
-            ))}
+          <ul className="space-y-6">
+            {disputes.map(d => {
+              const b = d.booking
+              return (
+                <li key={d.id} className="card p-5">
+                  <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                    <p className="font-medium text-teal-900">
+                      {tBooking('with', { name: d.customer?.full_name ?? t('unknownUser') })}
+                      {' · '}
+                      {d.cleaner_profiles?.display_name ?? t('unknownUser')}
+                    </p>
+                    <span className="text-label uppercase tracking-widest text-muted">
+                      {t('filedOn', { date: dateFormatter.format(new Date(d.created_at)) })}
+                    </span>
+                  </div>
+
+                  {b && (
+                    <div className="mb-3">
+                      <p className="text-label uppercase tracking-widest text-muted mb-1">{t('bookingDetails')}</p>
+                      <p className="text-body text-teal-900">
+                        {tBooking(b.duration_hours == null ? 'summaryNoDuration' : 'summary', {
+                          cleaningType: tBooking(b.cleaning_type === 'DEEP' ? 'deepClean' : 'standardClean'),
+                          bedrooms: b.bedrooms ?? '—',
+                          bathrooms: b.bathrooms ?? '—',
+                          date: dateFormatter.format(new Date(`${b.date}T00:00:00`)),
+                          time: b.start_time.slice(0, 5),
+                          duration: b.duration_hours ?? undefined,
+                        })}
+                      </p>
+                      {b.address && <p className="text-body text-muted mt-0.5">📍 {b.address}</p>}
+                    </div>
+                  )}
+
+                  <div className="mb-3">
+                    <p className="text-label uppercase tracking-widest text-muted mb-1">{t('customerClaim')}</p>
+                    <p className="text-body text-teal-900 bg-[#F7FAF9] rounded-lg p-3">{d.claim}</p>
+                  </div>
+
+                  <div className="mb-3">
+                    <p className="text-label uppercase tracking-widest text-muted mb-1">{t('cleanerResponse')}</p>
+                    {d.cleaner_response ? (
+                      <p className="text-body text-teal-900 bg-[#F7FAF9] rounded-lg p-3">{d.cleaner_response}</p>
+                    ) : (
+                      <p className="text-body text-muted italic">{t('noCleanerResponse')}</p>
+                    )}
+                  </div>
+
+                  {b && b.photo_urls.length > 0 && (
+                    <div>
+                      <p className="text-label uppercase tracking-widest text-muted mb-2">{t('completionPhotos')}</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {b.photo_urls.map((url, i) => (
+                          <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                            <img
+                              src={url}
+                              alt=""
+                              className="w-full aspect-square object-cover rounded-lg border border-border"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>

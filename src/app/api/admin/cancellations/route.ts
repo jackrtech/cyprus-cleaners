@@ -15,15 +15,20 @@ export async function GET() {
   const supabase = createAdminClient()
 
   const { data, error } = await supabase
-    .from('cleaner_profiles')
-    .select('id, slug, display_name, photo_url, city, cities, bio, id_submitted_at, id_photo_url, selfie_photo_url, created_at, users ( email, phone )')
-    .not('id_submitted_at', 'is', null)
-    .eq('verified', false)
-    .order('id_submitted_at', { ascending: true })
+    .from('bookings')
+    .select(`
+      id, date, start_time, cancellation_reason, created_at,
+      customer:users!bookings_customer_id_fkey ( id, full_name, email ),
+      cancelled_by_user:users!bookings_cancelled_by_fkey ( id, full_name, role ),
+      cleaner_profiles ( id, display_name, user_id )
+    `)
+    .eq('status', 'CANCELLED')
+    .not('cancellation_reason', 'is', null)
+    .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('GET admin verifications error:', error)
-    return NextResponse.json({ error: 'Failed to fetch verification queue' }, { status: 500 })
+    console.error('GET admin cancellations error:', error)
+    return NextResponse.json({ error: 'Failed to fetch cancellations' }, { status: 500 })
   }
 
   return NextResponse.json(data)

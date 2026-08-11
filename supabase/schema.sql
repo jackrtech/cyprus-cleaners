@@ -56,6 +56,8 @@ create table cleaner_profiles (
   -- Trust & verification
   verified              boolean not null default false,
   id_submitted_at       timestamptz,
+  id_photo_url          text,  -- Photo of the ID document, submitted alongside id_submitted_at
+  selfie_photo_url      text,  -- Selfie for face-match against the ID document
   status                cleaner_status not null default 'ACTIVE',
   -- Denormalised stats (updated by triggers)
   avg_rating            numeric(3,2) not null default 0,
@@ -197,6 +199,29 @@ create table reviews (
 create index idx_reviews_cleaner  on reviews (cleaner_profile_id, created_at desc);
 create index idx_reviews_customer on reviews (customer_id);
 
+-- ─── DISPUTES ────────────────────────────────────────────────
+-- Quality/property claims on a completed booking (not to be confused with a
+-- cancellation reason) — the customer's claim, the cleaner's response, and
+-- the booking's own completion photos (bookings.photo_paths) are reviewed
+-- together by an admin.
+
+create type dispute_status as enum ('OPEN', 'RESOLVED');
+
+create table disputes (
+  id                  uuid primary key default gen_random_uuid(),
+  booking_id          uuid not null references bookings(id) on delete cascade,
+  customer_id         uuid not null references users(id) on delete cascade,
+  cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
+  claim               text not null,
+  cleaner_response    text,
+  status              dispute_status not null default 'OPEN',
+  created_at          timestamptz not null default now(),
+  resolved_at         timestamptz
+);
+
+create index idx_disputes_status  on disputes (status);
+create index idx_disputes_booking on disputes (booking_id);
+
 -- ─── CHAT NOTIFICATIONS ──────────────────────────────────────
 
 create table chat_notifications (
@@ -283,9 +308,10 @@ alter table messages            enable row level security;
 alter table reviews             enable row level security;
 alter table chat_notifications  enable row level security;
 alter table payments            enable row level security;
--- No policies beyond enabling it — payments are only ever read/written via
--- the service-role admin client (API routes), never the anon-key browser
--- client, so RLS just needs to deny by default here.
+alter table disputes            enable row level security;
+-- No policies beyond enabling it on payments/disputes — both are only ever
+-- read/written via the service-role admin client (API routes), never the
+-- anon-key browser client, so RLS just needs to deny by default here.
 
 -- Users: can only see and edit own record
 create policy "users_select_own" on users for select using (auth.uid()::text = id::text);

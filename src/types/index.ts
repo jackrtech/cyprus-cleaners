@@ -8,6 +8,7 @@ export type ServiceType = 'HOUSE' | 'APARTMENT'
 
 export type BookingStatus = 'REQUESTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
 export type PaymentStatus = 'PENDING' | 'PAID' | 'REFUNDED' | 'FAILED'
+export type DisputeStatus = 'OPEN' | 'RESOLVED'
 
 export type CleaningType = 'STANDARD' | 'DEEP'
 
@@ -45,6 +46,8 @@ export interface CleanerProfile {
   // Trust & verification
   verified: boolean       // Blue tick — admin-granted after ID review
   id_submitted_at: string | null
+  id_photo_url: string | null
+  selfie_photo_url: string | null
   status: CleanerStatus
   // Denormalised stats — updated by DB triggers
   avg_rating: number
@@ -112,6 +115,18 @@ export interface Payment {
   paid_at: string | null
   refunded_at: string | null
   created_at: string
+}
+
+export interface Dispute {
+  id: string
+  booking_id: string
+  customer_id: string
+  cleaner_profile_id: string
+  claim: string
+  cleaner_response: string | null
+  status: DisputeStatus
+  created_at: string
+  resolved_at: string | null
 }
 
 export interface Review {

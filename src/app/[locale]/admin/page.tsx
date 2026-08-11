@@ -21,6 +21,8 @@ interface VerificationCleaner {
   cities: string[] | null
   bio: string
   id_submitted_at: string
+  id_photo_url: string | null
+  selfie_photo_url: string | null
   created_at: string
   users: VerificationUser | null
 }
@@ -155,6 +157,34 @@ export default function AdminPage() {
                       </p>
                     </div>
                   </div>
+                  {(cleaner.id_photo_url || cleaner.selfie_photo_url) && (
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                      {cleaner.id_photo_url && (
+                        <div>
+                          <p className="text-label uppercase tracking-widest text-muted mb-1">{t('idDocument')}</p>
+                          <a href={cleaner.id_photo_url} target="_blank" rel="noopener noreferrer">
+                            <img
+                              src={cleaner.id_photo_url}
+                              alt=""
+                              className="w-full aspect-[4/3] object-cover rounded-lg border border-border"
+                            />
+                          </a>
+                        </div>
+                      )}
+                      {cleaner.selfie_photo_url && (
+                        <div>
+                          <p className="text-label uppercase tracking-widest text-muted mb-1">{t('selfiePhoto')}</p>
+                          <a href={cleaner.selfie_photo_url} target="_blank" rel="noopener noreferrer">
+                            <img
+                              src={cleaner.selfie_photo_url}
+                              alt=""
+                              className="w-full aspect-[4/3] object-cover rounded-lg border border-border"
+                            />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="flex gap-3 mt-4 justify-end">
                     <button
                       className="btn-ghost"

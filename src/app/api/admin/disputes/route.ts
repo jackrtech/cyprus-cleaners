@@ -3,6 +3,33 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
 
+const SIGNED_URL_TTL = 60 * 60 // 1 hour
+
+interface DisputeBooking {
+  id: string
+  date: string
+  start_time: string
+  duration_hours: number | null
+  bedrooms: number | null
+  bathrooms: number | null
+  cleaning_type: string | null
+  address: string | null
+  notes: string | null
+  photo_paths: string[]
+}
+
+interface DisputeRow {
+  id: string
+  claim: string
+  cleaner_response: string | null
+  status: string
+  created_at: string
+  resolved_at: string | null
+  customer: { id: string; full_name: string; email: string } | null
+  cleaner_profiles: { id: string; display_name: string; user_id: string | null } | null
+  booking: DisputeBooking | null
+}
+
 export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session) {
@@ -15,21 +42,35 @@ export async function GET() {
   const supabase = createAdminClient()
 
   const { data, error } = await supabase
-    .from('bookings')
+    .from('disputes')
     .select(`
-      id, date, start_time, cancellation_reason, created_at,
-      customer:users!bookings_customer_id_fkey ( id, full_name, email ),
-      cancelled_by_user:users!bookings_cancelled_by_fkey ( id, full_name, role ),
-      cleaner_profiles ( id, display_name, user_id )
+      id, claim, cleaner_response, status, created_at, resolved_at,
+      customer:users!disputes_customer_id_fkey ( id, full_name, email ),
+      cleaner_profiles ( id, display_name, user_id ),
+      booking:bookings ( id, date, start_time, duration_hours, bedrooms, bathrooms, cleaning_type, address, notes, photo_paths )
     `)
-    .eq('status', 'CANCELLED')
-    .not('cancellation_reason', 'is', null)
-    .order('created_at', { ascending: false })
+    .eq('status', 'OPEN')
+    .order('created_at', { ascending: true })
 
   if (error) {
     console.error('GET admin disputes error:', error)
     return NextResponse.json({ error: 'Failed to fetch disputes' }, { status: 500 })
   }
 
-  return NextResponse.json(data)
+  // Resolve booking completion photos to signed URLs — booking-photos is a
+  // private bucket, same pattern as /api/bookings.
+  const rows = (data ?? []) as unknown as DisputeRow[]
+  const allPaths = rows.flatMap(d => d.booking?.photo_paths ?? [])
+  let urlByPath = new Map<string, string>()
+  if (allPaths.length > 0) {
+    const { data: signed } = await supabase.storage.from('booking-photos').createSignedUrls(allPaths, SIGNED_URL_TTL)
+    urlByPath = new Map((signed ?? []).map((s: { path: string; signedUrl: string }) => [s.path, s.signedUrl]))
+  }
+
+  const withPhotoUrls = rows.map(d => {
+    const photo_urls = (d.booking?.photo_paths ?? []).map(p => urlByPath.get(p)).filter((u): u is string => !!u)
+    return { ...d, booking: d.booking ? { ...d.booking, photo_urls } : null }
+  })
+
+  return NextResponse.json(withPhotoUrls)
 }
