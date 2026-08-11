@@ -9,6 +9,7 @@ export type ServiceType = 'HOUSE' | 'APARTMENT'
 export type BookingStatus = 'REQUESTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
 export type PaymentStatus = 'PENDING' | 'PAID' | 'REFUNDED' | 'FAILED'
 export type DisputeStatus = 'OPEN' | 'RESOLVED'
+export type DisputeResolution = 'CUSTOMER' | 'CLEANER'
 
 export type CleaningType = 'STANDARD' | 'DEEP'
 
@@ -48,6 +49,7 @@ export interface CleanerProfile {
   id_submitted_at: string | null
   id_photo_url: string | null
   selfie_photo_url: string | null
+  verification_note: string | null
   status: CleanerStatus
   // Denormalised stats — updated by DB triggers
   avg_rating: number
@@ -125,6 +127,8 @@ export interface Dispute {
   claim: string
   cleaner_response: string | null
   status: DisputeStatus
+  resolution: DisputeResolution | null
+  admin_note: string | null
   created_at: string
   resolved_at: string | null
 }

@@ -23,6 +23,8 @@ interface DisputeRow {
   claim: string
   cleaner_response: string | null
   status: string
+  resolution: string | null
+  admin_note: string | null
   created_at: string
   resolved_at: string | null
   customer: { id: string; full_name: string; email: string } | null
@@ -41,15 +43,16 @@ export async function GET() {
 
   const supabase = createAdminClient()
 
+  // Both open and resolved disputes stay on the list — a resolved dispute is
+  // still part of the record, not something to just disappear once handled.
   const { data, error } = await supabase
     .from('disputes')
     .select(`
-      id, claim, cleaner_response, status, created_at, resolved_at,
+      id, claim, cleaner_response, status, resolution, admin_note, created_at, resolved_at,
       customer:users!disputes_customer_id_fkey ( id, full_name, email ),
       cleaner_profiles ( id, display_name, user_id ),
       booking:bookings ( id, date, start_time, duration_hours, bedrooms, bathrooms, cleaning_type, address, notes, photo_paths )
     `)
-    .eq('status', 'OPEN')
     .order('created_at', { ascending: true })
 
   if (error) {

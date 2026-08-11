@@ -223,6 +223,101 @@ export async function sendBookingConfirmedEmail({
   return sendEmail({ to: customerEmail, subject, html })
 }
 
+// ─── 5b. ID verification approved → cleaner ──────────────────────────────────
+
+export async function sendVerificationApprovedEmail({
+  to, locale, dashboardUrl,
+}: {
+  to:           string
+  locale:       string | null
+  dashboardUrl: string
+}) {
+  const isEl = locale === 'el'
+
+  const subject = isEl ? 'Η ταυτότητά σας επαληθεύτηκε' : 'Your ID has been verified'
+
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Επαλήθευση εγκρίθηκε</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Η ταυτότητά σας ελέγχθηκε και εγκρίθηκε — το προφίλ σας φέρει πλέον το σήμα επαλήθευσης.</p>
+       ${cta('Προβολή προφίλ', dashboardUrl)}`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Verification approved</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Your ID has been reviewed and approved — your profile now shows the verified badge.</p>
+       ${cta('View profile', dashboardUrl)}`)
+
+  return sendEmail({ to, subject, html })
+}
+
+// ─── 5c. ID verification rejected → cleaner ──────────────────────────────────
+
+export async function sendVerificationRejectedEmail({
+  to, locale, note, dashboardUrl,
+}: {
+  to:           string
+  locale:       string | null
+  note:         string | null
+  dashboardUrl: string
+}) {
+  const isEl = locale === 'el'
+
+  const subject = isEl ? 'Δεν ήταν δυνατή η επαλήθευση της ταυτότητάς σας' : 'We couldn\'t verify your ID'
+
+  const safeNote = note ? escapeHtml(note) : null
+
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η επαλήθευση δεν εγκρίθηκε</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Δεν μπορέσαμε να επαληθεύσουμε την ταυτότητά σας με τα έγγραφα που υποβάλατε. Μπορείτε να υποβάλετε νέα έγγραφα όποτε θέλετε.</p>
+       ${safeNote ? `<blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
+       ${cta('Μετάβαση στον πίνακα ελέγχου', dashboardUrl)}`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Verification not approved</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">We weren't able to verify your ID from the documents submitted. You're welcome to submit new documents at any time.</p>
+       ${safeNote ? `<blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
+       ${cta('Go to dashboard', dashboardUrl)}`)
+
+  return sendEmail({ to, subject, html })
+}
+
+// ─── 5d. Dispute resolved → both parties ─────────────────────────────────────
+// Sent once per party (customer and cleaner), each from their own
+// perspective — outcome is 'WON' if the admin ruled in that recipient's
+// favor, 'LOST' otherwise. Same admin note goes to both sides.
+
+export async function sendDisputeResolvedEmail({
+  to, locale, outcome, note, dashboardUrl,
+}: {
+  to:           string
+  locale:       string | null
+  outcome:      'WON' | 'LOST'
+  note:         string | null
+  dashboardUrl: string
+}) {
+  const isEl = locale === 'el'
+
+  const subject = isEl ? 'Ενημέρωση για τη διαφορά σας' : 'Update on your dispute'
+
+  const safeNote = note ? escapeHtml(note) : null
+
+  const outcomeLineEl = outcome === 'WON'
+    ? 'Μετά από έλεγχο, η διαφορά επιλύθηκε υπέρ σας.'
+    : 'Μετά από έλεγχο, η διαφορά επιλύθηκε υπέρ του άλλου μέρους.'
+  const outcomeLineEn = outcome === 'WON'
+    ? 'After review, the dispute was resolved in your favor.'
+    : 'After review, the dispute was resolved in favor of the other party.'
+
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η διαφορά επιλύθηκε</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${outcomeLineEl}</p>
+       ${safeNote ? `<p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Σημείωση από τη διαχείριση:</p>
+       <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
+       ${cta('Μετάβαση στον πίνακα ελέγχου', dashboardUrl)}`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Dispute resolved</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${outcomeLineEn}</p>
+       ${safeNote ? `<p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Note from admin:</p>
+       <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
+       ${cta('Go to dashboard', dashboardUrl)}`)
+
+  return sendEmail({ to, subject, html })
+}
+
 // ─── 6. Booking completed → customer ─────────────────────────────────────────
 
 export async function sendBookingCompletedEmail({

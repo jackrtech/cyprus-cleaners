@@ -303,6 +303,9 @@
     "idDocument": "ID document",
     "selfiePhoto": "Selfie",
     "viewProfile": "View cleaner profile ↗",
+    "adminNote": "Note (optional)",
+    "adminNotePlaceholder": "Reason for this decision, visible to the cleaner by email",
+    "adminNoteHint": "Sent to the cleaner by email along with the outcome — especially useful if rejecting.",
     "cancellationsTitle": "Cancellations",
     "cancellationsSubtitle": "Cancelled bookings with a reason on file.",
     "cancellationsLoadError": "Failed to load cancellations. Please refresh.",
@@ -326,7 +329,16 @@
     "noCleanerResponse": "{name} (cleaner) hasn't responded yet.",
     "completionPhotos": "Photos from the job",
     "bookingDetails": "Booking details",
-    "filedOn": "Filed {date}"
+    "filedOn": "Filed {date}",
+    "statusOpen": "Open",
+    "resolvedForCustomer": "Resolved — customer",
+    "resolvedForCleaner": "Resolved — cleaner",
+    "resolutionLabel": "Resolution",
+    "resolvedForCustomerNamed": "Resolved in favor of {name} (customer).",
+    "resolvedForCleanerNamed": "Resolved in favor of {name} (cleaner).",
+    "resolveForCustomer": "Rule for {name} (customer)",
+    "resolveForCleaner": "Rule for {name} (cleaner)",
+    "disputeNoteHint": "Sent to both the customer and the cleaner by email along with the outcome."
   },
   "cleaners": {
     "topRated": "Top rated",

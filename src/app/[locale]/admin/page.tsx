@@ -40,6 +40,7 @@ export default function AdminPage() {
   const [pendingId,    setPendingId]   = useState<string | null>(null)
   const [actionError,  setActionError] = useState<string | null>(null)
   const [viewingId,    setViewingId]   = useState<string | null>(null)
+  const [noteText,     setNoteText]    = useState('')
 
   // Auth guard — middleware already gates /admin, this just handles the
   // client-side flash while the session resolves and covers a direct visit
@@ -67,11 +68,12 @@ export default function AdminPage() {
       const res = await fetch(`/api/admin/verifications/${id}`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ action }),
+        body:    JSON.stringify({ action, note: noteText.trim() || undefined }),
       })
       if (!res.ok) throw new Error(await extractErrorMessage(res, t('actionError')))
       setQueue(prev => prev.filter(c => c.id !== id))
       setViewingId(null)
+      setNoteText('')
     } catch (err) {
       setActionError(err instanceof Error ? err.message : t('actionError'))
     } finally {
@@ -128,7 +130,7 @@ export default function AdminPage() {
                 <li key={cleaner.id}>
                   <button
                     type="button"
-                    onClick={() => setViewingId(cleaner.id)}
+                    onClick={() => { setViewingId(cleaner.id); setNoteText('') }}
                     className="card p-5 w-full text-left hover:border-teal-300 transition-colors"
                   >
                     <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -210,6 +212,18 @@ export default function AdminPage() {
                   />
                 </div>
               )}
+
+              <div>
+                <label className="label">{t('adminNote')}</label>
+                <textarea
+                  value={noteText}
+                  onChange={e => setNoteText(e.target.value.slice(0, 1000))}
+                  placeholder={t('adminNotePlaceholder')}
+                  rows={3}
+                  className="input"
+                />
+                <p className="text-muted text-sm mt-1">{t('adminNoteHint')}</p>
+              </div>
             </div>
 
             <div className="flex gap-3 px-4 py-3 border-t border-[#E0EDEC] shrink-0">

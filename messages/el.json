@@ -313,6 +313,9 @@
     "idDocument": "Έγγραφο ταυτότητας",
     "selfiePhoto": "Selfie",
     "viewProfile": "Προβολή προφίλ καθαριστή ↗",
+    "adminNote": "Σημείωση (προαιρετικό)",
+    "adminNotePlaceholder": "Λόγος για αυτή την απόφαση, ορατός στον καθαριστή μέσω email",
+    "adminNoteHint": "Αποστέλλεται στον καθαριστή μέσω email μαζί με το αποτέλεσμα — ιδιαίτερα χρήσιμο σε περίπτωση απόρριψης.",
     "cancellationsTitle": "Ακυρώσεις",
     "cancellationsSubtitle": "Ακυρωμένες κρατήσεις με καταγεγραμμένο λόγο.",
     "cancellationsLoadError": "Αποτυχία φόρτωσης ακυρώσεων. Ανανεώστε τη σελίδα.",
@@ -336,7 +339,16 @@
     "noCleanerResponse": "Ο/Η {name} (καθαριστής) δεν έχει απαντήσει ακόμα.",
     "completionPhotos": "Φωτογραφίες από τη δουλειά",
     "bookingDetails": "Στοιχεία κράτησης",
-    "filedOn": "Υποβλήθηκε {date}"
+    "filedOn": "Υποβλήθηκε {date}",
+    "statusOpen": "Ανοιχτή",
+    "resolvedForCustomer": "Επιλύθηκε — πελάτης",
+    "resolvedForCleaner": "Επιλύθηκε — καθαριστής",
+    "resolutionLabel": "Επίλυση",
+    "resolvedForCustomerNamed": "Επιλύθηκε υπέρ του/της {name} (πελάτης).",
+    "resolvedForCleanerNamed": "Επιλύθηκε υπέρ του/της {name} (καθαριστής).",
+    "resolveForCustomer": "Απόφαση υπέρ {name} (πελάτης)",
+    "resolveForCleaner": "Απόφαση υπέρ {name} (καθαριστής)",
+    "disputeNoteHint": "Αποστέλλεται στον πελάτη και στον καθαριστή μέσω email μαζί με το αποτέλεσμα."
   },
   "cleaners": {
     "topRated": "Κορυφαίοι",

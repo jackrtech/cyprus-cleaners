@@ -58,6 +58,7 @@ create table cleaner_profiles (
   id_submitted_at       timestamptz,
   id_photo_url          text,  -- Photo of the ID document, submitted alongside id_submitted_at
   selfie_photo_url      text,  -- Selfie for face-match against the ID document
+  verification_note     text,  -- Admin's note from the last approve/reject decision
   status                cleaner_status not null default 'ACTIVE',
   -- Denormalised stats (updated by triggers)
   avg_rating            numeric(3,2) not null default 0,
@@ -205,7 +206,8 @@ create index idx_reviews_customer on reviews (customer_id);
 -- the booking's own completion photos (bookings.photo_paths) are reviewed
 -- together by an admin.
 
-create type dispute_status as enum ('OPEN', 'RESOLVED');
+create type dispute_status     as enum ('OPEN', 'RESOLVED');
+create type dispute_resolution as enum ('CUSTOMER', 'CLEANER');  -- Who the admin ruled in favor of
 
 create table disputes (
   id                  uuid primary key default gen_random_uuid(),
@@ -215,6 +217,8 @@ create table disputes (
   claim               text not null,
   cleaner_response    text,
   status              dispute_status not null default 'OPEN',
+  resolution          dispute_resolution,
+  admin_note          text,
   created_at          timestamptz not null default now(),
   resolved_at         timestamptz
 );
