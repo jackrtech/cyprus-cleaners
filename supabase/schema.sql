@@ -119,13 +119,12 @@ create index idx_bookings_status   on bookings (status);
 create index idx_bookings_date     on bookings (date);
 
 -- ─── PAYMENTS ────────────────────────────────────────────────
--- One row per booking, created when checkout starts. AUTHORIZED means the
--- customer's card is held but not yet charged (set on booking CONFIRM);
--- CAPTURED means the charge went through (set on booking COMPLETE). This
--- authorize-then-capture split means a customer is never charged for a job
--- that doesn't happen.
+-- One row per booking. The customer is charged in full when the cleaner
+-- confirms the booking (not on completion) — deliberate choice to discourage
+-- last-minute cancellations, and it sidesteps card auth holds expiring
+-- (~7 days) for bookings confirmed well ahead of the job date.
 
-create type payment_status as enum ('PENDING', 'AUTHORIZED', 'CAPTURED', 'REFUNDED', 'FAILED');
+create type payment_status as enum ('PENDING', 'PAID', 'REFUNDED', 'FAILED');
 
 create table payments (
   id                          uuid primary key default gen_random_uuid(),
@@ -134,8 +133,7 @@ create table payments (
   status                      payment_status not null default 'PENDING',
   provider                    text not null default 'stripe',
   provider_payment_intent_id  text,
-  authorized_at               timestamptz,
-  captured_at                 timestamptz,
+  paid_at                     timestamptz,
   refunded_at                 timestamptz,
   created_at                  timestamptz not null default now()
 );
