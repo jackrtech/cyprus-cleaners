@@ -297,6 +297,7 @@
     "empty": "All caught up",
     "emptyBody": "No pending ID verifications right now.",
     "submitted": "Submitted {date}",
+    "review": "Review",
     "approve": "Approve",
     "reject": "Reject",
     "idDocument": "ID document",
