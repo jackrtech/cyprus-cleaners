@@ -284,6 +284,19 @@
     "previewingOwnProfile": "You're previewing your public profile — this is what customers see",
     "backToDashboard": "← Back to dashboard"
   },
+  "admin": {
+    "title": "Cleaner verifications",
+    "subtitle": "Review ID submissions and grant the verified badge.",
+    "signOut": "Sign out",
+    "loading": "Loading…",
+    "loadError": "Failed to load the verification queue. Please refresh.",
+    "actionError": "Something went wrong. Please try again.",
+    "empty": "All caught up",
+    "emptyBody": "No pending ID verifications right now.",
+    "submitted": "Submitted {date}",
+    "approve": "Approve",
+    "reject": "Reject"
+  },
   "cleaners": {
     "topRated": "Top rated",
     "featuredTitle": "Featured cleaners",
