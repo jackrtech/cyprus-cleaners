@@ -22,6 +22,7 @@ export async function PATCH(
 
   const body = await req.json()
   const action: Action = body.action
+  const reason: string | undefined = typeof body.reason === 'string' ? body.reason.trim().slice(0, 500) : undefined
 
   if (!VALID_ACTIONS.includes(action)) {
     return NextResponse.json(
@@ -110,9 +111,15 @@ export async function PATCH(
   // Note: review_prompted_at and cleaner_profiles stats are stamped by the
   // on_booking_status_change DB trigger when status transitions to COMPLETED —
   // never set them from application code.
+  const update: Record<string, unknown> = { status: newStatus }
+  if (newStatus === 'CANCELLED') {
+    update.cancellation_reason = reason || null
+    update.cancelled_by = session.user.id
+  }
+
   const { data, error } = await supabase
     .from('bookings')
-    .update({ status: newStatus })
+    .update(update)
     .eq('id', params.id)
     .select('*')
     .single()

@@ -5,6 +5,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from '@/navigation'
 import { extractErrorMessage } from '@/lib/utils'
+import AdminNav from '@/components/admin/AdminNav'
 
 interface VerificationUser {
   email: string
@@ -95,6 +96,8 @@ export default function AdminPage() {
             {t('signOut')}
           </button>
         </div>
+
+        <AdminNav />
 
         {actionError && (
           <div className="mb-4 rounded-md bg-red-50 text-red-600 px-4 py-3 text-body">{actionError}</div>

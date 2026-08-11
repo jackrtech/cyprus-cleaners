@@ -20,6 +20,7 @@ export interface BookingDetailData {
   notes:              string | null
   address:            string | null
   photo_urls:         string[]
+  cancellationReason?: string | null
 }
 
 interface Props {
@@ -139,6 +140,13 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
         <span className={`inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full ${STATUS_BADGE[booking.status]}`}>
           {tBooking(STATUS_KEY[booking.status])}
         </span>
+
+        {booking.status === 'CANCELLED' && booking.cancellationReason && (
+          <div>
+            <p className="text-[12px] font-medium text-[#6B8886] mb-0.5">{tBooking('cancellationReason')}</p>
+            <p className="text-[13px] text-[#0D1F1E] bg-[#F7FAF9] rounded-lg p-3">{booking.cancellationReason}</p>
+          </div>
+        )}
 
         <div className="flex items-start gap-2.5">
           <CalendarIcon />

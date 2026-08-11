@@ -62,6 +62,7 @@ interface Booking {
   users:          IntroUser | null
   photo_paths:    string[]
   photo_urls:     string[]
+  cancellation_reason: string | null
 }
 
 const MIN_COMPLETION_PHOTOS = 4
@@ -165,6 +166,8 @@ export default function CleanerDashboardPage() {
   const [bookingsLoading, setBookingsLoading]  = useState(true)
   const [bookingActionPendingId, setBookingActionPendingId] = useState<string | null>(null)
   const [bookingActionError,     setBookingActionError]     = useState<string | null>(null)
+  const [decliningId, setDecliningId] = useState<string | null>(null)
+  const [declineReasonText, setDeclineReasonText] = useState('')
 
   const [photoUploadingId, setPhotoUploadingId] = useState<string | null>(null)
   const [photoUploadError, setPhotoUploadError] = useState<string | null>(null)
@@ -208,7 +211,7 @@ export default function CleanerDashboardPage() {
     }
   }
 
-  async function handleBookingAction(bookingId: string, action: 'CONFIRM' | 'DECLINE' | 'COMPLETE') {
+  async function handleBookingAction(bookingId: string, action: 'CONFIRM' | 'DECLINE' | 'COMPLETE', reason?: string) {
     if (bookingActionPendingId) return
     setBookingActionPendingId(bookingId)
     setBookingActionError(null)
@@ -216,11 +219,13 @@ export default function CleanerDashboardPage() {
       const res = await fetch(`/api/bookings/${bookingId}`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ action }),
+        body:    JSON.stringify({ action, reason }),
       })
       if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('actionError')))
       const updated: Booking = await res.json()
       setBookings(prev => prev.map(b => b.id === updated.id ? { ...b, ...updated } : b))
+      setDecliningId(null)
+      setDeclineReasonText('')
     } catch (err) {
       setBookingActionError(err instanceof Error ? err.message : tBooking('actionError'))
     } finally {
@@ -360,7 +365,7 @@ export default function CleanerDashboardPage() {
             )}
           </div>
 
-          {booking.status === 'REQUESTED' && (
+          {booking.status === 'REQUESTED' && decliningId !== booking.id && (
             <div className="flex gap-2 shrink-0">
               <button
                 type="button"
@@ -372,7 +377,7 @@ export default function CleanerDashboardPage() {
               </button>
               <button
                 type="button"
-                onClick={e => { e.stopPropagation(); handleBookingAction(booking.id, 'DECLINE') }}
+                onClick={e => { e.stopPropagation(); setDecliningId(booking.id) }}
                 disabled={isPending}
                 className="btn-ghost !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
               >
@@ -403,6 +408,35 @@ export default function CleanerDashboardPage() {
             )
           )}
         </div>
+        {decliningId === booking.id && (
+          <div className="mb-2 space-y-2" onClick={e => e.stopPropagation()}>
+            <textarea
+              value={declineReasonText}
+              onChange={e => setDeclineReasonText(e.target.value)}
+              placeholder={tBooking('cancelReasonPlaceholder')}
+              rows={2}
+              maxLength={500}
+              className="input text-[13px]"
+            />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => handleBookingAction(booking.id, 'DECLINE', declineReasonText)}
+                disabled={isPending}
+                className="text-[12px] font-medium text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
+              >
+                {tBooking('confirmDecline')}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setDecliningId(null); setDeclineReasonText('') }}
+                className="text-[12px] font-medium text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+              >
+                {tBooking('neverMind')}
+              </button>
+            </div>
+          </div>
+        )}
         <p className="text-[13px] text-[#6B8886]">
           {tBooking(booking.duration_hours == null ? 'summaryNoDuration' : 'summary', {
             cleaningType: tBooking(booking.cleaning_type === 'DEEP' ? 'deepClean' : 'standardClean'),
@@ -645,6 +679,7 @@ export default function CleanerDashboardPage() {
             notes:          b.notes,
             address:        b.address,
             photo_urls:     b.photo_urls,
+            cancellationReason: b.cancellation_reason,
           }
         })()}
       />

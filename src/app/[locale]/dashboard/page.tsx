@@ -61,6 +61,7 @@ interface Booking {
   cleaner_profiles:   CleanerProfile | null
   reviews:            { id: string }[] | null
   photo_urls:         string[]
+  cancellation_reason: string | null
 }
 
 const BOOKING_STATUS_BADGE: Record<BookingStatus, string> = {
@@ -102,6 +103,8 @@ export default function DashboardPage() {
   const [skippedReviewIds, setSkippedReviewIds] = useState<Set<string>>(new Set())
   const activeTab = searchParams.get('tab') === 'messages' ? 'messages' : 'bookings'
   const [viewingBookingId, setViewingBookingId] = useState<string | null>(null)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [cancelReasonText, setCancelReasonText] = useState('')
 
   // Auth guard
   useEffect(() => {
@@ -165,7 +168,7 @@ export default function DashboardPage() {
 
   // Cancel used to only be reachable from chat — now it's on the card itself,
   // reaching parity with the cleaner dashboard's own booking actions.
-  async function handleCancelBooking(bookingId: string) {
+  async function handleCancelBooking(bookingId: string, reason: string) {
     if (bookingActionPendingId) return
     setBookingActionPendingId(bookingId)
     setBookingActionError(null)
@@ -173,11 +176,13 @@ export default function DashboardPage() {
       const res = await fetch(`/api/bookings/${bookingId}`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ action: 'CANCEL' }),
+        body:    JSON.stringify({ action: 'CANCEL', reason }),
       })
       if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('actionError')))
       const updated: Booking = await res.json()
       setBookings(prev => prev.map(b => b.id === updated.id ? { ...b, ...updated } : b))
+      setCancellingId(null)
+      setCancelReasonText('')
     } catch (err) {
       setBookingActionError(err instanceof Error ? err.message : tBooking('actionError'))
     } finally {
@@ -241,16 +246,45 @@ export default function DashboardPage() {
                 <p className="text-[12px] text-[#6B8886] line-clamp-1 mt-0.5">📍 {booking.address}</p>
               )}
               {(booking.status === 'REQUESTED' || booking.status === 'CONFIRMED') && (
-                <div className="flex items-center gap-3 mt-2">
-                  <button
-                    type="button"
-                    onClick={e => { e.stopPropagation(); handleCancelBooking(booking.id) }}
-                    disabled={bookingActionPendingId === booking.id}
-                    className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B8886] hover:text-red-600 transition-colors disabled:opacity-50"
-                  >
-                    {tBooking('cancelBooking')}
-                  </button>
-                </div>
+                cancellingId === booking.id ? (
+                  <div className="mt-2 space-y-2" onClick={e => e.stopPropagation()}>
+                    <textarea
+                      value={cancelReasonText}
+                      onChange={e => setCancelReasonText(e.target.value)}
+                      placeholder={tBooking('cancelReasonPlaceholder')}
+                      rows={2}
+                      maxLength={500}
+                      className="input text-[13px]"
+                    />
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleCancelBooking(booking.id, cancelReasonText)}
+                        disabled={bookingActionPendingId === booking.id}
+                        className="text-[12px] font-medium text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
+                      >
+                        {tBooking('confirmCancel')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setCancellingId(null); setCancelReasonText('') }}
+                        className="text-[12px] font-medium text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+                      >
+                        {tBooking('neverMind')}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 mt-2">
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); setCancellingId(booking.id) }}
+                      className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B8886] hover:text-red-600 transition-colors disabled:opacity-50"
+                    >
+                      {tBooking('cancelBooking')}
+                    </button>
+                  </div>
+                )
               )}
             </div>
           </div>
@@ -524,6 +558,7 @@ export default function DashboardPage() {
             notes:              b.notes,
             address:            b.address,
             photo_urls:         b.photo_urls,
+            cancellationReason: b.cancellation_reason,
           }
         })()}
         onBookAgain={() => {

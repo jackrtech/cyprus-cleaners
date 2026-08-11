@@ -108,6 +108,8 @@ create table bookings (
   photo_paths         text[] not null default '{}',  -- Private storage paths in 'booking-photos' bucket; signed URLs generated at read time
   status              booking_status not null default 'REQUESTED',
   review_prompted_at  timestamptz,  -- Set when status → COMPLETED; triggers review prompt
+  cancellation_reason text,  -- Free-text reason, set on CANCEL/DECLINE
+  cancelled_by        uuid references users(id),  -- Who initiated the cancellation
   created_at          timestamptz not null default now()
 );
 

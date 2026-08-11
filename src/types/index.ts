@@ -81,6 +81,8 @@ export interface Booking {
   address: string | null
   status: BookingStatus
   review_prompted_at: string | null
+  cancellation_reason: string | null
+  cancelled_by: string | null
   created_at: string
   // Joins
   customer?: User

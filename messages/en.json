@@ -285,6 +285,8 @@
     "backToDashboard": "← Back to dashboard"
   },
   "admin": {
+    "navVerifications": "Verifications",
+    "navDisputes": "Disputes",
     "title": "Cleaner verifications",
     "subtitle": "Review ID submissions and grant the verified badge.",
     "signOut": "Sign out",
@@ -295,7 +297,14 @@
     "emptyBody": "No pending ID verifications right now.",
     "submitted": "Submitted {date}",
     "approve": "Approve",
-    "reject": "Reject"
+    "reject": "Reject",
+    "disputesTitle": "Cancellation disputes",
+    "disputesSubtitle": "Cancelled bookings with a reason on file.",
+    "disputesLoadError": "Failed to load disputes. Please refresh.",
+    "disputesEmpty": "Nothing to review",
+    "disputesEmptyBody": "No cancelled bookings have a reason on file right now.",
+    "cancelledBy": "Cancelled by {name}",
+    "unknownUser": "Unknown"
   },
   "cleaners": {
     "topRated": "Top rated",
@@ -467,6 +476,11 @@
     "photoUploadError": "Failed to upload photo. Please try again.",
     "needMorePhotos": "{count} more photo(s) needed before you can mark this complete",
     "cancelBooking": "Cancel booking",
+    "cancelReasonPlaceholder": "Let them know why (optional)",
+    "confirmCancel": "Confirm cancellation",
+    "confirmDecline": "Confirm decline",
+    "neverMind": "Never mind",
+    "cancellationReason": "Reason",
     "requestedOn": "Requested",
     "timeLeftToRespond": "{hours}h left to respond",
     "lessThanHourLeft": "Less than 1h left to respond",
