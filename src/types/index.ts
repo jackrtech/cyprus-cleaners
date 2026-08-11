@@ -7,6 +7,7 @@ export type CleanerStatus = 'ACTIVE' | 'PAUSED' | 'SUSPENDED'
 export type ServiceType = 'HOUSE' | 'APARTMENT'
 
 export type BookingStatus = 'REQUESTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
+export type PaymentStatus = 'PENDING' | 'AUTHORIZED' | 'CAPTURED' | 'REFUNDED' | 'FAILED'
 
 export type CleaningType = 'STANDARD' | 'DEEP'
 
@@ -98,6 +99,19 @@ export interface Message {
   created_at: string
   // Joins
   sender?: User
+}
+
+export interface Payment {
+  id: string
+  booking_id: string
+  amount_eur: number
+  status: PaymentStatus
+  provider: string
+  provider_payment_intent_id: string | null
+  authorized_at: string | null
+  captured_at: string | null
+  refunded_at: string | null
+  created_at: string
 }
 
 export interface Review {

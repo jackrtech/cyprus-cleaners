@@ -118,6 +118,30 @@ create index idx_bookings_cleaner  on bookings (cleaner_profile_id);
 create index idx_bookings_status   on bookings (status);
 create index idx_bookings_date     on bookings (date);
 
+-- ─── PAYMENTS ────────────────────────────────────────────────
+-- One row per booking, created when checkout starts. AUTHORIZED means the
+-- customer's card is held but not yet charged (set on booking CONFIRM);
+-- CAPTURED means the charge went through (set on booking COMPLETE). This
+-- authorize-then-capture split means a customer is never charged for a job
+-- that doesn't happen.
+
+create type payment_status as enum ('PENDING', 'AUTHORIZED', 'CAPTURED', 'REFUNDED', 'FAILED');
+
+create table payments (
+  id                          uuid primary key default gen_random_uuid(),
+  booking_id                  uuid not null unique references bookings(id) on delete cascade,
+  amount_eur                  numeric(10,2) not null,
+  status                      payment_status not null default 'PENDING',
+  provider                    text not null default 'stripe',
+  provider_payment_intent_id  text,
+  authorized_at               timestamptz,
+  captured_at                 timestamptz,
+  refunded_at                 timestamptz,
+  created_at                  timestamptz not null default now()
+);
+
+create index idx_payments_status on payments (status);
+
 -- ─── ADDRESSES ───────────────────────────────────────────────
 -- A customer's saved addresses, offered as a picker on the booking form.
 -- Bookings store a free-text snapshot of whichever address was selected
@@ -258,6 +282,10 @@ alter table addresses           enable row level security;
 alter table messages            enable row level security;
 alter table reviews             enable row level security;
 alter table chat_notifications  enable row level security;
+alter table payments            enable row level security;
+-- No policies beyond enabling it — payments are only ever read/written via
+-- the service-role admin client (API routes), never the anon-key browser
+-- client, so RLS just needs to deny by default here.
 
 -- Users: can only see and edit own record
 create policy "users_select_own" on users for select using (auth.uid()::text = id::text);
