@@ -107,12 +107,17 @@ export default function AdminDisputesPage() {
               const b = d.booking
               return (
                 <li key={d.id} className="card p-5">
-                  <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
-                    <p className="font-medium text-teal-900">
-                      {tBooking('with', { name: d.customer?.full_name ?? t('unknownUser') })}
-                      {' · '}
-                      {d.cleaner_profiles?.display_name ?? t('unknownUser')}
-                    </p>
+                  <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="badge badge-teal">{t('customerLabel')}</span>
+                        <p className="font-medium text-teal-900">{d.customer?.full_name ?? t('unknownUser')}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="badge badge-gold">{t('cleanerLabel')}</span>
+                        <p className="font-medium text-teal-900">{d.cleaner_profiles?.display_name ?? t('unknownUser')}</p>
+                      </div>
+                    </div>
                     <span className="text-label uppercase tracking-widest text-muted">
                       {t('filedOn', { date: dateFormatter.format(new Date(d.created_at)) })}
                     </span>
@@ -136,16 +141,22 @@ export default function AdminDisputesPage() {
                   )}
 
                   <div className="mb-3">
-                    <p className="text-label uppercase tracking-widest text-muted mb-1">{t('customerClaim')}</p>
+                    <p className="text-label uppercase tracking-widest text-muted mb-1">
+                      {t('customerClaim', { name: d.customer?.full_name ?? t('unknownUser') })}
+                    </p>
                     <p className="text-body text-teal-900 bg-[#F7FAF9] rounded-lg p-3">{d.claim}</p>
                   </div>
 
                   <div className="mb-3">
-                    <p className="text-label uppercase tracking-widest text-muted mb-1">{t('cleanerResponse')}</p>
+                    <p className="text-label uppercase tracking-widest text-muted mb-1">
+                      {t('cleanerResponse', { name: d.cleaner_profiles?.display_name ?? t('unknownUser') })}
+                    </p>
                     {d.cleaner_response ? (
                       <p className="text-body text-teal-900 bg-[#F7FAF9] rounded-lg p-3">{d.cleaner_response}</p>
                     ) : (
-                      <p className="text-body text-muted italic">{t('noCleanerResponse')}</p>
+                      <p className="text-body text-muted italic">
+                        {t('noCleanerResponse', { name: d.cleaner_profiles?.display_name ?? t('unknownUser') })}
+                      </p>
                     )}
                   </div>
 

@@ -20,7 +20,8 @@ export async function GET() {
       id, date, start_time, cancellation_reason, created_at,
       customer:users!bookings_customer_id_fkey ( id, full_name, email ),
       cancelled_by_user:users!bookings_cancelled_by_fkey ( id, full_name, role ),
-      cleaner_profiles ( id, display_name, user_id )
+      cleaner_profiles ( id, display_name, user_id ),
+      payments ( status, amount_eur, refunded_at )
     `)
     .eq('status', 'CANCELLED')
     .not('cancellation_reason', 'is', null)

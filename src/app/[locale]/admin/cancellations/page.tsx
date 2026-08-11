@@ -24,6 +24,12 @@ interface CancellationCleaner {
   user_id: string | null
 }
 
+interface CancellationPayment {
+  status: string
+  amount_eur: number
+  refunded_at: string | null
+}
+
 interface Cancellation {
   id: string
   date: string
@@ -33,12 +39,17 @@ interface Cancellation {
   customer: CancellationCustomer | null
   cancelled_by_user: CancelledByUser | null
   cleaner_profiles: CancellationCleaner | null
+  payments: CancellationPayment | CancellationPayment[] | null
+}
+
+function paymentOf(c: Cancellation): CancellationPayment | null {
+  if (!c.payments) return null
+  return Array.isArray(c.payments) ? c.payments[0] ?? null : c.payments
 }
 
 export default function AdminCancellationsPage() {
   const { data: session, status: sessionStatus } = useSession()
   const t      = useTranslations('admin')
-  const tBooking = useTranslations('booking')
   const locale = useLocale()
   const router = useRouter()
 
@@ -95,26 +106,44 @@ export default function AdminCancellationsPage() {
 
         {!loading && cancellations.length > 0 && (
           <ul className="space-y-4">
-            {cancellations.map(c => (
-              <li key={c.id} className="card p-5">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <p className="font-medium text-teal-900">
-                    {tBooking('with', { name: c.customer?.full_name ?? t('unknownUser') })}
-                    {' · '}
-                    {c.cleaner_profiles?.display_name ?? t('unknownUser')}
+            {cancellations.map(c => {
+              const payment = paymentOf(c)
+              const refundBadge = !payment || payment.status === 'PENDING'
+                ? { label: t('notCharged'), className: 'bg-teal-50 text-teal-600' }
+                : payment.status === 'REFUNDED'
+                ? { label: t('refundedBadge', { amount: payment.amount_eur.toFixed(2) }), className: 'bg-teal-50 text-teal-600' }
+                : payment.status === 'PAID'
+                ? { label: t('chargedNotRefunded'), className: 'bg-red-50 text-red-600' }
+                : { label: t('chargeFailed'), className: 'bg-red-50 text-red-600' }
+              return (
+                <li key={c.id} className="card p-5">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="badge badge-teal">{t('customerLabel')}</span>
+                        <p className="font-medium text-teal-900">{c.customer?.full_name ?? t('unknownUser')}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="badge badge-gold">{t('cleanerLabel')}</span>
+                        <p className="font-medium text-teal-900">{c.cleaner_profiles?.display_name ?? t('unknownUser')}</p>
+                      </div>
+                    </div>
+                    <span className="text-label uppercase tracking-widest text-muted shrink-0">
+                      {dateFormatter.format(new Date(`${c.date}T00:00:00`))} {c.start_time.slice(0, 5)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap mt-3">
+                    <span className={`badge ${refundBadge.className}`}>{refundBadge.label}</span>
+                    <span className="text-label uppercase tracking-widest text-muted">
+                      {t('cancelledBy', { name: c.cancelled_by_user?.full_name ?? t('unknownUser') })}
+                    </span>
+                  </div>
+                  <p className="text-body text-teal-900 mt-2 bg-[#F7FAF9] rounded-lg p-3">
+                    {c.cancellation_reason}
                   </p>
-                  <span className="badge bg-red-50 text-red-600">
-                    {dateFormatter.format(new Date(`${c.date}T00:00:00`))} {c.start_time.slice(0, 5)}
-                  </span>
-                </div>
-                <p className="text-label uppercase tracking-widest text-muted mt-2">
-                  {t('cancelledBy', { name: c.cancelled_by_user?.full_name ?? t('unknownUser') })}
-                </p>
-                <p className="text-body text-teal-900 mt-2 bg-[#F7FAF9] rounded-lg p-3">
-                  {c.cancellation_reason}
-                </p>
-              </li>
-            ))}
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>
