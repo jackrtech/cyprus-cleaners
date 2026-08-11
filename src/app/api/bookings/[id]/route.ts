@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
 import { sendBookingConfirmedEmail, sendBookingCompletedEmail } from '@/lib/email'
 import Stripe from 'stripe'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
@@ -35,6 +35,7 @@ export async function PATCH(
   }
 
   const supabase = createAdminClient()
+  const stripe = getStripe()
 
   const { data: booking, error: fetchError } = await supabase
     .from('bookings')

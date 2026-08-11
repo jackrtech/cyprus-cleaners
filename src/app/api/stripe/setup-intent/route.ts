@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 
 // Creates (or reuses) a Stripe Customer for the signed-in customer, then a
 // SetupIntent so the frontend can save a card for later off-session use — the
@@ -16,6 +16,7 @@ export async function POST() {
   }
 
   const supabase = createAdminClient()
+  const stripe = getStripe()
 
   const { data: user, error: userError } = await supabase
     .from('users')
