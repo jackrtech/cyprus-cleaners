@@ -151,6 +151,7 @@ export default function CleanerDashboardPage() {
   const t        = useTranslations('dashboard')
   const tAuth    = useTranslations('auth')
   const tBooking = useTranslations('booking')
+  const tDisputes = useTranslations('disputes')
   const tChat    = useTranslations('chat')
   const locale   = useLocale()
   const router   = useRouter()
@@ -175,6 +176,7 @@ export default function CleanerDashboardPage() {
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   const [emailVerified, setEmailVerified] = useState<boolean | null>(null)
+  const [openDisputeCount, setOpenDisputeCount] = useState(0)
   const [resending,     setResending]     = useState(false)
   const [resendResult,  setResendResult]  = useState<'sent' | 'rate_limited' | null>(null)
 
@@ -195,6 +197,19 @@ export default function CleanerDashboardPage() {
     fetch('/api/user/me')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setEmailVerified(d.email_verified ?? null) })
+      .catch(() => {})
+  }, [sessionStatus])
+
+  // Fetch open disputes needing a response, for the dashboard banner
+  useEffect(() => {
+    if (sessionStatus !== 'authenticated') return
+    fetch('/api/cleaner/disputes')
+      .then(r => r.ok ? r.json() : [])
+      .then((data: { status: string; cleaner_response: string | null }[]) => {
+        if (Array.isArray(data)) {
+          setOpenDisputeCount(data.filter(d => d.status === 'OPEN' && !d.cleaner_response).length)
+        }
+      })
       .catch(() => {})
   }, [sessionStatus])
 
@@ -507,6 +522,21 @@ export default function CleanerDashboardPage() {
                 {tAuth('resendEmail')}
               </button>
             )}
+          </div>
+        )}
+
+        {/* Open disputes banner */}
+        {openDisputeCount > 0 && (
+          <div className="flex items-center gap-3 bg-red-50 border-l-4 border-red-400 rounded-lg p-4 mb-4 flex-wrap">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
+              <path d="M9 1.5L1.5 15h15L9 1.5z" />
+              <path d="M9 7.5v3" />
+              <circle cx="9" cy="13" r="0.75" fill="#DC2626" stroke="none" />
+            </svg>
+            <p className="text-[13px] text-[#0D1F1E] flex-1">{tDisputes('dashboardBanner', { count: openDisputeCount })}</p>
+            <Link href="/dashboard/cleaner/disputes" className="btn-primary shrink-0 text-[13px] px-4 py-2 rounded-full">
+              {tDisputes('respondLink')}
+            </Link>
           </div>
         )}
 
