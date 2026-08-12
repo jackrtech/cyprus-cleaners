@@ -104,6 +104,9 @@ export async function PATCH(
       }
 
       try {
+        // Idempotency key scoped to this booking — if two concurrent Confirm
+        // requests both reach Stripe, only the first actually charges; the
+        // second gets back the same PaymentIntent instead of a new charge.
         const paymentIntent = await stripe.paymentIntents.create({
           amount:   Math.round(payment.amount_eur * 100),
           currency: 'eur',
@@ -111,6 +114,8 @@ export async function PATCH(
           payment_method: payment.provider_payment_method_id,
           off_session: true,
           confirm: true,
+        }, {
+          idempotencyKey: `confirm-${booking.id}`,
         })
 
         if (paymentIntent.status !== 'succeeded') {
@@ -177,17 +182,26 @@ export async function PATCH(
     update.cancelled_by = session.user.id
   }
 
-  const { data, error } = await supabase
+  // Guard the write on the status we validated against above — closes the
+  // check-then-act race where two concurrent requests (e.g. a double-tap on
+  // Confirm, or a Confirm and a Decline landing together) both pass their
+  // individual status check before either write lands. Whichever request's
+  // update loses the race affects zero rows instead of clobbering the other.
+  const { data: updateRows, error } = await supabase
     .from('bookings')
     .update(update)
     .eq('id', params.id)
+    .eq('status', booking.status)
     .select('*')
-    .single()
 
-  if (error || !data) {
+  if (error) {
     console.error('Booking update error:', error)
     return NextResponse.json({ error: 'Failed to update booking' }, { status: 500 })
   }
+  if (!updateRows || updateRows.length === 0) {
+    return NextResponse.json({ error: 'This booking was just updated by another request — refresh and try again' }, { status: 409 })
+  }
+  const data = updateRows[0]
 
   // Refund on cancellation — only relevant for CANCEL (DECLINE only ever
   // applies to a REQUESTED booking, which was never charged). Full refund
