@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
-import { sendBookingConfirmedEmail, sendBookingCompletedEmail } from '@/lib/email'
+import { sendBookingConfirmedEmail, sendBookingCompletedEmail, sendRefundFailedAlertEmail } from '@/lib/email'
 import Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe'
 
@@ -209,29 +209,55 @@ export async function PATCH(
   // window — the whole point of charging at confirm-time is to discourage
   // last-minute cancellations.
   if (action === 'CANCEL') {
-    try {
-      const { data: payment } = await supabase
-        .from('payments')
-        .select('id, status, provider_payment_intent_id')
-        .eq('booking_id', booking.id)
-        .single()
+    const { data: payment } = await supabase
+      .from('payments')
+      .select('id, status, amount_eur, provider_payment_intent_id')
+      .eq('booking_id', booking.id)
+      .single()
 
-      if (payment?.status === 'PAID' && payment.provider_payment_intent_id) {
-        const bookingStartMs = new Date(`${booking.date}T${booking.start_time}`).getTime()
-        const isEligible = bookingStartMs - Date.now() >= CANCELLATION_REFUND_WINDOW_MS
+    if (payment?.status === 'PAID' && payment.provider_payment_intent_id) {
+      const bookingStartMs = new Date(`${booking.date}T${booking.start_time}`).getTime()
+      const isEligible = bookingStartMs - Date.now() >= CANCELLATION_REFUND_WINDOW_MS
 
-        if (isEligible) {
-          await stripe.refunds.create({ payment_intent: payment.provider_payment_intent_id })
+      if (isEligible) {
+        try {
+          await stripe.refunds.create({
+            payment_intent: payment.provider_payment_intent_id,
+          }, {
+            idempotencyKey: `refund-${booking.id}`,
+          })
           await supabase.from('payments').update({
             status: 'REFUNDED',
             refunded_at: new Date().toISOString(),
           }).eq('id', payment.id)
+        } catch (refundErr) {
+          // The booking is still cancelled either way — a failed refund
+          // shouldn't block that — but the customer is now owed money nobody
+          // has sent them. Record that plainly and alert an admin instead of
+          // just logging it, so it doesn't get lost.
+          console.error('Booking cancel — refund failed:', refundErr)
+          await supabase.from('payments').update({ status: 'REFUND_FAILED' }).eq('id', payment.id)
+          try {
+            const { data: customerUser } = await supabase
+              .from('users')
+              .select('full_name, email')
+              .eq('id', booking.customer_id)
+              .single()
+            if (customerUser) {
+              await sendRefundFailedAlertEmail({
+                bookingId:     booking.id,
+                customerName:  customerUser.full_name,
+                customerEmail: customerUser.email,
+                amountEur:     payment.amount_eur,
+                stripeError:   refundErr instanceof Stripe.errors.StripeError ? refundErr.message : 'Unknown error',
+                adminUrl:      `${BASE_URL}/admin/cancellations`,
+              })
+            }
+          } catch (alertErr) {
+            console.error('Refund-failed admin alert error:', alertErr)
+          }
         }
       }
-    } catch (refundErr) {
-      // A failed refund shouldn't block the cancellation itself — this needs
-      // manual follow-up via the Stripe dashboard, logged here for that.
-      console.error('Booking cancel — refund failed:', refundErr)
     }
   }
 

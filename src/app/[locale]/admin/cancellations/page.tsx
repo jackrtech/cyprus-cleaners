@@ -56,6 +56,28 @@ export default function AdminCancellationsPage() {
   const [cancellations, setCancellations] = useState<Cancellation[]>([])
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState<string | null>(null)
+  const [retrying, setRetrying] = useState<string | null>(null)
+  const [retryError, setRetryError] = useState<string | null>(null)
+
+  async function retryRefund(bookingId: string) {
+    setRetrying(bookingId)
+    setRetryError(null)
+    try {
+      const res = await fetch(`/api/admin/cancellations/${bookingId}/retry-refund`, { method: 'POST' })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body?.error || 'Retry failed')
+      setCancellations(prev => prev.map(c => {
+        if (c.id !== bookingId) return c
+        const payment = paymentOf(c)
+        if (!payment) return c
+        return { ...c, payments: { ...payment, status: 'REFUNDED', refunded_at: new Date().toISOString() } }
+      }))
+    } catch (err) {
+      setRetryError(err instanceof Error ? err.message : 'Retry failed')
+    } finally {
+      setRetrying(null)
+    }
+  }
 
   useEffect(() => {
     if (sessionStatus === 'loading') return
@@ -97,6 +119,8 @@ export default function AdminCancellationsPage() {
 
         {!loading && error && <p className="text-red-600">{error}</p>}
 
+        {retryError && <p className="text-red-600 text-body mb-4">{retryError}</p>}
+
         {!loading && !error && cancellations.length === 0 && (
           <div className="card p-8 text-center">
             <p className="text-teal-900 font-medium">{t('cancellationsEmpty')}</p>
@@ -108,15 +132,21 @@ export default function AdminCancellationsPage() {
           <ul className="space-y-4">
             {cancellations.map(c => {
               const payment = paymentOf(c)
+              const isRefundFailed = payment?.status === 'REFUND_FAILED'
               const refundBadge = !payment || payment.status === 'PENDING'
                 ? { label: t('notCharged'), className: 'bg-teal-50 text-teal-600' }
                 : payment.status === 'REFUNDED'
                 ? { label: t('refundedBadge', { amount: payment.amount_eur.toFixed(2) }), className: 'bg-teal-50 text-teal-600' }
+                : payment.status === 'REFUND_FAILED'
+                ? { label: t('refundFailed'), className: 'bg-red-100 text-red-700' }
                 : payment.status === 'PAID'
                 ? { label: t('chargedNotRefunded'), className: 'bg-red-50 text-red-600' }
                 : { label: t('chargeFailed'), className: 'bg-red-50 text-red-600' }
               return (
-                <li key={c.id} className="card p-5">
+                <li
+                  key={c.id}
+                  className={`card p-5 ${isRefundFailed ? 'border-red-300 bg-red-50/40' : ''}`}
+                >
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -141,6 +171,15 @@ export default function AdminCancellationsPage() {
                   <p className="text-body text-teal-900 mt-2 bg-[#F7FAF9] rounded-lg p-3">
                     {c.cancellation_reason}
                   </p>
+                  {isRefundFailed && (
+                    <button
+                      className="btn-secondary mt-3"
+                      disabled={retrying === c.id}
+                      onClick={() => retryRefund(c.id)}
+                    >
+                      {retrying === c.id ? t('retryingRefund') : t('retryRefund')}
+                    </button>
+                  )}
                 </li>
               )
             })}

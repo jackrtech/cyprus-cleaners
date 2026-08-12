@@ -7,7 +7,7 @@ export type CleanerStatus = 'ACTIVE' | 'PAUSED' | 'SUSPENDED'
 export type ServiceType = 'HOUSE' | 'APARTMENT'
 
 export type BookingStatus = 'REQUESTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
-export type PaymentStatus = 'PENDING' | 'PAID' | 'REFUNDED' | 'FAILED'
+export type PaymentStatus = 'PENDING' | 'PAID' | 'REFUNDED' | 'FAILED' | 'REFUND_FAILED'
 export type DisputeStatus = 'OPEN' | 'RESOLVED'
 export type DisputeResolution = 'CUSTOMER' | 'CLEANER'
 

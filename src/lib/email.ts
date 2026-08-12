@@ -346,3 +346,55 @@ export async function sendBookingCompletedEmail({
 
   return sendEmail({ to: customerEmail, subject, html })
 }
+
+// ─── 7. Admin alerts — internal only, English only, no locale branching ──────
+
+// Generic shell for any "something needs an admin's attention" email — reused
+// by refund-failure alerts and, going forward, other admin notifications
+// (new dispute filed, etc.) rather than hand-rolling a template per trigger.
+export async function sendAdminAlertEmail({
+  subject, heading, bodyHtml,
+}: {
+  subject:  string
+  heading:  string
+  bodyHtml: string
+}) {
+  if (!process.env.ADMIN_EMAIL) {
+    console.error('sendAdminAlertEmail: ADMIN_EMAIL is not set — alert dropped:', subject)
+    return
+  }
+
+  const html = layout(
+    `<h2 style="color:#B5541F;font-size:20px;font-weight:600;margin:0 0 16px;">${escapeHtml(heading)}</h2>
+     ${bodyHtml}`
+  )
+
+  return sendEmail({ to: process.env.ADMIN_EMAIL, subject, html })
+}
+
+export async function sendRefundFailedAlertEmail({
+  bookingId, customerName, customerEmail, amountEur, stripeError, adminUrl,
+}: {
+  bookingId:     string
+  customerName:  string
+  customerEmail: string
+  amountEur:     number
+  stripeError:   string
+  adminUrl:      string
+}) {
+  const bodyHtml =
+    `<p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 12px;">A cancellation refund failed to process. The booking is cancelled but the customer has <strong>not</strong> been refunded — this needs a manual retry.</p>
+     <table style="width:100%;font-size:13px;color:#0D1F1E;border-collapse:collapse;margin-top:8px;">
+       <tr><td style="padding:4px 0;color:#6B8886;">Booking</td><td style="padding:4px 0;">${escapeHtml(bookingId)}</td></tr>
+       <tr><td style="padding:4px 0;color:#6B8886;">Customer</td><td style="padding:4px 0;">${escapeHtml(customerName)} — ${escapeHtml(customerEmail)}</td></tr>
+       <tr><td style="padding:4px 0;color:#6B8886;">Amount</td><td style="padding:4px 0;">€${amountEur.toFixed(2)}</td></tr>
+       <tr><td style="padding:4px 0;color:#6B8886;">Stripe error</td><td style="padding:4px 0;">${escapeHtml(stripeError)}</td></tr>
+     </table>
+     ${cta('Open cancellations ledger', adminUrl)}`
+
+  return sendAdminAlertEmail({
+    subject:  `🚨 Refund failed — booking ${bookingId}`,
+    heading:  'Refund failed',
+    bodyHtml,
+  })
+}

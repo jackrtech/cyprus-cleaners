@@ -128,7 +128,11 @@ create index idx_bookings_date     on bookings (date);
 -- last-minute cancellations, and it sidesteps card auth holds expiring
 -- (~7 days) for bookings confirmed well ahead of the job date.
 
-create type payment_status as enum ('PENDING', 'PAID', 'REFUNDED', 'FAILED');
+create type payment_status as enum ('PENDING', 'PAID', 'REFUNDED', 'FAILED', 'REFUND_FAILED');
+-- REFUND_FAILED: the Stripe refund call itself errored after a CANCEL — the
+-- booking is CANCELLED but the customer was never actually refunded. Needs a
+-- manual retry from the admin cancellations ledger. Applying to an existing
+-- database (this file is bootstrap-only, not re-run): `alter type payment_status add value 'REFUND_FAILED';`
 
 create table payments (
   id                          uuid primary key default gen_random_uuid(),
