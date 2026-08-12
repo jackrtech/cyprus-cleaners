@@ -96,6 +96,20 @@ export default function PrivacyPolicyPage() {
           </p>
         </Section>
 
+        <Section title="5b. ID verification documents (cleaners only)">
+          <p>
+            If you register as a cleaner and choose to get verified, we ask you to upload a photo of a government-issued
+            ID (passport, national ID card, or driving licence) and a selfie of you holding it.
+          </p>
+          <ul className="list-disc pl-5 space-y-1.5">
+            <li><strong className="text-[#0D1F1E]">Why we collect it</strong> — to verify the identity of cleaning professionals listed on the platform, for the safety of customers booking a job in their home.</li>
+            <li><strong className="text-[#0D1F1E]">Legal basis</strong> — legitimate interests (platform safety), GDPR Article 6(1)(f).</li>
+            <li><strong className="text-[#0D1F1E]">How long we keep it</strong> — the document and selfie are permanently deleted the moment an admin reviews your submission, whether it&rsquo;s approved or rejected. We don&rsquo;t keep a copy afterward — only a record that verification occurred (and, if rejected, the reason, so you know what to fix if you resubmit).</li>
+            <li><strong className="text-[#0D1F1E]">Who sees it</strong> — only Cyprus Cleaners administrators, during the brief review window. The files are stored in a private, access-controlled bucket (not a public link) and are never shared with other customers, cleaners, or third parties.</li>
+          </ul>
+          <p>You can request deletion of your account and all associated data at any time — see &ldquo;Your rights&rdquo; below.</p>
+        </Section>
+
         <Section title="6. Data retention">
           <p>
             We keep your account data for as long as your account is active. If you delete your account, we delete or

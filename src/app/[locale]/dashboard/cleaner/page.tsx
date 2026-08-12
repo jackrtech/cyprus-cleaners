@@ -18,6 +18,9 @@ interface CleanerProfile {
   bio:       string | null
   photo_url: string | null
   cities:    string[] | null
+  verified:             boolean
+  verification_status:  'PENDING' | 'APPROVED' | 'REJECTED' | null
+  verification_note:    string | null
 }
 
 interface IntroUser {
@@ -175,6 +178,12 @@ export default function CleanerDashboardPage() {
   const [photoUploadTargetId, setPhotoUploadTargetId] = useState<string | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
+  const [idVerifyOpen,       setIdVerifyOpen]       = useState(false)
+  const [idVerifyFile,       setIdVerifyFile]       = useState<File | null>(null)
+  const [selfieVerifyFile,   setSelfieVerifyFile]   = useState<File | null>(null)
+  const [idVerifySubmitting, setIdVerifySubmitting] = useState(false)
+  const [idVerifyError,      setIdVerifyError]      = useState<string | null>(null)
+
   const [emailVerified, setEmailVerified] = useState<boolean | null>(null)
   const [openDisputeCount, setOpenDisputeCount] = useState(0)
   const [resending,     setResending]     = useState(false)
@@ -223,6 +232,40 @@ export default function CleanerDashboardPage() {
       // ignore
     } finally {
       setResending(false)
+    }
+  }
+
+  async function handleIdVerifySubmit() {
+    if (!idVerifyFile || !selfieVerifyFile || idVerifySubmitting) return
+    setIdVerifySubmitting(true)
+    setIdVerifyError(null)
+    try {
+      const prepRes = await fetch('/api/cleaner-profiles/id-upload', { method: 'POST' })
+      if (!prepRes.ok) throw new Error(await extractErrorMessage(prepRes, t('verificationUploadError')))
+      const { idUpload, selfieUpload } = await prepRes.json()
+
+      // Uploaded straight to the private bucket via the signed URLs above —
+      // never through this app's own server.
+      const storage = createClient().storage.from('id-documents')
+      const [idResult, selfieResult] = await Promise.all([
+        storage.uploadToSignedUrl(idUpload.path, idUpload.token, idVerifyFile),
+        storage.uploadToSignedUrl(selfieUpload.path, selfieUpload.token, selfieVerifyFile),
+      ])
+      if (idResult.error || selfieResult.error) {
+        throw new Error(t('verificationUploadError'))
+      }
+
+      const confirmRes = await fetch('/api/cleaner-profiles/id-upload/confirm', { method: 'POST' })
+      if (!confirmRes.ok) throw new Error(await extractErrorMessage(confirmRes, t('verificationUploadError')))
+
+      setProfile(prev => prev ? { ...prev, verification_status: 'PENDING', verification_note: null } : prev)
+      setIdVerifyOpen(false)
+      setIdVerifyFile(null)
+      setSelfieVerifyFile(null)
+    } catch (err) {
+      setIdVerifyError(err instanceof Error ? err.message : t('verificationUploadError'))
+    } finally {
+      setIdVerifySubmitting(false)
     }
   }
 
@@ -301,7 +344,7 @@ export default function CleanerDashboardPage() {
         .then(({ token }: { token: string }) =>
           createClient(token)
             .from('cleaner_profiles')
-            .select('slug, bio, photo_url, cities')
+            .select('slug, bio, photo_url, cities, verified, verification_status, verification_note')
             .eq('user_id', session.user.id)
             .single()
             .then(({ data }) => data)
@@ -552,6 +595,75 @@ export default function CleanerDashboardPage() {
             <Link href="/dashboard/cleaner/edit" className="btn-primary shrink-0 text-[13px] px-4 py-2 rounded-full">
               {t('editProfile')}
             </Link>
+          </div>
+        )}
+
+        {/* Verification status — PENDING/REJECTED/never-submitted. Nothing
+            shown once verified (the blue tick on the public profile speaks
+            for itself). */}
+        {!loading && profile?.verification_status === 'PENDING' && (
+          <div className="flex items-center gap-3 bg-[#FDF8E1] border-l-4 border-[#F2C94C] rounded-lg px-5 py-4 flex-wrap">
+            <p className="text-[13px] text-[#0D1F1E] flex-1">{t('verificationPendingBanner')}</p>
+          </div>
+        )}
+
+        {!loading && !profile?.verified && (profile?.verification_status === 'REJECTED' || !profile?.verification_status) && (
+          <div className={`rounded-lg px-5 py-4 border-l-4 ${profile?.verification_status === 'REJECTED' ? 'bg-red-50 border-red-400' : 'bg-[#F7FAF9] border-[#E0EDEC]'}`}>
+            <div className="flex items-center gap-3 flex-wrap">
+              <p className="text-[13px] text-[#0D1F1E] flex-1">
+                {profile?.verification_status === 'REJECTED'
+                  ? t('verificationRejectedBanner', { reason: profile.verification_note || t('verificationNoReason') })
+                  : t('verificationPromptBanner')}
+              </p>
+              {!idVerifyOpen && (
+                <button
+                  onClick={() => setIdVerifyOpen(true)}
+                  className="btn-primary shrink-0 text-[13px] px-4 py-2 rounded-full"
+                >
+                  {profile?.verification_status === 'REJECTED' ? t('verificationResubmitCta') : t('verificationUploadCta')}
+                </button>
+              )}
+            </div>
+
+            {idVerifyOpen && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className="label block mb-1">{t('verificationIdLabel')}</label>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    onChange={e => setIdVerifyFile(e.target.files?.[0] ?? null)}
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="label block mb-1">{t('verificationSelfieLabel')}</label>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={e => setSelfieVerifyFile(e.target.files?.[0] ?? null)}
+                    className="input"
+                  />
+                </div>
+                {idVerifyError && <p className="text-[13px] text-red-600">{idVerifyError}</p>}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleIdVerifySubmit}
+                    disabled={!idVerifyFile || !selfieVerifyFile || idVerifySubmitting}
+                    className="btn-primary text-[13px] px-4 py-2 rounded-full disabled:opacity-50"
+                  >
+                    {idVerifySubmitting ? t('verificationSubmitting') : t('verificationSubmit')}
+                  </button>
+                  <button
+                    onClick={() => { setIdVerifyOpen(false); setIdVerifyError(null) }}
+                    disabled={idVerifySubmitting}
+                    className="btn-ghost text-[13px] px-4 py-2 rounded-full"
+                  >
+                    {t('verificationCancel')}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

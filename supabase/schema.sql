@@ -56,9 +56,10 @@ create table cleaner_profiles (
   -- Trust & verification
   verified              boolean not null default false,
   id_submitted_at       timestamptz,
-  id_photo_url          text,  -- Photo of the ID document, submitted alongside id_submitted_at
-  selfie_photo_url      text,  -- Selfie for face-match against the ID document
+  id_photo_url          text,  -- storage PATH (not URL) in the private 'id-documents' bucket — nulled once admin decides, whether approved or rejected, since the document is deleted from storage at that point
+  selfie_photo_url      text,  -- storage PATH in 'id-documents' — same lifecycle as id_photo_url
   verification_note     text,  -- Admin's note from the last approve/reject decision
+  verification_status   verification_status,  -- null = never submitted; PENDING while awaiting review; APPROVED/REJECTED after a decision. Kept separate from `verified` (which drives the public badge and predates this column) so the cleaner dashboard can distinguish REJECTED from never-submitted.
   status                cleaner_status not null default 'ACTIVE',
   -- Denormalised stats (updated by triggers)
   avg_rating            numeric(3,2) not null default 0,
@@ -133,6 +134,9 @@ create type payment_status as enum ('PENDING', 'PAID', 'REFUNDED', 'FAILED', 'RE
 -- booking is CANCELLED but the customer was never actually refunded. Needs a
 -- manual retry from the admin cancellations ledger. Applying to an existing
 -- database (this file is bootstrap-only, not re-run): `alter type payment_status add value 'REFUND_FAILED';`
+create type verification_status as enum ('PENDING', 'APPROVED', 'REJECTED');
+-- Applying to an existing database: `create type verification_status as enum ('PENDING', 'APPROVED', 'REJECTED');`
+-- then `alter table cleaner_profiles add column verification_status verification_status;`
 
 create table payments (
   id                          uuid primary key default gen_random_uuid(),

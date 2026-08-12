@@ -36,7 +36,7 @@ export async function PATCH(
 
   const { data: profile, error: fetchError } = await supabase
     .from('cleaner_profiles')
-    .select('id, id_submitted_at, verified, user_id')
+    .select('id, id_submitted_at, verified, user_id, id_photo_url, selfie_photo_url')
     .eq('id', params.id)
     .single()
 
@@ -47,11 +47,34 @@ export async function PATCH(
     return NextResponse.json({ error: 'No verification submission pending for this profile' }, { status: 400 })
   }
 
-  // Reject clears id_submitted_at so the cleaner can resubmit; there's no
-  // separate submission flow yet, so this just resets the queue state.
+  // The document is deleted from storage the moment a decision is made —
+  // approved or rejected, it never sits around afterward. The profile update
+  // and the storage delete both happen in this one request; if the delete
+  // errors it's logged but doesn't block the decision itself (a dangling
+  // object with no DB reference isn't retrievable through the app anyway).
+  const pathsToDelete = [profile.id_photo_url, profile.selfie_photo_url].filter((p): p is string => !!p)
+  if (pathsToDelete.length > 0) {
+    const { error: removeError } = await supabase.storage.from('id-documents').remove(pathsToDelete)
+    if (removeError) {
+      console.error('ID document delete error:', removeError)
+    }
+  }
+
   const update = action === 'APPROVE'
-    ? { verified: true, verification_note: note }
-    : { verified: false, id_submitted_at: null, verification_note: note }
+    ? {
+        verified:             true,
+        verification_status: 'APPROVED' as const,
+        verification_note:    note,
+        id_photo_url:         null,
+        selfie_photo_url:     null,
+      }
+    : {
+        verified:             false,
+        verification_status: 'REJECTED' as const,
+        verification_note:    note,
+        id_photo_url:         null,
+        selfie_photo_url:     null,
+      }
 
   const { error: updateError } = await supabase
     .from('cleaner_profiles')
