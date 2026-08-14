@@ -19,43 +19,54 @@ export async function GET(req: NextRequest) {
 
   interface ExpiredMessage { id: string; photo_path: string | null; body: string | null }
 
-  const { data, error: fetchError } = await supabase
-    .from('messages')
-    .select('id, photo_path, body')
-    .not('photo_path', 'is', null)
-    .lt('created_at', cutoff)
+  // Batched rather than one unbounded query — PostgREST caps a single
+  // response at 1000 rows by default, so a large backlog (first run, or a
+  // day the job didn't fire) would otherwise silently leave the rest
+  // uncleaned instead of catching up over the next few runs.
+  const BATCH_SIZE = 500
+  let totalDeleted = 0
 
-  if (fetchError) {
-    console.error('Chat photo cleanup fetch error:', fetchError)
-    return NextResponse.json({ error: 'Failed to query expired photos' }, { status: 500 })
-  }
-
-  const expired = (data ?? []) as ExpiredMessage[]
-  if (expired.length === 0) {
-    return NextResponse.json({ deleted: 0 })
-  }
-
-  const paths = expired.map(m => m.photo_path as string)
-  const { error: removeError } = await supabase.storage.from('chat-photos').remove(paths)
-  if (removeError) {
-    console.error('Chat photo cleanup storage error:', removeError)
-    return NextResponse.json({ error: 'Failed to delete storage objects' }, { status: 500 })
-  }
-
-  // messages_body_or_photo requires a body once photo_path is cleared, so
-  // photo-only messages get a placeholder instead of just nulling the path.
-  const withBody = expired.filter(m => m.body).map(m => m.id)
-  const bodyless = expired.filter(m => !m.body).map(m => m.id)
-
-  if (withBody.length > 0) {
-    await supabase.from('messages').update({ photo_path: null }).in('id', withBody)
-  }
-  if (bodyless.length > 0) {
-    await supabase
+  while (true) {
+    const { data, error: fetchError } = await supabase
       .from('messages')
-      .update({ photo_path: null, body: '📷 Photo (removed after 90 days)' })
-      .in('id', bodyless)
+      .select('id, photo_path, body')
+      .not('photo_path', 'is', null)
+      .lt('created_at', cutoff)
+      .limit(BATCH_SIZE)
+
+    if (fetchError) {
+      console.error('Chat photo cleanup fetch error:', fetchError)
+      return NextResponse.json({ error: 'Failed to query expired photos', deleted: totalDeleted }, { status: 500 })
+    }
+
+    const expired = (data ?? []) as ExpiredMessage[]
+    if (expired.length === 0) break
+
+    const paths = expired.map(m => m.photo_path as string)
+    const { error: removeError } = await supabase.storage.from('chat-photos').remove(paths)
+    if (removeError) {
+      console.error('Chat photo cleanup storage error:', removeError)
+      return NextResponse.json({ error: 'Failed to delete storage objects', deleted: totalDeleted }, { status: 500 })
+    }
+
+    // messages_body_or_photo requires a body once photo_path is cleared, so
+    // photo-only messages get a placeholder instead of just nulling the path.
+    const withBody = expired.filter(m => m.body).map(m => m.id)
+    const bodyless = expired.filter(m => !m.body).map(m => m.id)
+
+    if (withBody.length > 0) {
+      await supabase.from('messages').update({ photo_path: null }).in('id', withBody)
+    }
+    if (bodyless.length > 0) {
+      await supabase
+        .from('messages')
+        .update({ photo_path: null, body: '📷 Photo (removed after 90 days)' })
+        .in('id', bodyless)
+    }
+
+    totalDeleted += expired.length
+    if (expired.length < BATCH_SIZE) break
   }
 
-  return NextResponse.json({ deleted: expired.length })
+  return NextResponse.json({ deleted: totalDeleted })
 }
