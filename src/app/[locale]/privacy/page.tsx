@@ -7,7 +7,13 @@
 //   3. Keep it in sync — if you add Stripe, analytics, or new data fields
 //      to schema.sql, this page needs the matching update.
 
+import type { Metadata } from 'next'
 import Footer from '@/components/Footer'
+import { pageMetadata } from '@/lib/seo'
+
+export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+  return pageMetadata({ locale: params.locale, path: '/privacy', titleKey: 'privacyTitle', descriptionKey: 'privacyDescription' })
+}
 
 const LAST_UPDATED = '[DATE — set when this is actually published]'
 

@@ -13,12 +13,24 @@ const dmSans = DM_Sans({
   variable: '--font-dm-sans',
 })
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
 export const metadata: Metadata = {
+  metadataBase: new URL(BASE_URL),
   title: {
     default: 'Cyprus Cleaners — Find trusted cleaners across Cyprus',
     template: '%s | Cyprus Cleaners',
   },
   description: 'Find vetted local cleaners for your home or apartment across Cyprus.',
+  openGraph: {
+    title: 'Cyprus Cleaners',
+    description: 'Find vetted local cleaners for your home or apartment across Cyprus.',
+    siteName: 'Cyprus Cleaners',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+  },
 }
 
 export default async function RootLayout({

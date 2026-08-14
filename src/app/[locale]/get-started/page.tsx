@@ -1,6 +1,12 @@
+import type { Metadata } from 'next'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import Footer from '@/components/Footer'
+import { pageMetadata } from '@/lib/seo'
+
+export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+  return pageMetadata({ locale: params.locale, path: '/get-started', titleKey: 'getStartedTitle', descriptionKey: 'getStartedDescription' })
+}
 
 export default function GetStartedPage() {
   const t = useTranslations('getStarted')
