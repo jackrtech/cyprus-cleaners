@@ -31,6 +31,7 @@ interface DisputeBooking {
   address: string | null
   notes: string | null
   photo_urls: string[]
+  payment: { status: string; amount_eur: number } | null
 }
 
 interface Dispute {
@@ -92,6 +93,26 @@ export default function AdminDisputesPage() {
       setDisputes(prev => prev.map(d => d.id === updated.id ? { ...d, ...updated } : d))
       setViewingId(null)
       setNoteText('')
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : t('actionError'))
+    } finally {
+      setPendingId(null)
+    }
+  }
+
+  async function handleRefund(id: string) {
+    if (pendingId) return
+    setPendingId(id)
+    setActionError(null)
+    try {
+      const res = await fetch(`/api/admin/disputes/${id}/refund`, { method: 'POST' })
+      if (!res.ok) throw new Error(await extractErrorMessage(res, t('actionError')))
+      const { status }: { status: string } = await res.json()
+      setDisputes(prev => prev.map(d =>
+        d.id === id && d.booking?.payment
+          ? { ...d, booking: { ...d.booking, payment: { ...d.booking.payment, status } } }
+          : d
+      ))
     } catch (err) {
       setActionError(err instanceof Error ? err.message : t('actionError'))
     } finally {
@@ -270,6 +291,22 @@ export default function AdminDisputesPage() {
                     </p>
                     {viewing.admin_note && (
                       <p className="text-body text-teal-900 bg-[#F7FAF9] rounded-lg p-3 mt-2">{viewing.admin_note}</p>
+                    )}
+                    {viewing.resolution === 'CUSTOMER' && b?.payment && (b.payment.status === 'PAID' || b.payment.status === 'REFUND_FAILED') && (
+                      <button
+                        type="button"
+                        onClick={() => handleRefund(viewing.id)}
+                        disabled={pendingId === viewing.id}
+                        className="btn-ghost mt-3 !text-red-600 disabled:opacity-50"
+                      >
+                        {b.payment.status === 'REFUND_FAILED' ? t('retryRefund') : t('refundCustomer', { amount: b.payment.amount_eur.toFixed(2) })}
+                      </button>
+                    )}
+                    {b?.payment?.status === 'REFUND_FAILED' && (
+                      <p className="text-body text-red-600 mt-1">{t('refundFailedNote')}</p>
+                    )}
+                    {b?.payment?.status === 'REFUNDED' && (
+                      <p className="text-body text-teal-600 mt-2">{t('refunded')}</p>
                     )}
                   </div>
                 ) : (

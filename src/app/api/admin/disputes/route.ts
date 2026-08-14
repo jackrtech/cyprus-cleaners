@@ -16,6 +16,7 @@ interface DisputeBooking {
   address: string | null
   notes: string | null
   photo_paths: string[]
+  payments: { status: string; amount_eur: number } | { status: string; amount_eur: number }[] | null
 }
 
 interface DisputeRow {
@@ -51,7 +52,7 @@ export async function GET() {
       id, claim, cleaner_response, status, resolution, admin_note, created_at, resolved_at,
       customer:users!disputes_customer_id_fkey ( id, full_name, email ),
       cleaner_profiles ( id, display_name, user_id ),
-      booking:bookings ( id, date, start_time, duration_hours, bedrooms, bathrooms, cleaning_type, address, notes, photo_paths )
+      booking:bookings ( id, date, start_time, duration_hours, bedrooms, bathrooms, cleaning_type, address, notes, photo_paths, payments ( status, amount_eur ) )
     `)
     .order('created_at', { ascending: true })
 
@@ -72,7 +73,8 @@ export async function GET() {
 
   const withPhotoUrls = rows.map(d => {
     const photo_urls = (d.booking?.photo_paths ?? []).map(p => urlByPath.get(p)).filter((u): u is string => !!u)
-    return { ...d, booking: d.booking ? { ...d.booking, photo_urls } : null }
+    const payment = Array.isArray(d.booking?.payments) ? d.booking?.payments[0] ?? null : d.booking?.payments ?? null
+    return { ...d, booking: d.booking ? { ...d.booking, photo_urls, payment } : null }
   })
 
   return NextResponse.json(withPhotoUrls)

@@ -341,7 +341,11 @@
     "resolvedForCleanerNamed": "Resolved in favor of {name} (cleaner).",
     "resolveForCustomer": "Rule for {name} (customer)",
     "resolveForCleaner": "Rule for {name} (cleaner)",
-    "disputeNoteHint": "Sent to both the customer and the cleaner by email along with the outcome."
+    "disputeNoteHint": "Sent to both the customer and the cleaner by email along with the outcome.",
+    "refundCustomer": "Refund customer (€{amount})",
+    "retryRefund": "Retry refund",
+    "refundFailedNote": "The refund attempt failed — retry, or check the Stripe dashboard directly.",
+    "refunded": "Refunded"
   },
   "cleaners": {
     "topRated": "Top rated",
