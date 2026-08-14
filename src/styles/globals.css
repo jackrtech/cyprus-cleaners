@@ -14,7 +14,7 @@
   --color-gold-light:     #FDF8E1;
   --color-blue:           #2D8CFF;
   --color-blue-light:     #E6F1FF;
-  --color-muted:          #6B8886;
+  --color-muted:          #5B7472;  /* darkened from #6B8886 for WCAG AA — see tailwind.config.js for the contrast math */
   --color-surface:        #F7FAF9;
   --color-border:         #E0EDEC;
   --color-white:          #FFFFFF;

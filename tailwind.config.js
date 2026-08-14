@@ -48,7 +48,14 @@ module.exports = {
           900: '#042C53',
         },
         // --- Neutrals ---
-        muted: '#6B8886',    // Secondary text, icons
+        // WCAG AA audit: the original #6B8886 only hit 3.82:1 on white and
+        // 3.64:1 on the page surface (#F7FAF9) — both fail the 4.5:1
+        // normal-text threshold; the real usage across the app is 11-13px
+        // regular weight, well under WCAG's large-text carve-out (24px
+        // regular / ~18.7px bold), so that carve-out never actually applied.
+        // Darkened to the same hue/ratio, verified via the actual WCAG
+        // relative-luminance formula: 4.78:1 on white, 5.02:1 on surface.
+        muted: '#5B7472',    // Secondary text, icons
         surface: '#F7FAF9',  // Page background (off-white with teal tint)
         border: '#E0EDEC',   // Default border
       },

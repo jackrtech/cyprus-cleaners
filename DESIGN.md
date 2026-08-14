@@ -13,7 +13,7 @@ Light, trust-first, local warmth. Surface `#F7FAF9` — tinted faintly toward te
 | `--color-primary-dark` | `#0D1F1E` | Near-black — all heading and body text |
 | `--color-gold` | `#F2C94C` | Accent — spark decoration, star ratings |
 | `--color-gold-light` | `#FDF8E1` | Gold bg fills |
-| `--color-muted` | `#6B8886` | Secondary text and labels (18px+ where 3:1 suffices; pure decoration at smaller sizes) |
+| `--color-muted` | `#5B7472` | Secondary text and labels — 4.78:1 on white, 5.02:1 on `--color-surface`, passes WCAG AA for normal text at any size (darkened from the original `#6B8886`, which only hit 3.6–3.8:1 and failed AA at the small sizes it's actually used at) |
 | `--color-surface` | `#F7FAF9` | Page background |
 | `--color-border` | `#E0EDEC` | Borders, dividers, step separators |
 | `--color-white` | `#FFFFFF` | Cards, elevated sections |
