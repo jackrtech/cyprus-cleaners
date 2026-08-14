@@ -34,12 +34,16 @@ interface DisputeBooking {
   payment: { status: string; amount_eur: number } | null
 }
 
+type DisputeResolution = 'CUSTOMER' | 'CLEANER' | 'UNRESOLVABLE'
+
 interface Dispute {
   id: string
   claim: string
   cleaner_response: string | null
   status: string
-  resolution: 'CUSTOMER' | 'CLEANER' | null
+  resolution: DisputeResolution | null
+  refund_percentage: number
+  resolve_by: string | null
   admin_note: string | null
   created_at: string
   resolved_at: string | null
@@ -62,6 +66,7 @@ export default function AdminDisputesPage() {
   const [noteText,     setNoteText]    = useState('')
   const [pendingId,    setPendingId]   = useState<string | null>(null)
   const [actionError,  setActionError] = useState<string | null>(null)
+  const [splitPercentage, setSplitPercentage] = useState(50)
 
   useEffect(() => {
     if (sessionStatus === 'loading') return
@@ -78,7 +83,7 @@ export default function AdminDisputesPage() {
       .finally(() => setLoading(false))
   }, [session, sessionStatus, t])
 
-  async function handleResolve(id: string, resolution: 'CUSTOMER' | 'CLEANER') {
+  async function handleResolve(id: string, resolution: DisputeResolution) {
     if (pendingId) return
     setPendingId(id)
     setActionError(null)
@@ -86,7 +91,11 @@ export default function AdminDisputesPage() {
       const res = await fetch(`/api/admin/disputes/${id}`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ resolution, note: noteText.trim() || undefined }),
+        body:    JSON.stringify({
+          resolution,
+          note: noteText.trim() || undefined,
+          refund_percentage: resolution === 'UNRESOLVABLE' ? splitPercentage : undefined,
+        }),
       })
       if (!res.ok) throw new Error(await extractErrorMessage(res, t('actionError')))
       const updated: Dispute = await res.json()
@@ -160,10 +169,15 @@ export default function AdminDisputesPage() {
         {!loading && disputes.length > 0 && (
           <ul className="space-y-3">
             {disputes.map(d => {
+              const isOverdue = d.status === 'OPEN' && !!d.resolve_by && new Date(d.resolve_by).getTime() < Date.now()
               const statusBadge = d.status === 'OPEN'
-                ? { label: t('statusOpen'), className: 'bg-gold-50 text-gold-700' }
+                ? (isOverdue
+                    ? { label: t('statusOverdue'), className: 'bg-red-100 text-red-700' }
+                    : { label: t('statusOpen'), className: 'bg-gold-50 text-gold-700' })
                 : d.resolution === 'CUSTOMER'
                 ? { label: t('resolvedForCustomer'), className: 'bg-teal-50 text-teal-600' }
+                : d.resolution === 'UNRESOLVABLE'
+                ? { label: t('resolvedUnresolvable'), className: 'bg-teal-50 text-teal-600' }
                 : { label: t('resolvedForCleaner'), className: 'bg-teal-50 text-teal-600' }
               return (
                 <li key={d.id}>
@@ -188,6 +202,13 @@ export default function AdminDisputesPage() {
                         <span className="text-label uppercase tracking-widest text-muted">
                           {t('filedOn', { date: dateFormatter.format(new Date(d.created_at)) })}
                         </span>
+                        {d.status === 'OPEN' && d.resolve_by && (
+                          <span className={`text-label uppercase tracking-widest ${isOverdue ? 'text-red-600' : 'text-muted'}`}>
+                            {isOverdue
+                              ? t('slaOverdue')
+                              : t('slaDaysLeft', { days: Math.max(0, Math.ceil((new Date(d.resolve_by).getTime() - Date.now()) / 86400000)) })}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </button>
@@ -287,6 +308,8 @@ export default function AdminDisputesPage() {
                     <p className="text-body text-teal-900">
                       {viewing.resolution === 'CUSTOMER'
                         ? t('resolvedForCustomerNamed', { name: customerName })
+                        : viewing.resolution === 'UNRESOLVABLE'
+                        ? t('resolvedUnresolvableNamed', { percentage: viewing.refund_percentage })
                         : t('resolvedForCleanerNamed', { name: cleanerName })}
                     </p>
                     {viewing.admin_note && (
@@ -325,21 +348,43 @@ export default function AdminDisputesPage() {
               </div>
 
               {viewing.status === 'OPEN' && (
-                <div className="flex gap-3 px-4 py-3 border-t border-[#E0EDEC] shrink-0">
-                  <button
-                    className="btn-ghost flex-1"
-                    disabled={pendingId === viewing.id}
-                    onClick={() => handleResolve(viewing.id, 'CLEANER')}
-                  >
-                    {t('resolveForCleaner', { name: cleanerName })}
-                  </button>
-                  <button
-                    className="btn-primary flex-1"
-                    disabled={pendingId === viewing.id}
-                    onClick={() => handleResolve(viewing.id, 'CUSTOMER')}
-                  >
-                    {t('resolveForCustomer', { name: customerName })}
-                  </button>
+                <div className="px-4 py-3 border-t border-[#E0EDEC] shrink-0 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <label className="text-body text-muted shrink-0">{t('splitRefundLabel')}</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={splitPercentage}
+                      onChange={e => setSplitPercentage(Math.min(100, Math.max(0, Number(e.target.value))))}
+                      className="input !py-1.5 !w-20 text-body"
+                    />
+                    <span className="text-body text-muted">%</span>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      className="btn-ghost flex-1"
+                      disabled={pendingId === viewing.id}
+                      onClick={() => handleResolve(viewing.id, 'CLEANER')}
+                    >
+                      {t('resolveForCleaner', { name: cleanerName })}
+                    </button>
+                    <button
+                      className="btn-secondary flex-1"
+                      disabled={pendingId === viewing.id}
+                      onClick={() => handleResolve(viewing.id, 'UNRESOLVABLE')}
+                    >
+                      {t('resolveUnresolvable')}
+                    </button>
+                    <button
+                      className="btn-primary flex-1"
+                      disabled={pendingId === viewing.id}
+                      onClick={() => handleResolve(viewing.id, 'CUSTOMER')}
+                    >
+                      {t('resolveForCustomer', { name: customerName })}
+                    </button>
+                  </div>
                 </div>
               )}
             </>

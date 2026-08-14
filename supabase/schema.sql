@@ -116,6 +116,7 @@ create table bookings (
   photo_paths         text[] not null default '{}',  -- Private storage paths in 'booking-photos' bucket; signed URLs generated at read time
   status              booking_status not null default 'REQUESTED',
   review_prompted_at  timestamptz,  -- Set when status → COMPLETED; triggers review prompt
+  completed_at        timestamptz,  -- Set when status → COMPLETED; anchors the 7-day customer dispute-filing window. Applying to an existing database: `alter table bookings add column completed_at timestamptz;`
   cancellation_reason text,  -- Free-text reason, set on CANCEL/DECLINE
   cancelled_by        uuid references users(id),  -- Who initiated the cancellation
   review_skipped_at   timestamptz,  -- Customer dismissed the review prompt; suppresses it going forward instead of re-showing on every reload. Applying to an existing database: `alter table bookings add column review_skipped_at timestamptz;`
@@ -225,7 +226,7 @@ create index idx_reviews_customer on reviews (customer_id);
 -- together by an admin.
 
 create type dispute_status     as enum ('OPEN', 'RESOLVED');
-create type dispute_resolution as enum ('CUSTOMER', 'CLEANER');  -- Who the admin ruled in favor of
+create type dispute_resolution as enum ('CUSTOMER', 'CLEANER', 'UNRESOLVABLE');  -- Who the admin ruled in favor of; UNRESOLVABLE is a neutral split decision, framed as "the platform made a fair call with limited information" rather than either party winning/losing — applying to an existing database: `alter type dispute_resolution add value 'UNRESOLVABLE';`
 
 create table disputes (
   id                  uuid primary key default gen_random_uuid(),
@@ -236,10 +237,14 @@ create table disputes (
   cleaner_response    text,
   status              dispute_status not null default 'OPEN',
   resolution          dispute_resolution,
+  refund_percentage   int not null default 0 check (refund_percentage >= 0 and refund_percentage <= 100),  -- 100 for CUSTOMER (manual refund button), 0 for CLEANER, admin-chosen (default 50) for UNRESOLVABLE (auto-refunded on resolution)
+  resolve_by          timestamptz,  -- created_at + 5 days, stamped on insert — admin SLA, shown as a countdown/overdue flag in the queue
   admin_note          text,
   created_at          timestamptz not null default now(),
   resolved_at         timestamptz
 );
+-- Applying refund_percentage/resolve_by to an existing database:
+-- `alter table disputes add column refund_percentage int not null default 0 check (refund_percentage >= 0 and refund_percentage <= 100), add column resolve_by timestamptz;`
 
 create index idx_disputes_status  on disputes (status);
 create index idx_disputes_booking on disputes (booking_id);

@@ -282,13 +282,17 @@ export async function sendVerificationRejectedEmail({
 // favor, 'LOST' otherwise. Same admin note goes to both sides.
 
 export async function sendDisputeResolvedEmail({
-  to, locale, outcome, note, dashboardUrl,
+  to, locale, outcome, note, dashboardUrl, refundPercentage,
 }: {
   to:           string
   locale:       string | null
-  outcome:      'WON' | 'LOST'
+  outcome:      'WON' | 'LOST' | 'UNRESOLVABLE'
   note:         string | null
   dashboardUrl: string
+  // Only meaningful when outcome is 'UNRESOLVABLE' and the recipient is the
+  // customer (the one who might be getting money back) — omitted for the
+  // cleaner's copy of the same outcome.
+  refundPercentage?: number
 }) {
   const isEl = locale === 'el'
 
@@ -298,21 +302,55 @@ export async function sendDisputeResolvedEmail({
 
   const outcomeLineEl = outcome === 'WON'
     ? 'Μετά από έλεγχο, η διαφορά επιλύθηκε υπέρ σας.'
-    : 'Μετά από έλεγχο, η διαφορά επιλύθηκε υπέρ του άλλου μέρους.'
+    : outcome === 'LOST'
+    ? 'Μετά από έλεγχο, η διαφορά επιλύθηκε υπέρ του άλλου μέρους.'
+    : refundPercentage != null
+    ? `Μετά από έλεγχο των στοιχείων, δεν μπορέσαμε να καταλήξουμε με βεβαιότητα σε ποιον ευθύνεται το ζήτημα. Ως δίκαιη λύση, εκδώσαμε επιστροφή ${refundPercentage}% του ποσού.`
+    : 'Μετά από έλεγχο των στοιχείων, δεν μπορέσαμε να καταλήξουμε με βεβαιότητα σε ποιον ευθύνεται το ζήτημα. Καταλήξαμε σε μια δίκαιη απόφαση με βάση τα διαθέσιμα στοιχεία.'
   const outcomeLineEn = outcome === 'WON'
     ? 'After review, the dispute was resolved in your favor.'
-    : 'After review, the dispute was resolved in favor of the other party.'
+    : outcome === 'LOST'
+    ? 'After review, the dispute was resolved in favor of the other party.'
+    : refundPercentage != null
+    ? `After reviewing the evidence, we weren't able to determine with certainty who was at fault. As a fair resolution, we've issued a ${refundPercentage}% refund.`
+    : `After reviewing the evidence, we weren't able to determine with certainty who was at fault. We made the fairest call we could based on what was available.`
+
+  const heading = outcome === 'UNRESOLVABLE'
+    ? (isEl ? 'Δίκαιη απόφαση' : 'A fair resolution')
+    : (isEl ? 'Η διαφορά επιλύθηκε' : 'Dispute resolved')
 
   const html = layout(isEl
-    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η διαφορά επιλύθηκε</h2>
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">${heading}</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${outcomeLineEl}</p>
        ${safeNote ? `<p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Σημείωση από τη διαχείριση:</p>
        <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
        ${cta('Μετάβαση στον πίνακα ελέγχου', dashboardUrl)}`
-    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Dispute resolved</h2>
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">${heading}</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${outcomeLineEn}</p>
        ${safeNote ? `<p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Note from admin:</p>
        <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
+       ${cta('Go to dashboard', dashboardUrl)}`)
+
+  return sendEmail({ to, subject, html })
+}
+
+export async function sendDisputeFiledConfirmationEmail({
+  to, locale, dashboardUrl,
+}: {
+  to:           string
+  locale:       string | null
+  dashboardUrl: string
+}) {
+  const isEl = locale === 'el'
+
+  const subject = isEl ? 'Λάβαμε την αναφορά σας' : 'We received your report'
+
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Λάβαμε την αναφορά σας</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Η ομάδα μας θα την εξετάσει και θα απαντήσει εντός 5 ημερών. Θα σας ενημερώσουμε με email μόλις ληφθεί απόφαση.</p>
+       ${cta('Μετάβαση στον πίνακα ελέγχου', dashboardUrl)}`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">We received your report</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Our team will review this and respond within 5 days. You'll get an email as soon as a decision has been made.</p>
        ${cta('Go to dashboard', dashboardUrl)}`)
 
   return sendEmail({ to, subject, html })
@@ -339,9 +377,11 @@ export async function sendBookingCompletedEmail({
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η εργασία ολοκληρώθηκε</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Ο/Η <strong>${safeCleanerName}</strong> σήμανε την κράτησή σας ως ολοκληρωμένη. Ρίξτε μια ματιά στις φωτογραφίες και αφήστε μια κριτική.</p>
+       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Αν έχετε κάποιο πρόβλημα με την εργασία, έχετε 7 ημέρες για να το αναφέρετε μέσω του πίνακα ελέγχου σας.</p>
        ${cta('Προβολή στον πίνακα ελέγχου', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Job complete</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;"><strong>${safeCleanerName}</strong> marked your booking complete. Take a look at the photos and leave a review.</p>
+       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">If you have any concerns about the service, you have 7 days to raise them through your dashboard.</p>
        ${cta('View in dashboard', dashboardUrl)}`)
 
   return sendEmail({ to: customerEmail, subject, html })

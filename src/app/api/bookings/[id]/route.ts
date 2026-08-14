@@ -181,6 +181,9 @@ export async function PATCH(
     update.cancellation_reason = reason || null
     update.cancelled_by = session.user.id
   }
+  if (newStatus === 'COMPLETED') {
+    update.completed_at = new Date().toISOString()
+  }
 
   // Guard the write on the status we validated against above — closes the
   // check-then-act race where two concurrent requests (e.g. a double-tap on

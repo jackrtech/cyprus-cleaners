@@ -25,6 +25,8 @@ interface DisputeRow {
   cleaner_response: string | null
   status: string
   resolution: string | null
+  refund_percentage: number
+  resolve_by: string | null
   admin_note: string | null
   created_at: string
   resolved_at: string | null
@@ -49,7 +51,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('disputes')
     .select(`
-      id, claim, cleaner_response, status, resolution, admin_note, created_at, resolved_at,
+      id, claim, cleaner_response, status, resolution, refund_percentage, resolve_by, admin_note, created_at, resolved_at,
       customer:users!disputes_customer_id_fkey ( id, full_name, email ),
       cleaner_profiles ( id, display_name, user_id ),
       booking:bookings ( id, date, start_time, duration_hours, bedrooms, bathrooms, cleaning_type, address, notes, photo_paths, payments ( status, amount_eur ) )

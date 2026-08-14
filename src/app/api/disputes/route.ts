@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
-import { sendDisputeFiledAlertEmail } from '@/lib/email'
+import { sendDisputeFiledAlertEmail, sendDisputeFiledConfirmationEmail } from '@/lib/email'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 const CLAIM_MAX_LENGTH = 2000
+const FILING_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
+const RESOLUTION_SLA_MS = 5 * 24 * 60 * 60 * 1000
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -31,7 +33,7 @@ export async function POST(req: NextRequest) {
 
   const { data: booking, error: fetchError } = await supabase
     .from('bookings')
-    .select('id, customer_id, cleaner_profile_id, status')
+    .select('id, customer_id, cleaner_profile_id, status, completed_at')
     .eq('id', booking_id)
     .single()
 
@@ -43,6 +45,9 @@ export async function POST(req: NextRequest) {
   }
   if (booking.status !== 'COMPLETED') {
     return NextResponse.json({ error: 'Only a completed booking can be disputed' }, { status: 409 })
+  }
+  if (booking.completed_at && Date.now() - new Date(booking.completed_at).getTime() > FILING_WINDOW_MS) {
+    return NextResponse.json({ error: 'The 7-day window to raise a concern about this booking has passed' }, { status: 400 })
   }
 
   const { data: existing } = await supabase
@@ -62,6 +67,7 @@ export async function POST(req: NextRequest) {
       customer_id:        session.user.id,
       cleaner_profile_id: booking.cleaner_profile_id,
       claim,
+      resolve_by:          new Date(Date.now() + RESOLUTION_SLA_MS).toISOString(),
     })
     .select('*')
     .single()
@@ -94,6 +100,25 @@ export async function POST(req: NextRequest) {
     })
   } catch (emailErr) {
     console.error('Email send error (dispute filed):', emailErr)
+  }
+
+  // Confirm to the customer, with the 5-day SLA — non-blocking
+  try {
+    const { data: customerUser } = await supabase
+      .from('users')
+      .select('email, locale')
+      .eq('id', session.user.id)
+      .single()
+
+    if (customerUser?.email) {
+      await sendDisputeFiledConfirmationEmail({
+        to:           customerUser.email,
+        locale:       customerUser.locale,
+        dashboardUrl: `${BASE_URL}/dashboard`,
+      })
+    }
+  } catch (emailErr) {
+    console.error('Email send error (dispute filed confirmation):', emailErr)
   }
 
   return NextResponse.json(dispute, { status: 201 })

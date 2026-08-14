@@ -10,7 +10,7 @@ export type BookingStatus = 'REQUESTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED
 export type PaymentStatus = 'PENDING' | 'PAID' | 'REFUNDED' | 'FAILED' | 'REFUND_FAILED'
 export type DisputeStatus = 'OPEN' | 'RESOLVED'
 export type VerificationStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
-export type DisputeResolution = 'CUSTOMER' | 'CLEANER'
+export type DisputeResolution = 'CUSTOMER' | 'CLEANER' | 'UNRESOLVABLE'
 
 export type CleaningType = 'STANDARD' | 'DEEP'
 
@@ -92,6 +92,7 @@ export interface Booking {
   finding_us_notes: string | null
   status: BookingStatus
   review_prompted_at: string | null
+  completed_at: string | null
   cancellation_reason: string | null
   cancelled_by: string | null
   review_skipped_at: string | null
@@ -135,6 +136,8 @@ export interface Dispute {
   cleaner_response: string | null
   status: DisputeStatus
   resolution: DisputeResolution | null
+  refund_percentage: number
+  resolve_by: string | null
   admin_note: string | null
   created_at: string
   resolved_at: string | null

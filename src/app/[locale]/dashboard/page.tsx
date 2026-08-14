@@ -67,6 +67,7 @@ interface Booking {
   photo_urls:         string[]
   cancellation_reason: string | null
   review_skipped_at:  string | null
+  completed_at:       string | null
 }
 
 const BOOKING_STATUS_BADGE: Record<BookingStatus, string> = {
@@ -318,9 +319,15 @@ export default function DashboardPage() {
                   </div>
                 )
               )}
-              {booking.status === 'COMPLETED' && (
-                (booking.disputes?.length ?? 0) > 0 ? (
+              {booking.status === 'COMPLETED' && (() => {
+                const daysLeft = booking.completed_at
+                  ? 7 - Math.floor((Date.now() - new Date(booking.completed_at).getTime()) / 86400000)
+                  : null
+                const windowExpired = daysLeft !== null && daysLeft <= 0
+                return (booking.disputes?.length ?? 0) > 0 ? (
                   <p className="text-[12px] text-[#6B8886] mt-2">{tBooking('disputeSubmitted')}</p>
+                ) : windowExpired ? (
+                  <p className="text-[12px] text-[#6B8886] mt-2">{tBooking('disputeWindowPassed')}</p>
                 ) : disputingId === booking.id ? (
                   <div className="mt-2 space-y-2" onClick={e => e.stopPropagation()}>
                     <textarea
@@ -350,7 +357,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3 mt-2">
+                  <div className="flex items-center gap-3 mt-2 flex-wrap">
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); setDisputingId(booking.id) }}
@@ -358,9 +365,14 @@ export default function DashboardPage() {
                     >
                       {tBooking('fileDispute')}
                     </button>
+                    {daysLeft !== null && (
+                      <span className="text-[11px] text-[#6B8886]">
+                        {tBooking('disputeDaysLeft', { days: daysLeft })}
+                      </span>
+                    )}
                   </div>
                 )
-              )}
+              })()}
             </div>
           </div>
         </div>

@@ -384,7 +384,14 @@
     "refundCustomer": "Refund customer (€{amount})",
     "retryRefund": "Retry refund",
     "refundFailedNote": "The refund attempt failed — retry, or check the Stripe dashboard directly.",
-    "refunded": "Refunded"
+    "refunded": "Refunded",
+    "statusOverdue": "Overdue",
+    "resolvedUnresolvable": "Resolved — split decision",
+    "resolvedUnresolvableNamed": "Ruled unresolvable — a {percentage}% refund was issued as a fair resolution.",
+    "resolveUnresolvable": "Unresolvable — split decision",
+    "splitRefundLabel": "Split refund if unresolvable:",
+    "slaDaysLeft": "{days, plural, one {# day left to resolve} other {# days left to resolve}}",
+    "slaOverdue": "Past 5-day SLA"
   },
   "cleaners": {
     "topRated": "Top rated",
@@ -617,6 +624,8 @@
     "disputeClaimPlaceholder": "What went wrong with this job?",
     "submitDispute": "Submit report",
     "disputeSubmitted": "Report submitted — we'll review it and get back to you",
+    "disputeWindowPassed": "The window to raise a concern about this booking has passed",
+    "disputeDaysLeft": "{days, plural, one {# day left to report a problem} other {# days left to report a problem}}",
     "requestedOn": "Requested",
     "timeLeftToRespond": "{hours}h left to respond",
     "lessThanHourLeft": "Less than 1h left to respond",
