@@ -2,13 +2,25 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
+import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import Footer from '@/components/Footer'
 
+// Only ever honoured for a CUSTOMER login (see handleSubmit) — a cleaner or
+// admin always lands on their own dashboard regardless of where they came
+// from. Restricted to a same-origin relative path so this query param (fully
+// attacker-controllable) can't be used as an open redirect.
+function safeReturnPath(value: string | null): string | null {
+  if (!value) return null
+  if (!value.startsWith('/') || value.startsWith('//') || value.includes('://')) return null
+  return value
+}
+
 export default function LoginPage() {
   const t = useTranslations('auth')
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [email, setEmail]           = useState('')
   const [password, setPassword]     = useState('')
@@ -36,7 +48,7 @@ export default function LoginPage() {
 
       if (role === 'CLEANER') router.replace('/dashboard/cleaner')
       else if (role === 'ADMIN') router.replace('/admin')
-      else router.replace('/dashboard')
+      else router.replace(safeReturnPath(searchParams.get('return')) ?? '/dashboard')
     } finally {
       setLoading(false)
     }
