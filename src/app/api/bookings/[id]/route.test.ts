@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createMockSupabaseClient } from '@/test/mocks/supabase'
 
-const { client, setFromResult } = createMockSupabaseClient()
+const { client, setFromResult, queueFromResults } = createMockSupabaseClient()
 
 vi.mock('@/lib/supabase/server', () => ({
   createAdminClient: () => client,
@@ -9,8 +9,12 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('next-auth/next', () => ({
   getServerSession: vi.fn(),
 }))
+const mockStripe = {
+  paymentIntents: { create: vi.fn() },
+  refunds: { create: vi.fn() },
+}
 vi.mock('@/lib/stripe', () => ({
-  getStripe: () => ({ paymentIntents: { create: vi.fn() }, refunds: { create: vi.fn() } }),
+  getStripe: () => mockStripe,
 }))
 vi.mock('@/lib/email', () => ({
   sendBookingConfirmedEmail:      vi.fn(() => Promise.resolve()),
@@ -89,5 +93,38 @@ describe('PATCH /api/bookings/[id] — CONFIRM authorization', () => {
     const res = await PATCH(makeRequest({ action: 'CANCEL' }), { params: { id: 'booking-1' } })
 
     expect(res.status).toBe(403)
+  })
+})
+
+describe('PATCH /api/bookings/[id] — CONFIRM success path', () => {
+  beforeEach(() => {
+    client.from.mockClear()
+    mockStripe.paymentIntents.create.mockReset()
+  })
+
+  it('moves a REQUESTED booking to CONFIRMED and charges the saved card', async () => {
+    mockSession('cleaner-user-1', 'CLEANER')
+    queueFromResults<unknown>('bookings',
+      { data: BASE_BOOKING, error: null }, // initial fetch
+      { data: [{ ...BASE_BOOKING, status: 'CONFIRMED' }], error: null } // guarded update+select
+    )
+    setFromResult('cleaner_profiles', { data: { user_id: 'cleaner-user-1', display_name: 'Cleaner' }, error: null })
+    queueFromResults('payments',
+      { data: { id: 'payment-1', amount_eur: 100, status: 'PENDING', provider_payment_method_id: 'pm_123' }, error: null }, // pre-charge fetch
+      { data: null, error: null }, // status -> PAID write, result unread
+      { data: { amount_eur: 100 }, error: null } // admin-alert amount fetch
+    )
+    setFromResult('users', { data: { stripe_customer_id: 'cus_123', email: 'customer@example.com', full_name: 'Customer Name' }, error: null })
+    mockStripe.paymentIntents.create.mockResolvedValueOnce({ status: 'succeeded', id: 'pi_test123' })
+
+    const res = await PATCH(makeRequest({ action: 'CONFIRM' }), { params: { id: 'booking-1' } })
+
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.status).toBe('CONFIRMED')
+    expect(mockStripe.paymentIntents.create).toHaveBeenCalledWith(
+      expect.objectContaining({ payment_method: 'pm_123', off_session: true, confirm: true }),
+      expect.objectContaining({ idempotencyKey: 'confirm-booking-1' })
+    )
   })
 })
