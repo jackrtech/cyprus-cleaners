@@ -4,12 +4,11 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-import { extractErrorMessage, estimateCleaningHours } from '@/lib/utils'
+import { extractErrorMessage } from '@/lib/utils'
 import { compressImage } from '@/lib/utils/compressImage'
 import BookingDetailModal from '@/components/dashboard/BookingDetailModal'
-import AddressFormModal, { type SavedAddress } from '@/components/addresses/AddressFormModal'
+import BookingFormModal from '@/components/chat/BookingFormModal'
 import LoadingImage from '@/components/ui/LoadingImage'
-import BookingPaymentElement, { type BookingPaymentHandle } from '@/components/chat/BookingPaymentElement'
 import type { BookingStatus, CleaningType } from '@/types'
 
 interface Message {
@@ -65,17 +64,6 @@ interface Booking {
   photo_urls:      string[]
 }
 
-// Quarter-hour slots covering a typical working day, 07:00–20:00
-const TIME_SLOTS: string[] = (() => {
-  const slots: string[] = []
-  for (let minutes = 7 * 60; minutes <= 20 * 60; minutes += 15) {
-    const h = String(Math.floor(minutes / 60)).padStart(2, '0')
-    const m = String(minutes % 60).padStart(2, '0')
-    slots.push(`${h}:${m}`)
-  }
-  return slots
-})()
-
 interface ChatPanelProps {
   introductionId:    string
   currentUserId:     string
@@ -103,7 +91,6 @@ export default function ChatPanel({
 }: ChatPanelProps) {
   const t        = useTranslations('chat')
   const tBooking = useTranslations('booking')
-  const tAddr    = useTranslations('address')
   const locale   = useLocale()
 
   const [messages, setMessages] = useState<Message[] | null>(null)
@@ -115,74 +102,12 @@ export default function ChatPanel({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoError,   setPhotoError]   = useState<string | null>(null)
 
-  const [bookings,         setBookings]         = useState<Booking[] | null>(null)
-  const [showBookingForm,  setShowBookingForm]  = useState(initialShowBookingForm)
-  const [bookingSubmitting, setBookingSubmitting] = useState(false)
-  const [bookingError,     setBookingError]     = useState<string | null>(null)
-
-  const [bedrooms,       setBedrooms]       = useState('1')
-  const [bathrooms,      setBathrooms]      = useState('1')
-  const [cleaningType,   setCleaningType]   = useState<CleaningType>('STANDARD')
-  const [bookingDate,    setBookingDate]    = useState('')
-  const [startTime,      setStartTime]      = useState('')
-  const [durationHours,  setDurationHours]  = useState(String(estimateCleaningHours(1, 1, 'STANDARD')))
-  const [durationTouched, setDurationTouched] = useState(false)
-  const [bookingNotes,   setBookingNotes]   = useState('')
-
-  const ADD_NEW_ADDRESS = '__add_new__'
-  const [savedAddresses,   setSavedAddresses]   = useState<SavedAddress[]>([])
-  const [selectedAddressId, setSelectedAddressId] = useState('')
-  const [showAddressModal, setShowAddressModal] = useState(false)
-
-  const [setupClientSecret, setSetupClientSecret] = useState<string | null>(null)
-  const paymentHandleRef = useRef<BookingPaymentHandle | null>(null)
-
-  const selectedAddress = savedAddresses.find(a => a.id === selectedAddressId) ?? null
-
-  // Pre-fill the duration estimate as room count/type change, but stop
-  // overwriting it once the customer has edited it themselves
-  useEffect(() => {
-    if (durationTouched) return
-    setDurationHours(String(estimateCleaningHours(Number(bedrooms) || 0, Number(bathrooms) || 0, cleaningType)))
-  }, [bedrooms, bathrooms, cleaningType, durationTouched])
-
-  // Fetch the customer's saved addresses once the booking form opens — with
-  // exactly one on file, pre-select it; with zero or several, leave it
-  // unselected so a customer with multiple properties has to pick explicitly
-  // rather than risk a cleaner going to the wrong address.
-  useEffect(() => {
-    if (!showBookingForm || currentUserRole !== 'CUSTOMER') return
-    let cancelled = false
-    fetch('/api/addresses')
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then((data: SavedAddress[]) => {
-        if (cancelled) return
-        setSavedAddresses(data)
-        if (data.length === 1) setSelectedAddressId(prev => prev || data[0].id)
-      })
-      .catch(() => {})
-    return () => { cancelled = true }
-  }, [showBookingForm, currentUserRole])
-
-  // Fetch a SetupIntent to save a card once the booking form opens — the
-  // customer's payment method has to be on file before submitting, since
-  // charging happens later when the cleaner confirms (they aren't present
-  // for that step).
-  useEffect(() => {
-    if (!showBookingForm || currentUserRole !== 'CUSTOMER') return
-    let cancelled = false
-    fetch('/api/stripe/setup-intent', { method: 'POST' })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then((data: { clientSecret: string }) => { if (!cancelled) setSetupClientSecret(data.clientSecret) })
-      .catch(() => {})
-    return () => { cancelled = true }
-  }, [showBookingForm, currentUserRole])
+  const [bookings,        setBookings]        = useState<Booking[] | null>(null)
+  const [showBookingModal, setShowBookingModal] = useState(initialShowBookingForm)
 
   const [viewingBookingId, setViewingBookingId] = useState<string | null>(null)
 
-  const latestBooking   = bookings && bookings.length > 0 ? bookings[0] : null
-  const todayStr        = new Date().toISOString().slice(0, 10)
-  const bookingDateFmt  = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
+  const latestBooking = bookings && bookings.length > 0 ? bookings[0] : null
 
   const messageListRef = useRef<HTMLDivElement>(null)
   const textareaRef   = useRef<HTMLTextAreaElement>(null)
@@ -515,57 +440,6 @@ export default function ChatPanel({
     setPhotoError(null)
   }
 
-  async function handleBookingSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!bookingDate || !startTime || !selectedAddress || bookingSubmitting) return
-    if (!paymentHandleRef.current) {
-      setBookingError(tBooking('paymentNotReady'))
-      return
-    }
-
-    setBookingSubmitting(true)
-    setBookingError(null)
-    try {
-      const paymentMethodId = await paymentHandleRef.current.confirmCard()
-
-      const res = await fetch('/api/bookings', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          introduction_id: introductionId,
-          bedrooms:         Number(bedrooms),
-          bathrooms:        Number(bathrooms),
-          cleaning_type:    cleaningType,
-          date:             bookingDate,
-          start_time:       startTime,
-          duration_hours:   Number(durationHours),
-          notes:            bookingNotes.trim() || undefined,
-          address:          `${selectedAddress.line1}, ${selectedAddress.area ? selectedAddress.area + ', ' : ''}${selectedAddress.city}`,
-          address_lat:      selectedAddress.lat ?? undefined,
-          address_lng:      selectedAddress.lng ?? undefined,
-          finding_us_notes: selectedAddress.finding_us_notes ?? undefined,
-          payment_method_id: paymentMethodId,
-        }),
-      })
-      if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('submitError')))
-
-      const newBooking: Booking = await res.json()
-      setBookings(prev => [{ ...newBooking, photo_urls: [] }, ...(prev ?? [])])
-      setShowBookingForm(false)
-      setBedrooms('1')
-      setBathrooms('1')
-      setCleaningType('STANDARD')
-      setBookingDate('')
-      setStartTime('')
-      setDurationTouched(false)
-      setBookingNotes('')
-      setSetupClientSecret(null)
-    } catch (err) {
-      setBookingError(err instanceof Error ? err.message : tBooking('submitError'))
-    } finally {
-      setBookingSubmitting(false)
-    }
-  }
 
   return (
     <>
@@ -622,204 +496,45 @@ export default function ChatPanel({
           when the full status card was pinned here. */}
       {bookings !== null && currentUserRole === 'CUSTOMER' && (
         <div className="border-b border-[#E0EDEC] px-4 py-3">
-          {bookingError && <p className="text-[12px] text-red-600 mb-2">{bookingError}</p>}
-
-          {!showBookingForm && (
-            latestBooking ? (
-              <>
-                <p className="text-[13px] font-medium text-[#0D1F1E] mb-1.5">
-                  {tBooking(
-                    latestBooking.status === 'CANCELLED' ? 'bookingCancelledNudge'
-                    : latestBooking.status === 'COMPLETED' ? 'bookingCompletedNudge'
-                    : 'bookingActiveNudge'
-                  )}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowBookingForm(true)}
-                  className="btn-primary !px-4 !py-2 text-[13px] rounded-full"
-                >
-                  {tBooking('bookAgain')}
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="text-[11px] text-[#6B8886] mb-1.5">{tBooking('bookingNudge')}</p>
-                <button
-                  type="button"
-                  onClick={() => setShowBookingForm(true)}
-                  className="btn-secondary !px-4 !py-2 text-[13px] rounded-full"
-                >
-                  {tBooking('requestBtn')}
-                </button>
-              </>
-            )
-          )}
-
-          {showBookingForm && (
-            <form onSubmit={handleBookingSubmit} className="space-y-2">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('cleaningType')}</label>
-                  <select
-                    value={cleaningType}
-                    onChange={e => setCleaningType(e.target.value as CleaningType)}
-                    className="input !py-2 text-[13px]"
-                  >
-                    <option value="STANDARD">{tBooking('standardClean')}</option>
-                    <option value="DEEP">{tBooking('deepClean')}</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('duration')}</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={12}
-                    step={0.5}
-                    value={durationHours}
-                    onChange={e => { setDurationHours(e.target.value); setDurationTouched(true) }}
-                    className="input !py-2 text-[13px]"
-                    required
-                  />
-                </div>
-              </div>
-              <p className="text-[11px] text-[#6B8886] -mt-1">{tBooking('durationEstimateHint')}</p>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('bedrooms')}</label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={10}
-                    step={1}
-                    value={bedrooms}
-                    onChange={e => setBedrooms(e.target.value)}
-                    className="input !py-2 text-[13px]"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('bathrooms')}</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={10}
-                    step={1}
-                    value={bathrooms}
-                    onChange={e => setBathrooms(e.target.value)}
-                    className="input !py-2 text-[13px]"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('date')}</label>
-                  <input
-                    type="date"
-                    value={bookingDate}
-                    min={todayStr}
-                    onChange={e => setBookingDate(e.target.value)}
-                    className="input !py-2 text-[13px]"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('startTime')}</label>
-                  <select
-                    value={startTime}
-                    onChange={e => setStartTime(e.target.value)}
-                    className="input !py-2 text-[13px]"
-                    required
-                  >
-                    <option value="" disabled>{tBooking('selectTime')}</option>
-                    {TIME_SLOTS.map(slot => (
-                      <option key={slot} value={slot}>{slot}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('address')}</label>
-                <select
-                  value={selectedAddressId}
-                  onChange={e => {
-                    if (e.target.value === ADD_NEW_ADDRESS) { setShowAddressModal(true); return }
-                    setSelectedAddressId(e.target.value)
-                  }}
-                  className="input !py-2 text-[13px]"
-                  required
-                >
-                  <option value="" disabled>{tAddr('selectAddress')}</option>
-                  {savedAddresses.map(a => {
-                    const place = a.area ? `${a.area}, ${a.city}` : a.city
-                    return (
-                      <option key={a.id} value={a.id}>
-                        {a.label ? `${a.label} — ${a.line1}, ${place}` : `${a.line1}, ${place}`}
-                      </option>
-                    )
-                  })}
-                  <option value={ADD_NEW_ADDRESS}>{tAddr('addNewOption')}</option>
-                </select>
-                {selectedAddress?.area && (
-                  <p className="text-[11px] text-[#6B8886] mt-1">{tBooking('outsideCityCentreNudge')}</p>
+          {latestBooking ? (
+            <>
+              <p className="text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+                {tBooking(
+                  latestBooking.status === 'CANCELLED' ? 'bookingCancelledNudge'
+                  : latestBooking.status === 'COMPLETED' ? 'bookingCompletedNudge'
+                  : 'bookingActiveNudge'
                 )}
-              </div>
-              <div>
-                <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('notes')}</label>
-                <textarea
-                  value={bookingNotes}
-                  onChange={e => setBookingNotes(e.target.value.slice(0, 1000))}
-                  placeholder={tBooking('notesPlaceholder')}
-                  rows={2}
-                  className="input !py-2 text-[13px] resize-none w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('paymentMethod')}</label>
-                {setupClientSecret ? (
-                  <BookingPaymentElement
-                    clientSecret={setupClientSecret}
-                    onReady={handle => { paymentHandleRef.current = handle }}
-                  />
-                ) : (
-                  <p className="text-[12px] text-[#6B8886]">{tBooking('loadingPayment')}</p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={bookingSubmitting || !selectedAddress || !setupClientSecret}
-                  className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
-                >
-                  {tBooking('submit')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowBookingForm(false)}
-                  className="btn-ghost !px-4 !py-2 text-[13px] rounded-full"
-                >
-                  {tBooking('cancelForm')}
-                </button>
-              </div>
-            </form>
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowBookingModal(true)}
+                className="btn-primary !px-4 !py-2 text-[13px] rounded-full"
+              >
+                {tBooking('bookAgain')}
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-[11px] text-[#6B8886] mb-1.5">{tBooking('bookingNudge')}</p>
+              <button
+                type="button"
+                onClick={() => setShowBookingModal(true)}
+                className="btn-secondary !px-4 !py-2 text-[13px] rounded-full"
+              >
+                {tBooking('requestBtn')}
+              </button>
+            </>
           )}
         </div>
       )}
 
-      <AddressFormModal
-        isOpen={showAddressModal}
-        onClose={() => setShowAddressModal(false)}
-        addresses={savedAddresses}
-        onSelect={address => {
-          setSavedAddresses(prev => prev.some(a => a.id === address.id) ? prev : [...prev, address])
-          setSelectedAddressId(address.id)
-          setShowAddressModal(false)
-        }}
-        onDeleted={id => {
-          setSavedAddresses(prev => prev.filter(a => a.id !== id))
-          setSelectedAddressId(prev => prev === id ? '' : prev)
+      <BookingFormModal
+        isOpen={showBookingModal}
+        onClose={() => setShowBookingModal(false)}
+        introductionId={introductionId}
+        cleanerName={otherPartyName}
+        onBookingCreated={newBooking => {
+          setBookings(prev => [newBooking, ...(prev ?? [])])
         }}
       />
 
