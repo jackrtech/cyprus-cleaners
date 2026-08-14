@@ -679,7 +679,7 @@ export default function ForCleanersPage() {
               </div>
               <p style={{ fontSize: '12px', color: '#5B7472', marginBottom: '10px' }}>Limassol · €18/hr</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ color: '#F2C94C', fontSize: '12px', letterSpacing: '-0.5px' }}>★★★★★</span>
+                <span aria-hidden="true" style={{ color: '#7A5F00', fontSize: '12px', letterSpacing: '-0.5px' }}>★★★★★</span>
                 <span style={{ fontSize: '12px', fontWeight: 500, color: '#0D1F1E' }}>4.9</span>
                 <span style={{ fontSize: '12px', color: '#5B7472' }}>(38 reviews)</span>
               </div>

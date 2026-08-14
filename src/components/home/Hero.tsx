@@ -193,7 +193,7 @@ export default function Hero() {
               ))}
             </div>
             <div className="flex items-center gap-1.5 mb-0.5">
-              <span className="text-[#F2C94C] text-[13px] leading-none tracking-tight">★★★★★</span>
+              <span aria-hidden="true" className="text-[#7A5F00] text-[13px] leading-none tracking-tight">★★★★★</span>
               <span className="text-[13px] font-medium text-[#0D1F1E]">4.9/5</span>
             </div>
             <p className="text-[11px] text-[#5B7472] leading-snug">{t('ratingLabel')}</p>

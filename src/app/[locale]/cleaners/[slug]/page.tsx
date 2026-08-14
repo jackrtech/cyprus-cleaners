@@ -124,11 +124,12 @@ function mapReview(row: DbReviewRow): ProfileReview {
 }
 
 function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
+  const t = useTranslations('profile')
   const full = Math.round(rating)
   return (
-    <span style={{ fontSize: size }} className="leading-none">
+    <span style={{ fontSize: size }} className="leading-none" role="img" aria-label={t('starRating', { rating })}>
       {Array.from({ length: 5 }, (_, i) => (
-        <span key={i} className={i < full ? 'text-[#F2C94C]' : 'text-[#D9D9D9]'}>
+        <span key={i} aria-hidden="true" className={i < full ? 'text-[#7A5F00]' : 'text-[#D9D9D9]'}>
           {i < full ? '★' : '☆'}
         </span>
       ))}

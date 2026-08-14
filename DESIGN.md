@@ -11,7 +11,7 @@ Light, trust-first, local warmth. Surface `#F7FAF9` — tinted faintly toward te
 | `--color-primary` | `#19706A` | Brand teal — buttons, accent text, icons, teal word in headlines |
 | `--color-primary-light` | `#E8F4F3` | Hover fills, quote section bg, tag backgrounds |
 | `--color-primary-dark` | `#0D1F1E` | Near-black — all heading and body text |
-| `--color-gold` | `#F2C94C` | Accent — spark decoration, star ratings |
+| `--color-gold` | `#F2C94C` | Accent — spark decoration and other purely-decorative gold uses only. **Not used for star-rating glyphs** — `#F2C94C` measures 1.6:1 against white, badly failing WCAG AA (needs 4.5:1, or 3:1 even at the 28px review-picker size). Star-rating text (`★`/`☆`) uses `#7A5F00` (gold-700) instead — 6.06:1, passes AA, same shade already used for `badge-gold` text. Where a star row sits next to visible numeric-equivalent text (e.g. "4.9/5"), the glyphs are `aria-hidden` since the text already conveys the rating; where there's no adjacent text (e.g. `CleanerCard`, `ReviewItem`), the wrapping span carries `role="img"` + a translated `aria-label` instead. |
 | `--color-gold-light` | `#FDF8E1` | Gold bg fills |
 | `--color-muted` | `#5B7472` | Secondary text and labels — 4.78:1 on white, 5.02:1 on `--color-surface`, passes WCAG AA for normal text at any size (darkened from the original `#6B8886`, which only hit 3.6–3.8:1 and failed AA at the small sizes it's actually used at) |
 | `--color-surface` | `#F7FAF9` | Page background |

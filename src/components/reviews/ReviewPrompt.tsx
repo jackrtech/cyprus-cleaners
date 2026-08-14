@@ -37,7 +37,7 @@ function StarPicker({ rating, hoverRating, onHover, onPick }: {
           onClick={() => onPick(n)}
           aria-label={`${n} star${n > 1 ? 's' : ''}`}
           className="text-[28px] leading-none transition-transform hover:scale-110"
-          style={{ color: n <= active ? '#F2C94C' : '#D9D9D9' }}
+          style={{ color: n <= active ? '#7A5F00' : '#D9D9D9' }}
         >
           {n <= active ? '★' : '☆'}
         </button>
