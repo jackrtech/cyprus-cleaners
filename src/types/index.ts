@@ -95,6 +95,7 @@ export interface Booking {
   // Joins
   customer?: User
   cleaner_profile?: CleanerProfile
+  disputes?: { id: string; status: DisputeStatus }[]
 }
 
 export interface Message {

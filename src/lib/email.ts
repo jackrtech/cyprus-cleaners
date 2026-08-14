@@ -398,3 +398,30 @@ export async function sendRefundFailedAlertEmail({
     bodyHtml,
   })
 }
+
+export async function sendDisputeFiledAlertEmail({
+  bookingId, customerName, cleanerName, claim, adminUrl,
+}: {
+  bookingId:    string
+  customerName: string
+  cleanerName:  string
+  claim:        string
+  adminUrl:     string
+}) {
+  const bodyHtml =
+    `<p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 12px;">A customer has filed a dispute on a completed booking — it needs review.</p>
+     <table style="width:100%;font-size:13px;color:#0D1F1E;border-collapse:collapse;margin-top:8px;">
+       <tr><td style="padding:4px 0;color:#6B8886;">Booking</td><td style="padding:4px 0;">${escapeHtml(bookingId)}</td></tr>
+       <tr><td style="padding:4px 0;color:#6B8886;">Customer</td><td style="padding:4px 0;">${escapeHtml(customerName)}</td></tr>
+       <tr><td style="padding:4px 0;color:#6B8886;">Cleaner</td><td style="padding:4px 0;">${escapeHtml(cleanerName)}</td></tr>
+     </table>
+     <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Claim:</p>
+     <blockquote style="border-left:3px solid #B5541F;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${escapeHtml(claim)}</blockquote>
+     ${cta('Open dispute queue', adminUrl)}`
+
+  return sendAdminAlertEmail({
+    subject:  `🚨 New dispute filed — booking ${bookingId}`,
+    heading:  'New dispute filed',
+    bodyHtml,
+  })
+}

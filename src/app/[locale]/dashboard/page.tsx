@@ -60,6 +60,7 @@ interface Booking {
   created_at:         string
   cleaner_profiles:   CleanerProfile | null
   reviews:            { id: string }[] | null
+  disputes:           { id: string; status: string }[] | null
   photo_urls:         string[]
   cancellation_reason: string | null
 }
@@ -105,6 +106,8 @@ export default function DashboardPage() {
   const [viewingBookingId, setViewingBookingId] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [cancelReasonText, setCancelReasonText] = useState('')
+  const [disputingId, setDisputingId] = useState<string | null>(null)
+  const [disputeClaimText, setDisputeClaimText] = useState('')
 
   // Auth guard
   useEffect(() => {
@@ -183,6 +186,30 @@ export default function DashboardPage() {
       setBookings(prev => prev.map(b => b.id === updated.id ? { ...b, ...updated } : b))
       setCancellingId(null)
       setCancelReasonText('')
+    } catch (err) {
+      setBookingActionError(err instanceof Error ? err.message : tBooking('actionError'))
+    } finally {
+      setBookingActionPendingId(null)
+    }
+  }
+
+  async function handleFileDispute(bookingId: string, claim: string) {
+    if (bookingActionPendingId) return
+    setBookingActionPendingId(bookingId)
+    setBookingActionError(null)
+    try {
+      const res = await fetch('/api/disputes', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ booking_id: bookingId, claim }),
+      })
+      if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('actionError')))
+      const dispute: { id: string; status: string } = await res.json()
+      setBookings(prev => prev.map(b =>
+        b.id === bookingId ? { ...b, disputes: [...(b.disputes ?? []), dispute] } : b
+      ))
+      setDisputingId(null)
+      setDisputeClaimText('')
     } catch (err) {
       setBookingActionError(err instanceof Error ? err.message : tBooking('actionError'))
     } finally {
@@ -282,6 +309,49 @@ export default function DashboardPage() {
                       className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B8886] hover:text-red-600 transition-colors disabled:opacity-50"
                     >
                       {tBooking('cancelBooking')}
+                    </button>
+                  </div>
+                )
+              )}
+              {booking.status === 'COMPLETED' && (
+                (booking.disputes?.length ?? 0) > 0 ? (
+                  <p className="text-[12px] text-[#6B8886] mt-2">{tBooking('disputeSubmitted')}</p>
+                ) : disputingId === booking.id ? (
+                  <div className="mt-2 space-y-2" onClick={e => e.stopPropagation()}>
+                    <textarea
+                      value={disputeClaimText}
+                      onChange={e => setDisputeClaimText(e.target.value)}
+                      placeholder={tBooking('disputeClaimPlaceholder')}
+                      rows={2}
+                      maxLength={2000}
+                      className="input text-[13px]"
+                    />
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleFileDispute(booking.id, disputeClaimText)}
+                        disabled={bookingActionPendingId === booking.id || !disputeClaimText.trim()}
+                        className="text-[12px] font-medium text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
+                      >
+                        {tBooking('submitDispute')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setDisputingId(null); setDisputeClaimText('') }}
+                        className="text-[12px] font-medium text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+                      >
+                        {tBooking('neverMind')}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 mt-2">
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); setDisputingId(booking.id) }}
+                      className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B8886] hover:text-red-600 transition-colors disabled:opacity-50"
+                    >
+                      {tBooking('fileDispute')}
                     </button>
                   </div>
                 )

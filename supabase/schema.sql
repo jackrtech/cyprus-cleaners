@@ -219,7 +219,7 @@ create type dispute_resolution as enum ('CUSTOMER', 'CLEANER');  -- Who the admi
 
 create table disputes (
   id                  uuid primary key default gen_random_uuid(),
-  booking_id          uuid not null references bookings(id) on delete cascade,
+  booking_id          uuid not null unique references bookings(id) on delete cascade,  -- one dispute per booking; applying to an existing database: `alter table disputes add constraint disputes_booking_id_key unique (booking_id);`
   customer_id         uuid not null references users(id) on delete cascade,
   cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
   claim               text not null,

@@ -256,7 +256,8 @@ export async function GET(req: NextRequest) {
       .select(`
         *,
         cleaner_profiles ( id, slug, display_name, photo_url, cities ),
-        reviews ( id )
+        reviews ( id ),
+        disputes ( id, status )
       `)
       .eq('customer_id', userId)
 
