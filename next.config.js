@@ -26,7 +26,7 @@ const nextConfig = {
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: https://*.supabase.co https://images.unsplash.com",
+      "img-src 'self' data: https://*.supabase.co https://images.unsplash.com https://tile.openstreetmap.org",
       "font-src 'self' data:",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
       "frame-ancestors 'none'",
