@@ -217,7 +217,8 @@
     }
   },
   "common": {
-    "perHour": "/ώρα"
+    "perHour": "/ώρα",
+    "skipToContent": "Μετάβαση στο κύριο περιεχόμενο"
   },
   "filters": {
     "city": "Πόλη",

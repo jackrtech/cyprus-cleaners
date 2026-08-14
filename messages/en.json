@@ -217,7 +217,8 @@
     }
   },
   "common": {
-    "perHour": "/hr"
+    "perHour": "/hr",
+    "skipToContent": "Skip to main content"
   },
   "filters": {
     "city": "City",
