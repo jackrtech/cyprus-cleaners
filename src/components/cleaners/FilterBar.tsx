@@ -81,22 +81,41 @@ function Panel({ children, onMouseDown }: { children: React.ReactNode; onMouseDo
   )
 }
 
-function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+function toggleKeyHandler(onChange: () => void) {
+  return (e: React.KeyboardEvent) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault()
+      onChange()
+    }
+  }
+}
+
+function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
   return (
     <span
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
+      tabIndex={0}
       className={`w-4 h-4 rounded border-[1.5px] flex items-center justify-center shrink-0 cursor-pointer transition-colors ${checked ? 'bg-[#19706A] border-[#19706A]' : 'bg-white border-[#D0DCD9]'}`}
       onMouseDown={e => { e.preventDefault(); onChange() }}
+      onKeyDown={toggleKeyHandler(onChange)}
     >
       {checked && <CheckIcon />}
     </span>
   )
 }
 
-function Radio({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+function Radio({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
   return (
     <span
+      role="radio"
+      aria-checked={checked}
+      aria-label={label}
+      tabIndex={0}
       className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center shrink-0 cursor-pointer transition-colors ${checked ? 'border-[#19706A]' : 'border-[#D0DCD9]'}`}
       onMouseDown={e => { e.preventDefault(); onChange() }}
+      onKeyDown={toggleKeyHandler(onChange)}
     >
       {checked && <span className="w-2 h-2 rounded-full bg-[#19706A] block" />}
     </span>
@@ -218,7 +237,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                     const checked = filters.cities.includes(city)
                     return (
                       <label key={city} className="flex items-center gap-2.5 cursor-pointer">
-                        <Checkbox checked={checked} onChange={() => update({ cities: checked ? filters.cities.filter(c => c !== city) : [...filters.cities, city] })} />
+                        <Checkbox checked={checked} onChange={() => update({ cities: checked ? filters.cities.filter(c => c !== city) : [...filters.cities, city] })} label={getCityName(city)} />
                         <span className="text-[13px] text-[#0D1F1E] flex-1">{getCityName(city)}</span>
                         <span className="text-[11px] text-[#6B8886]">{count}</span>
                       </label>
@@ -302,7 +321,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                 <div className="space-y-2.5">
                   {(['any', 'female', 'male'] as const).map(g => (
                     <label key={g} className="flex items-center gap-2.5 cursor-pointer">
-                      <Radio checked={filters.gender === g} onChange={() => update({ gender: g })} />
+                      <Radio checked={filters.gender === g} onChange={() => update({ gender: g })} label={g === 'any' ? t('anyGender') : g === 'female' ? t('female') : t('male')} />
                       <span className="text-[13px] text-[#0D1F1E]">{g === 'any' ? t('anyGender') : g === 'female' ? t('female') : t('male')}</span>
                     </label>
                   ))}
@@ -332,7 +351,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                     const checked = filters.languages.includes(lang.code)
                     return (
                       <label key={lang.code} className="flex items-center gap-2.5 cursor-pointer">
-                        <Checkbox checked={checked} onChange={() => update({ languages: checked ? filters.languages.filter(l => l !== lang.code) : [...filters.languages, lang.code] })} />
+                        <Checkbox checked={checked} onChange={() => update({ languages: checked ? filters.languages.filter(l => l !== lang.code) : [...filters.languages, lang.code] })} label={`${lang.label} (${lang.code})`} />
                         <span className="text-[13px] text-[#0D1F1E]">{lang.label} ({lang.code})</span>
                       </label>
                     )
@@ -361,7 +380,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                     const checked = filters.availability.includes(a)
                     return (
                       <label key={a} className="flex items-center gap-2.5 cursor-pointer">
-                        <Checkbox checked={checked} onChange={() => update({ availability: checked ? filters.availability.filter(x => x !== a) : [...filters.availability, a] })} />
+                        <Checkbox checked={checked} onChange={() => update({ availability: checked ? filters.availability.filter(x => x !== a) : [...filters.availability, a] })} label={t(a)} />
                         <span className="text-[13px] text-[#0D1F1E]">{t(a)}</span>
                       </label>
                     )
@@ -388,7 +407,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                 <div className="space-y-2.5">
                   {(['any', 'individual', 'company'] as const).map(tp => (
                     <label key={tp} className="flex items-center gap-2.5 cursor-pointer">
-                      <Radio checked={filters.cleanerType === tp} onChange={() => update({ cleanerType: tp })} />
+                      <Radio checked={filters.cleanerType === tp} onChange={() => update({ cleanerType: tp })} label={tp === 'any' ? t('anyType') : tp === 'individual' ? t('individual') : t('company')} />
                       <span className="text-[13px] text-[#0D1F1E]">{tp === 'any' ? t('anyType') : tp === 'individual' ? t('individual') : t('company')}</span>
                     </label>
                   ))}
