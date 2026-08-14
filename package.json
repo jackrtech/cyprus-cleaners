@@ -13,6 +13,7 @@
     "db:reset": "supabase db reset",
     "db:sql": "node src/scripts/run-sql.js",
     "create-admin": "node src/scripts/create-admin.js",
+    "seed": "node src/scripts/seed-full.js",
     "start-dev": "git pull origin main && npm install && node src/scripts/check-env.js && npm run dev",
     "prepare": "git config core.hooksPath .githooks"
   },
