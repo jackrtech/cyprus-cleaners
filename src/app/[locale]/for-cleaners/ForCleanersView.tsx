@@ -309,7 +309,7 @@ export default function ForCleanersPage() {
             <div style={{ position: 'absolute', top: '-72px', right: 0, bottom: '-80px', left: 0, clipPath: 'url(#fc-hero-clip)' }}>
               <Image
                 src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=700&h=900&q=80&auto=format&fit=crop"
-                alt="Professional cleaner in a bright home"
+                alt={t('heroPhotoAlt')}
                 fill
                 priority
                 sizes="50vw"
@@ -437,7 +437,7 @@ export default function ForCleanersPage() {
             >
               <Image
                 src="https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=640&h=500&q=80&auto=format&fit=crop"
-                alt="Cleaner working in a bright apartment"
+                alt={t('howPhotoAlt')}
                 fill
                 sizes="45vw"
                 style={{ objectFit: 'cover' }}

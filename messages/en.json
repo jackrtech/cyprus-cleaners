@@ -201,7 +201,9 @@
     "cardExp": "Exp.",
     "closingH2Line1": "Your profile is free.",
     "closingH2Line2": "Your clients are waiting.",
-    "closingSub": "Ten minutes to set up. No card needed."
+    "closingSub": "Ten minutes to set up. No card needed.",
+    "heroPhotoAlt": "Professional cleaner in a bright home",
+    "howPhotoAlt": "Cleaner working in a bright apartment"
   },
   "review": {
     "prompt": {
