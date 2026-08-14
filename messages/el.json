@@ -315,7 +315,8 @@
     "startChatError": "Κάτι πήγε στραβά. Παρακαλώ δοκιμάστε ξανά.",
     "openChat": "Ανοίξτε τη συνομιλία",
     "previewingOwnProfile": "Βλέπετε μια προεπισκόπηση του δημόσιου προφίλ σας — αυτό βλέπουν οι πελάτες",
-    "backToDashboard": "← Πίσω στον πίνακα ελέγχου"
+    "backToDashboard": "← Πίσω στον πίνακα ελέγχου",
+    "starRating": "{rating} από 5 αστέρια"
   },
   "admin": {
     "navVerifications": "Επαληθεύσεις",
@@ -411,7 +412,8 @@
     "allCities": "Όλες οι πόλεις",
     "verified": "Επαληθευμένος/η",
     "perHour": "/ώρα",
-    "viewProfile": "Προβολή προφίλ"
+    "viewProfile": "Προβολή προφίλ",
+    "starRating": "{rating} από 5 αστέρια"
   },
   "disputes": {
     "title": "Διαφορές",

@@ -305,7 +305,8 @@
     "startChatError": "Something went wrong. Please try again.",
     "openChat": "Open chat",
     "previewingOwnProfile": "You're previewing your public profile — this is what customers see",
-    "backToDashboard": "← Back to dashboard"
+    "backToDashboard": "← Back to dashboard",
+    "starRating": "{rating} out of 5 stars"
   },
   "admin": {
     "navVerifications": "Verifications",
@@ -401,7 +402,8 @@
     "allCities": "All cities",
     "verified": "Verified",
     "perHour": "/hr",
-    "viewProfile": "View profile"
+    "viewProfile": "View profile",
+    "starRating": "{rating} out of 5 stars"
   },
   "disputes": {
     "title": "Disputes",

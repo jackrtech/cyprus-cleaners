@@ -7,11 +7,12 @@ import { useCity } from '@/hooks/useCity'
 import LoadingImage from '@/components/ui/LoadingImage'
 
 function StarRow({ rating }: { rating: number }) {
+  const t = useTranslations('cleaners')
   const full = Math.round(rating)
   return (
-    <span className="text-[11px] leading-none">
+    <span className="text-[11px] leading-none" role="img" aria-label={t('starRating', { rating })}>
       {Array.from({ length: 5 }, (_, i) => (
-        <span key={i} className={i < full ? 'text-[#F2C94C]' : 'text-[#D9D9D9]'}>
+        <span key={i} aria-hidden="true" className={i < full ? 'text-[#F2C94C]' : 'text-[#D9D9D9]'}>
           {i < full ? '★' : '☆'}
         </span>
       ))}
