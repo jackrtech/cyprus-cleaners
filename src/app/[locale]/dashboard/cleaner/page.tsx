@@ -109,7 +109,7 @@ function IntroCard({
             <div className="flex items-center gap-2.5 flex-wrap mb-1">
               <p className="text-[15px] font-medium text-[#0D1F1E]">{customerName}</p>
             </div>
-            <p className="text-[12px] text-[#6B8886]">
+            <p className="text-[12px] text-[#5B7472]">
               {tReceivedOn} {dateFormatter.format(new Date(intro.created_at))}
             </p>
           </div>
@@ -128,7 +128,7 @@ function IntroCard({
         </div>
 
         {!isChatOpen && (
-          <p className="text-[13px] text-[#6B8886] leading-relaxed line-clamp-2">{previewText}</p>
+          <p className="text-[13px] text-[#5B7472] leading-relaxed line-clamp-2">{previewText}</p>
         )}
       </div>
 
@@ -418,7 +418,7 @@ export default function CleanerDashboardPage() {
               )}
             </span>
             {booking.status === 'REQUESTED' && (
-              <span className="text-[11px] text-[#6B8886]">
+              <span className="text-[11px] text-[#5B7472]">
                 {hoursLeftToRespond(booking.created_at) > 0
                   ? tBooking('timeLeftToRespond', { hours: hoursLeftToRespond(booking.created_at) })
                   : tBooking('lessThanHourLeft')}
@@ -457,13 +457,13 @@ export default function CleanerDashboardPage() {
                 {tBooking('markComplete')}
               </button>
             ) : !dateReached ? (
-              <span className="text-[12px] text-[#6B8886] shrink-0">
+              <span className="text-[12px] text-[#5B7472] shrink-0">
                 {tBooking('notYetDue', {
                   date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${booking.date}T00:00:00`)),
                 })}
               </span>
             ) : (
-              <span className="text-[12px] text-[#6B8886] shrink-0">
+              <span className="text-[12px] text-[#5B7472] shrink-0">
                 {tBooking('needMorePhotos', { count: MIN_COMPLETION_PHOTOS - booking.photo_urls.length })}
               </span>
             )
@@ -491,14 +491,14 @@ export default function CleanerDashboardPage() {
               <button
                 type="button"
                 onClick={() => { setDecliningId(null); setDeclineReasonText('') }}
-                className="text-[12px] font-medium text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+                className="text-[12px] font-medium text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
               >
                 {tBooking('neverMind')}
               </button>
             </div>
           </div>
         )}
-        <p className="text-[13px] text-[#6B8886]">
+        <p className="text-[13px] text-[#5B7472]">
           {tBooking(booking.duration_hours == null ? 'summaryNoDuration' : 'summary', {
             cleaningType: tBooking(booking.cleaning_type === 'DEEP' ? 'deepClean' : 'standardClean'),
             bedrooms: booking.bedrooms ?? '—',
@@ -509,10 +509,10 @@ export default function CleanerDashboardPage() {
           })}
         </p>
         {booking.address && (
-          <p className="text-[12px] text-[#6B8886] line-clamp-1 mt-0.5">📍 {booking.address}</p>
+          <p className="text-[12px] text-[#5B7472] line-clamp-1 mt-0.5">📍 {booking.address}</p>
         )}
         {booking.notes && (
-          <p className="text-[12px] text-[#6B8886] mt-1">{booking.notes}</p>
+          <p className="text-[12px] text-[#5B7472] mt-1">{booking.notes}</p>
         )}
         {booking.status === 'CONFIRMED' && (
           <div className="mt-2">
@@ -528,12 +528,12 @@ export default function CleanerDashboardPage() {
                 onClick={e => { e.stopPropagation(); handlePhotoAddClick(booking.id) }}
                 disabled={isUploadingPhoto}
                 aria-label="Add photo"
-                className="w-12 h-12 rounded-md border border-dashed border-[#E0EDEC] flex items-center justify-center text-[#6B8886] hover:text-[#19706A] hover:border-[#19706A] transition-colors disabled:opacity-50 text-[18px] leading-none"
+                className="w-12 h-12 rounded-md border border-dashed border-[#E0EDEC] flex items-center justify-center text-[#5B7472] hover:text-[#19706A] hover:border-[#19706A] transition-colors disabled:opacity-50 text-[18px] leading-none"
               >
                 {isUploadingPhoto ? '…' : '+'}
               </button>
             </div>
-            <p className="text-[11px] text-[#6B8886] mt-1">
+            <p className="text-[11px] text-[#5B7472] mt-1">
               {tBooking('photoCount', { count: booking.photo_urls.length, min: MIN_COMPLETION_PHOTOS })}
             </p>
           </div>
@@ -716,7 +716,7 @@ export default function CleanerDashboardPage() {
               </div>
               <div>
                 <p className="text-[16px] font-medium text-[#0D1F1E] mb-1">{t('noIntroRequestsYet')}</p>
-                <p className="text-[13px] text-[#6B8886]">{t('noIntroRequestsBody')}</p>
+                <p className="text-[13px] text-[#5B7472]">{t('noIntroRequestsBody')}</p>
               </div>
             </div>
           ) : (
@@ -757,7 +757,7 @@ export default function CleanerDashboardPage() {
           ) : bookings.length === 0 ? (
             <div className="card p-8 flex flex-col items-center text-center gap-2">
               <p className="text-[14px] font-medium text-[#0D1F1E]">{tBooking('noBookingsYet')}</p>
-              <p className="text-[13px] text-[#6B8886]">{tBooking('noBookingsBodyCleaner')}</p>
+              <p className="text-[13px] text-[#5B7472]">{tBooking('noBookingsBodyCleaner')}</p>
             </div>
           ) : (
             <div className="space-y-8">
@@ -768,7 +768,7 @@ export default function CleanerDashboardPage() {
               )}
               {bookingGroups.requested.length > 0 && (
                 <div>
-                  <h3 className="text-[12px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">
+                  <h3 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
                     {tBooking('needsResponse')}
                   </h3>
                   <div className="space-y-3">{bookingGroups.requested.map(renderBookingCard)}</div>
@@ -776,7 +776,7 @@ export default function CleanerDashboardPage() {
               )}
               {bookingGroups.confirmed.length > 0 && (
                 <div>
-                  <h3 className="text-[12px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">
+                  <h3 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
                     {tBooking('upcoming')}
                   </h3>
                   <div className="space-y-3">{bookingGroups.confirmed.map(renderBookingCard)}</div>
@@ -784,7 +784,7 @@ export default function CleanerDashboardPage() {
               )}
               {bookingGroups.history.length > 0 && (
                 <div>
-                  <h3 className="text-[12px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">
+                  <h3 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
                     {tBooking('bookingHistory')}
                   </h3>
                   <div className="space-y-3">{bookingGroups.history.map(renderBookingCard)}</div>

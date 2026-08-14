@@ -274,9 +274,9 @@ export default function DashboardPage() {
                   )}
                 </span>
               </div>
-              <p className="text-[13px] text-[#6B8886]">{bookingSummary}</p>
+              <p className="text-[13px] text-[#5B7472]">{bookingSummary}</p>
               {booking.address && (
-                <p className="text-[12px] text-[#6B8886] line-clamp-1 mt-0.5">📍 {booking.address}</p>
+                <p className="text-[12px] text-[#5B7472] line-clamp-1 mt-0.5">📍 {booking.address}</p>
               )}
               {(booking.status === 'REQUESTED' || booking.status === 'CONFIRMED') && (
                 cancellingId === booking.id ? (
@@ -301,7 +301,7 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={() => { setCancellingId(null); setCancelReasonText('') }}
-                        className="text-[12px] font-medium text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+                        className="text-[12px] font-medium text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
                       >
                         {tBooking('neverMind')}
                       </button>
@@ -312,7 +312,7 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); setCancellingId(booking.id) }}
-                      className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B8886] hover:text-red-600 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#5B7472] hover:text-red-600 transition-colors disabled:opacity-50"
                     >
                       {tBooking('cancelBooking')}
                     </button>
@@ -325,9 +325,9 @@ export default function DashboardPage() {
                   : null
                 const windowExpired = daysLeft !== null && daysLeft <= 0
                 return (booking.disputes?.length ?? 0) > 0 ? (
-                  <p className="text-[12px] text-[#6B8886] mt-2">{tBooking('disputeSubmitted')}</p>
+                  <p className="text-[12px] text-[#5B7472] mt-2">{tBooking('disputeSubmitted')}</p>
                 ) : windowExpired ? (
-                  <p className="text-[12px] text-[#6B8886] mt-2">{tBooking('disputeWindowPassed')}</p>
+                  <p className="text-[12px] text-[#5B7472] mt-2">{tBooking('disputeWindowPassed')}</p>
                 ) : disputingId === booking.id ? (
                   <div className="mt-2 space-y-2" onClick={e => e.stopPropagation()}>
                     <textarea
@@ -350,7 +350,7 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={() => { setDisputingId(null); setDisputeClaimText('') }}
-                        className="text-[12px] font-medium text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+                        className="text-[12px] font-medium text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
                       >
                         {tBooking('neverMind')}
                       </button>
@@ -361,12 +361,12 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); setDisputingId(booking.id) }}
-                      className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B8886] hover:text-red-600 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#5B7472] hover:text-red-600 transition-colors disabled:opacity-50"
                     >
                       {tBooking('fileDispute')}
                     </button>
                     {daysLeft !== null && (
-                      <span className="text-[11px] text-[#6B8886]">
+                      <span className="text-[11px] text-[#5B7472]">
                         {tBooking('disputeDaysLeft', { days: daysLeft })}
                       </span>
                     )}
@@ -475,7 +475,7 @@ export default function DashboardPage() {
               ) : bookings.length === 0 ? (
                 <div className="card p-8 flex flex-col items-center text-center gap-2">
                   <p className="text-[14px] font-medium text-[#0D1F1E]">{tBooking('noBookingsYet')}</p>
-                  <p className="text-[13px] text-[#6B8886]">{tBooking('noBookingsBodyCustomer')}</p>
+                  <p className="text-[13px] text-[#5B7472]">{tBooking('noBookingsBodyCustomer')}</p>
                 </div>
               ) : (
                 <div className="space-y-8">
@@ -486,7 +486,7 @@ export default function DashboardPage() {
                   )}
                   {bookingGroups.requested.length > 0 && (
                     <div>
-                      <h3 className="text-[12px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">
+                      <h3 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
                         {tBooking('awaitingConfirmation')}
                       </h3>
                       <div className="space-y-3">{bookingGroups.requested.map(renderBookingCard)}</div>
@@ -494,7 +494,7 @@ export default function DashboardPage() {
                   )}
                   {bookingGroups.confirmed.length > 0 && (
                     <div>
-                      <h3 className="text-[12px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">
+                      <h3 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
                         {tBooking('upcoming')}
                       </h3>
                       <div className="space-y-3">{bookingGroups.confirmed.map(renderBookingCard)}</div>
@@ -502,7 +502,7 @@ export default function DashboardPage() {
                   )}
                   {bookingGroups.history.length > 0 && (
                     <div>
-                      <h3 className="text-[12px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">
+                      <h3 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
                         {tBooking('bookingHistory')}
                       </h3>
                       <div className="space-y-3">{bookingGroups.history.map(renderBookingCard)}</div>
@@ -529,7 +529,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="text-[16px] font-medium text-[#0D1F1E] mb-1">{t('noIntrosYet')}</p>
-                    <p className="text-[13px] text-[#6B8886]">{t('noIntrosBody')}</p>
+                    <p className="text-[13px] text-[#5B7472]">{t('noIntrosBody')}</p>
                   </div>
                   <Link href="/cleaners" className="btn-primary">{t('findACleaner')}</Link>
                 </div>
@@ -561,7 +561,7 @@ export default function DashboardPage() {
                               </div>
                               <div className="min-w-0">
                                 <p className="text-[15px] font-medium text-[#0D1F1E] truncate">{name}</p>
-                                <p className="text-[12px] text-[#6B8886]">
+                                <p className="text-[12px] text-[#5B7472]">
                                   {t('sentOn')} {dateFormatter.format(new Date(intro.created_at))}
                                 </p>
                               </div>
@@ -593,7 +593,7 @@ export default function DashboardPage() {
 
                           {/* Most recent message preview — hidden once the chat is open below */}
                           {!isChatOpen && (
-                            <p className="text-[13px] text-[#6B8886] line-clamp-2 mt-2">{previewText}</p>
+                            <p className="text-[13px] text-[#5B7472] line-clamp-2 mt-2">{previewText}</p>
                           )}
                         </div>
 

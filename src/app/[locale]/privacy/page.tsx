@@ -36,7 +36,7 @@ export default function PrivacyPolicyPage() {
     <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-10 sm:py-14">
       <div className="max-w-[760px] mx-auto">
         <h1 className="text-[28px] sm:text-[32px] font-medium text-[#0D1F1E] mb-2">Privacy Policy</h1>
-        <p className="text-[13px] text-[#6B8886] mb-10">Last updated: {LAST_UPDATED}</p>
+        <p className="text-[13px] text-[#5B7472] mb-10">Last updated: {LAST_UPDATED}</p>
 
         <Section title="1. Who we are">
           <p>

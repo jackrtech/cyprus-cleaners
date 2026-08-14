@@ -99,7 +99,7 @@ export default function Hero() {
             </h1>
 
             {/* Subline */}
-            <p className="text-[15px] text-[#6B8886] leading-relaxed max-w-[320px] mb-8">
+            <p className="text-[15px] text-[#5B7472] leading-relaxed max-w-[320px] mb-8">
               {t('sub')}
             </p>
 
@@ -130,7 +130,7 @@ export default function Hero() {
             <button
               type="button"
               onClick={() => setShowBusinessModal(true)}
-              className="mt-5 text-[13px] text-[#6B8886] hover:text-[#19706A] transition-colors underline underline-offset-2 decoration-[#E0EDEC] hover:decoration-[#19706A]"
+              className="mt-5 text-[13px] text-[#5B7472] hover:text-[#19706A] transition-colors underline underline-offset-2 decoration-[#E0EDEC] hover:decoration-[#19706A]"
             >
               {t('businessCta')} →
             </button>
@@ -196,7 +196,7 @@ export default function Hero() {
               <span className="text-[#F2C94C] text-[13px] leading-none tracking-tight">★★★★★</span>
               <span className="text-[13px] font-medium text-[#0D1F1E]">4.9/5</span>
             </div>
-            <p className="text-[11px] text-[#6B8886] leading-snug">{t('ratingLabel')}</p>
+            <p className="text-[11px] text-[#5B7472] leading-snug">{t('ratingLabel')}</p>
           </div>
         </div>
       </div>
@@ -215,7 +215,7 @@ export default function Hero() {
                 type="button"
                 onClick={() => setShowBusinessModal(false)}
                 aria-label="Close"
-                className="text-[#6B8886] hover:text-[#0D1F1E] transition-colors text-[22px] leading-none"
+                className="text-[#5B7472] hover:text-[#0D1F1E] transition-colors text-[22px] leading-none"
               >
                 ×
               </button>

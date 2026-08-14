@@ -150,7 +150,7 @@ export default function RegisterCleanerPage() {
                     className={`flex-1 py-2 text-[13px] transition-colors ${
                       cleanerType === type
                         ? 'bg-[#19706A] text-white'
-                        : 'bg-white text-[#6B8886] hover:text-[#0D1F1E]'
+                        : 'bg-white text-[#5B7472] hover:text-[#0D1F1E]'
                     }`}
                   >
                     {t(type)}
@@ -165,7 +165,7 @@ export default function RegisterCleanerPage() {
                 {t('hourlyRate')}
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B8886] text-[14px] pointer-events-none">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5B7472] text-[14px] pointer-events-none">
                   €
                 </span>
                 <input
@@ -218,7 +218,7 @@ export default function RegisterCleanerPage() {
                   type="button"
                   onClick={() => setShowPass(v => !v)}
                   aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
                 >
                   {showPassword ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -254,7 +254,7 @@ export default function RegisterCleanerPage() {
                   type="button"
                   onClick={() => setShowConfirm(v => !v)}
                   aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
                 >
                   {showConfirm ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -283,7 +283,7 @@ export default function RegisterCleanerPage() {
           </form>
         </div>
 
-        <div className="mt-5 text-center text-[13px] text-[#6B8886]">
+        <div className="mt-5 text-center text-[13px] text-[#5B7472]">
           <p>
             {t('alreadyHaveAccount')}{' '}
             <Link href="/login" className="text-[#19706A] hover:underline font-medium">

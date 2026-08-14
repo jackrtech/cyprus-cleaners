@@ -32,7 +32,7 @@ export default function Footer() {
               </svg>
               <span className="text-white text-[15px] md:text-[17px] font-medium">Cyprus Cleaners</span>
             </div>
-            <p className="text-[13px] text-[#6B8886] leading-relaxed max-w-[220px]">
+            <p className="text-[13px] text-[#5B7472] leading-relaxed max-w-[220px]">
               Connecting Cyprus homes with trusted local cleaners.
             </p>
           </div>
@@ -51,10 +51,10 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-white/10 mt-5 md:mt-12 pt-4 md:pt-6 flex justify-between items-center flex-wrap gap-3">
           <div className="flex items-center gap-3 flex-wrap">
-            <p className="text-[11px] md:text-[12px] text-[#6B8886]">
+            <p className="text-[11px] md:text-[12px] text-[#5B7472]">
               © 2025 Cyprus Cleaners. All rights reserved.
             </p>
-            <Link href="/privacy" className="text-[11px] md:text-[12px] text-[#6B8886] hover:text-white transition-colors">
+            <Link href="/privacy" className="text-[11px] md:text-[12px] text-[#5B7472] hover:text-white transition-colors">
               Privacy Policy
             </Link>
           </div>
@@ -68,7 +68,7 @@ export default function Footer() {
                 className={`text-xs font-medium tracking-wide px-3 py-1 rounded-full transition-all ${
                   locale === lang
                     ? 'bg-white/20 text-white'
-                    : 'text-[#6B8886] hover:text-white'
+                    : 'text-[#5B7472] hover:text-white'
                 }`}
               >
                 {lang.toUpperCase()}

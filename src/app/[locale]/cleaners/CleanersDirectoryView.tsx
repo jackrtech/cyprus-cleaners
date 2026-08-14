@@ -132,13 +132,13 @@ export default function CleanersPage() {
     <div className="min-h-screen bg-[#F7FAF9] pb-tabbar md:pb-0">
       {/* Page header */}
       <div className="bg-white border-b border-[#E0EDEC] px-4 sm:px-10 pt-7 pb-0">
-        <nav className="flex items-center gap-1.5 text-[12px] text-[#6B8886] mb-2">
+        <nav className="flex items-center gap-1.5 text-[12px] text-[#5B7472] mb-2">
           <Link href="/" className="text-[#19706A] hover:underline">{t('breadcrumbHome')}</Link>
           <span>›</span>
           <span>{t('title')}</span>
         </nav>
         <h1 className="text-[28px] font-medium text-[#0D1F1E] tracking-tight mb-1">{t('title')}</h1>
-        <p className="text-[13px] text-[#6B8886] mb-5">{t('subtitle', { count: cleaners.length })}</p>
+        <p className="text-[13px] text-[#5B7472] mb-5">{t('subtitle', { count: cleaners.length })}</p>
       </div>
 
       <FilterBar filters={filters} onChange={setFilters}>
@@ -146,7 +146,7 @@ export default function CleanersPage() {
           pinned for the full scroll height of the list (see FilterBar.tsx) */}
       <div className="px-4 sm:px-10 py-6">
         <div className="flex justify-between items-center mb-5">
-          <span className="text-[13px] text-[#6B8886]">{t('found', { count: results.length })}</span>
+          <span className="text-[13px] text-[#5B7472]">{t('found', { count: results.length })}</span>
           <select
             value={sort}
             onChange={e => setSort(e.target.value as SortKey)}
@@ -190,7 +190,7 @@ export default function CleanersPage() {
               <path d="M31 31l10 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
             <p className="text-[16px] font-medium text-[#0D1F1E] mt-4">{t('noResults')}</p>
-            <p className="text-[13px] text-[#6B8886] mt-1">{t('noResultsSub')}</p>
+            <p className="text-[13px] text-[#5B7472] mt-1">{t('noResultsSub')}</p>
             <button
               onClick={() => setFilters(DEFAULT_FILTERS)}
               className="mt-5 border border-[#E0EDEC] rounded-full px-6 py-2 text-[13px] text-[#0D1F1E] hover:border-[#19706A] hover:text-[#19706A] transition-colors"

@@ -20,7 +20,7 @@ export default function GetStartedPage() {
           <h1 className="text-[28px] font-medium text-[#0D1F1E] tracking-tight mb-2">
             {t('heading')}
           </h1>
-          <p className="text-[14px] text-[#6B8886]">{t('subtitle')}</p>
+          <p className="text-[14px] text-[#5B7472]">{t('subtitle')}</p>
         </div>
 
         {/* Cards */}
@@ -31,7 +31,7 @@ export default function GetStartedPage() {
             <h2 className="text-[17px] font-medium text-[#0D1F1E] mb-2">
               {t('customerHeading')}
             </h2>
-            <p className="text-[13px] text-[#6B8886] leading-relaxed mb-6 flex-1">
+            <p className="text-[13px] text-[#5B7472] leading-relaxed mb-6 flex-1">
               {t('customerBody')}
             </p>
             <Link href="/register" className="btn-primary w-full text-center">
@@ -45,7 +45,7 @@ export default function GetStartedPage() {
             <h2 className="text-[17px] font-medium text-[#0D1F1E] mb-2">
               {t('cleanerHeading')}
             </h2>
-            <p className="text-[13px] text-[#6B8886] leading-relaxed mb-6 flex-1">
+            <p className="text-[13px] text-[#5B7472] leading-relaxed mb-6 flex-1">
               {t('cleanerBody')}
             </p>
             <Link href="/for-cleaners" className="btn-secondary w-full text-center">
@@ -55,7 +55,7 @@ export default function GetStartedPage() {
         </div>
 
         {/* Sign in link */}
-        <p className="text-center text-[13px] text-[#6B8886] mt-6">
+        <p className="text-center text-[13px] text-[#5B7472] mt-6">
           {t('alreadyHaveAccount')}{' '}
           <Link href="/login" className="text-[#19706A] hover:underline font-medium">
             {t('signIn')}

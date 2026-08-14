@@ -183,7 +183,7 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
           type="button"
           onClick={resetAndClose}
           aria-label="Close"
-          className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] border border-[#E0EDEC] text-[#6B8886] hover:text-[#0D1F1E] hover:border-[#19706A] transition-colors text-[20px] leading-none shrink-0 ml-2"
+          className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] border border-[#E0EDEC] text-[#5B7472] hover:text-[#0D1F1E] hover:border-[#19706A] transition-colors text-[20px] leading-none shrink-0 ml-2"
         >
           ×
         </button>
@@ -194,7 +194,7 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label htmlFor="booking-cleaning-type" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('cleaningType')}</label>
+            <label htmlFor="booking-cleaning-type" className="block text-[11px] text-[#5B7472] mb-1">{tBooking('cleaningType')}</label>
             <select
               id="booking-cleaning-type"
               value={cleaningType}
@@ -206,7 +206,7 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
             </select>
           </div>
           <div>
-            <label htmlFor="booking-duration" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('duration')}</label>
+            <label htmlFor="booking-duration" className="block text-[11px] text-[#5B7472] mb-1">{tBooking('duration')}</label>
             <input
               id="booking-duration"
               type="number"
@@ -220,10 +220,10 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
             />
           </div>
         </div>
-        <p className="text-[11px] text-[#6B8886] -mt-1">{tBooking('durationEstimateHint')}</p>
+        <p className="text-[11px] text-[#5B7472] -mt-1">{tBooking('durationEstimateHint')}</p>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label htmlFor="booking-bedrooms" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('bedrooms')}</label>
+            <label htmlFor="booking-bedrooms" className="block text-[11px] text-[#5B7472] mb-1">{tBooking('bedrooms')}</label>
             <input
               id="booking-bedrooms"
               type="number"
@@ -237,7 +237,7 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
             />
           </div>
           <div>
-            <label htmlFor="booking-bathrooms" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('bathrooms')}</label>
+            <label htmlFor="booking-bathrooms" className="block text-[11px] text-[#5B7472] mb-1">{tBooking('bathrooms')}</label>
             <input
               id="booking-bathrooms"
               type="number"
@@ -253,7 +253,7 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label htmlFor="booking-date" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('date')}</label>
+            <label htmlFor="booking-date" className="block text-[11px] text-[#5B7472] mb-1">{tBooking('date')}</label>
             <input
               id="booking-date"
               type="date"
@@ -265,7 +265,7 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
             />
           </div>
           <div>
-            <label htmlFor="booking-start-time" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('startTime')}</label>
+            <label htmlFor="booking-start-time" className="block text-[11px] text-[#5B7472] mb-1">{tBooking('startTime')}</label>
             <select
               id="booking-start-time"
               value={startTime}
@@ -281,7 +281,7 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
           </div>
         </div>
         <div>
-          <label htmlFor="booking-address" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('address')}</label>
+          <label htmlFor="booking-address" className="block text-[11px] text-[#5B7472] mb-1">{tBooking('address')}</label>
           <select
             id="booking-address"
             value={selectedAddressId}
@@ -304,11 +304,11 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
             <option value={ADD_NEW_ADDRESS}>{tAddr('addNewOption')}</option>
           </select>
           {selectedAddress?.area && (
-            <p className="text-[11px] text-[#6B8886] mt-1">{tBooking('outsideCityCentreNudge')}</p>
+            <p className="text-[11px] text-[#5B7472] mt-1">{tBooking('outsideCityCentreNudge')}</p>
           )}
         </div>
         <div>
-          <label htmlFor="booking-notes" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('notes')}</label>
+          <label htmlFor="booking-notes" className="block text-[11px] text-[#5B7472] mb-1">{tBooking('notes')}</label>
           <textarea
             id="booking-notes"
             value={bookingNotes}
@@ -319,14 +319,14 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
           />
         </div>
         <div>
-          <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('paymentMethod')}</label>
+          <label className="block text-[11px] text-[#5B7472] mb-1">{tBooking('paymentMethod')}</label>
           {setupClientSecret ? (
             <BookingPaymentElement
               clientSecret={setupClientSecret}
               onReady={handle => { paymentHandleRef.current = handle }}
             />
           ) : (
-            <p className="text-[12px] text-[#6B8886]">{tBooking('loadingPayment')}</p>
+            <p className="text-[12px] text-[#5B7472]">{tBooking('loadingPayment')}</p>
           )}
         </div>
       </form>

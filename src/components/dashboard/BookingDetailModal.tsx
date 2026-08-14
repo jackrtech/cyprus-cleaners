@@ -53,7 +53,7 @@ function getInitials(name: string): string {
 
 function CalendarIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6B8886" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 mt-0.5">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#5B7472" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 mt-0.5">
       <rect x="2" y="3" width="12" height="11" rx="1.5" />
       <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
     </svg>
@@ -62,7 +62,7 @@ function CalendarIcon() {
 
 function PinIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6B8886" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 mt-0.5">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#5B7472" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 mt-0.5">
       <path d="M8 14.5S13 10 13 6.5a5 5 0 1 0-10 0C3 10 8 14.5 8 14.5z" />
       <circle cx="8" cy="6.5" r="1.75" />
     </svg>
@@ -71,7 +71,7 @@ function PinIcon() {
 
 function NoteIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6B8886" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 mt-0.5">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#5B7472" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 mt-0.5">
       <rect x="3" y="2.5" width="10" height="12" rx="1.5" />
       <path d="M6 2v-.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V2M5.5 7h5M5.5 9.5h5M5.5 12h3" />
     </svg>
@@ -80,7 +80,7 @@ function NoteIcon() {
 
 function CameraIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6B8886" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#5B7472" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
       <path d="M2 5.5a1 1 0 0 1 1-1h1.5l1-1.5h5l1 1.5H13a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-7z" />
       <circle cx="8" cy="9" r="2.5" />
     </svg>
@@ -133,7 +133,7 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] border border-[#E0EDEC] text-[#6B8886] hover:text-[#0D1F1E] hover:border-[#19706A] transition-colors text-[20px] leading-none shrink-0"
+          className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] border border-[#E0EDEC] text-[#5B7472] hover:text-[#0D1F1E] hover:border-[#19706A] transition-colors text-[20px] leading-none shrink-0"
         >
           ×
         </button>
@@ -146,7 +146,7 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
 
         {booking.status === 'CANCELLED' && booking.cancellationReason && (
           <div>
-            <p className="text-[12px] font-medium text-[#6B8886] mb-0.5">{tBooking('cancellationReason')}</p>
+            <p className="text-[12px] font-medium text-[#5B7472] mb-0.5">{tBooking('cancellationReason')}</p>
             <p className="text-[13px] text-[#0D1F1E] bg-[#F7FAF9] rounded-lg p-3">{booking.cancellationReason}</p>
           </div>
         )}
@@ -168,7 +168,7 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
         <div className="flex items-start gap-2.5">
           <PinIcon />
           <div>
-            <p className="text-[12px] font-medium text-[#6B8886] mb-0.5">{tBooking('propertyAddress')}</p>
+            <p className="text-[12px] font-medium text-[#5B7472] mb-0.5">{tBooking('propertyAddress')}</p>
             <p className="text-[13px] text-[#0D1F1E]">{booking.address ?? tBooking('noAddressProvided')}</p>
             {booking.addressLat != null && booking.addressLng != null && (
               <a
@@ -199,7 +199,7 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
           <div>
             <div className="flex items-center gap-2.5 mb-2">
               <CameraIcon />
-              <p className="text-[12px] font-medium text-[#6B8886]">{tBooking('jobPhotos')}</p>
+              <p className="text-[12px] font-medium text-[#5B7472]">{tBooking('jobPhotos')}</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {booking.photo_urls.map((url, i) => (

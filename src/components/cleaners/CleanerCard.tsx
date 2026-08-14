@@ -75,7 +75,7 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
           <span className="text-[13px] font-medium text-[#0D1F1E] leading-snug">{cleaner.display_name}</span>
           <span className="text-right shrink-0 ml-1.5">
             <span className="text-[12px] font-medium text-[#0D1F1E]">€{cleaner.hourly_rate_eur}</span>
-            <span className="text-[10px] text-[#6B8886]">{tCommon('perHour')}</span>
+            <span className="text-[10px] text-[#5B7472]">{tCommon('perHour')}</span>
           </span>
         </div>
 
@@ -84,7 +84,7 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
             {getCityName(cleaner.cities[0])}
           </span>
           {cleaner.cities.length > 1 && (
-            <span className="text-[10px] text-[#6B8886]">+{cleaner.cities.length - 1} more</span>
+            <span className="text-[10px] text-[#5B7472]">+{cleaner.cities.length - 1} more</span>
           )}
         </div>
 
@@ -97,7 +97,7 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
         <div className="border-t border-[#F0F5F4] pt-2 flex justify-between items-center">
           <div className="flex items-center gap-1">
             <StarRow rating={cleaner.avg_rating} />
-            <span className="text-[11px] text-[#6B8886] ml-0.5">
+            <span className="text-[11px] text-[#5B7472] ml-0.5">
               {cleaner.avg_rating} ({cleaner.review_count})
             </span>
           </div>

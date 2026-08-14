@@ -205,7 +205,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             <button
               type="button"
               onClick={() => onChange(DEFAULT_FILTERS)}
-              className="text-[12px] text-[#6B8886] hover:text-[#19706A] transition-colors whitespace-nowrap"
+              className="text-[12px] text-[#5B7472] hover:text-[#19706A] transition-colors whitespace-nowrap"
             >
               {t('clearAll')}
             </button>
@@ -230,7 +230,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'city' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">{t('city')}</p>
+                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">{t('city')}</p>
                 <div className="space-y-2.5">
                   {ALL_CITIES.map(city => {
                     const count = cityCounts[city] || 0
@@ -239,7 +239,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                       <label key={city} className="flex items-center gap-2.5 cursor-pointer">
                         <Checkbox checked={checked} onChange={() => update({ cities: checked ? filters.cities.filter(c => c !== city) : [...filters.cities, city] })} label={getCityName(city)} />
                         <span className="text-[13px] text-[#0D1F1E] flex-1">{getCityName(city)}</span>
-                        <span className="text-[11px] text-[#6B8886]">{count}</span>
+                        <span className="text-[11px] text-[#5B7472]">{count}</span>
                       </label>
                     )
                   })}
@@ -261,7 +261,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'price' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#6B8886] uppercase tracking-wide mb-1">
+                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-1">
                   {filters.maxRate < 60 ? t('upTo', { value: filters.maxRate }) : t('anyPrice')}
                 </p>
                 <input
@@ -269,7 +269,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                   onChange={e => update({ maxRate: parseInt(e.target.value) })}
                   className="w-full mt-3 accent-[#19706A]"
                 />
-                <div className="flex justify-between text-[11px] text-[#6B8886] mt-1">
+                <div className="flex justify-between text-[11px] text-[#5B7472] mt-1">
                   <span>€5</span><span>€60</span>
                 </div>
                 <button onMouseDown={e => { e.stopPropagation(); close() }} className="mt-3 w-full bg-[#19706A] text-white rounded-full px-4 py-1.5 text-[12px] font-medium hover:bg-[#0D5752] transition-colors">{t('apply')}</button>
@@ -289,7 +289,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'rating' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#6B8886] uppercase tracking-wide mb-1">
+                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-1">
                   {filters.minRating > 0 ? `${filters.minRating}+ ★` : t('anyRating')}
                 </p>
                 <input
@@ -297,7 +297,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                   onChange={e => update({ minRating: parseFloat(e.target.value) })}
                   className="w-full mt-3 accent-[#19706A]"
                 />
-                <div className="flex justify-between text-[11px] text-[#6B8886] mt-1">
+                <div className="flex justify-between text-[11px] text-[#5B7472] mt-1">
                   <span>0</span><span>5</span>
                 </div>
                 <button onMouseDown={e => { e.stopPropagation(); close() }} className="mt-3 w-full bg-[#19706A] text-white rounded-full px-4 py-1.5 text-[12px] font-medium hover:bg-[#0D5752] transition-colors">{t('apply')}</button>
@@ -317,7 +317,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'gender' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">{t('gender')}</p>
+                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">{t('gender')}</p>
                 <div className="space-y-2.5">
                   {(['any', 'female', 'male'] as const).map(g => (
                     <label key={g} className="flex items-center gap-2.5 cursor-pointer">
@@ -345,7 +345,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'language' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">{t('language')}</p>
+                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">{t('language')}</p>
                 <div className="space-y-2.5">
                   {LANGUAGES.map(lang => {
                     const checked = filters.languages.includes(lang.code)
@@ -374,7 +374,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'availability' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">{t('availability')}</p>
+                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">{t('availability')}</p>
                 <div className="space-y-2.5">
                   {AVAIL_KEYS.map(a => {
                     const checked = filters.availability.includes(a)
@@ -403,7 +403,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'type' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#6B8886] uppercase tracking-wide mb-3">{t('type')}</p>
+                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">{t('type')}</p>
                 <div className="space-y-2.5">
                   {(['any', 'individual', 'company'] as const).map(tp => (
                     <label key={tp} className="flex items-center gap-2.5 cursor-pointer">
@@ -431,7 +431,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             <>
               <span className="w-px h-5 bg-[#E0EDEC] mx-1 shrink-0" />
               <button
-                className="text-[12px] text-[#6B8886] hover:text-[#19706A] transition-colors whitespace-nowrap flex-shrink-0"
+                className="text-[12px] text-[#5B7472] hover:text-[#19706A] transition-colors whitespace-nowrap flex-shrink-0"
                 onMouseDown={e => { e.stopPropagation(); onChange(DEFAULT_FILTERS); setOpenPanel(null) }}
               >
                 {t('clearAll')}
@@ -472,7 +472,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                 type="button"
                 onClick={() => setMobileSheetOpen(false)}
                 aria-label="Close"
-                className="text-[#6B8886] hover:text-[#0D1F1E] transition-colors text-[22px] leading-none"
+                className="text-[#5B7472] hover:text-[#0D1F1E] transition-colors text-[22px] leading-none"
               >
                 ×
               </button>
@@ -508,7 +508,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                   onChange={e => update({ maxRate: parseInt(e.target.value) })}
                   className="w-full accent-[#19706A]"
                 />
-                <div className="flex justify-between text-[11px] text-[#6B8886] mt-1">
+                <div className="flex justify-between text-[11px] text-[#5B7472] mt-1">
                   <span>€5</span><span>€60</span>
                 </div>
               </div>
@@ -522,7 +522,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                   onChange={e => update({ minRating: parseFloat(e.target.value) })}
                   className="w-full accent-[#19706A]"
                 />
-                <div className="flex justify-between text-[11px] text-[#6B8886] mt-1">
+                <div className="flex justify-between text-[11px] text-[#5B7472] mt-1">
                   <span>0</span><span>5</span>
                 </div>
               </div>

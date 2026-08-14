@@ -18,7 +18,7 @@ function layout(body: string): string {
       ${body}
     </div>
     <div style="padding:16px 32px;border-top:1px solid #E0EDEC;text-align:center;">
-      <p style="margin:0;color:#6B8886;font-size:12px;">© 2025 Cyprus Cleaners</p>
+      <p style="margin:0;color:#5B7472;font-size:12px;">© 2025 Cyprus Cleaners</p>
     </div>
   </div>
 </body>
@@ -74,7 +74,7 @@ export async function sendVerificationEmail({
     `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Welcome to Cyprus Cleaners!</h2>
      <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Please verify your email address to get started.</p>
      ${cta('Verify email', verifyUrl)}
-     <p style="color:#6B8886;font-size:12px;line-height:1.5;margin:16px 0 0;">This link expires in 24 hours.</p>`
+     <p style="color:#5B7472;font-size:12px;line-height:1.5;margin:16px 0 0;">This link expires in 24 hours.</p>`
   )
 
   return sendEmail({ to, subject, html })
@@ -101,8 +101,8 @@ export async function sendPasswordResetEmail({
     `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Reset your password</h2>
      <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">We received a request to reset your password.</p>
      ${cta('Reset password', resetUrl)}
-     <p style="color:#6B8886;font-size:12px;line-height:1.5;margin:16px 0 0;">This link expires in 1 hour.</p>
-     <p style="color:#6B8886;font-size:12px;line-height:1.5;margin:8px 0 0;">If you didn't request this, you can safely ignore this email.</p>`
+     <p style="color:#5B7472;font-size:12px;line-height:1.5;margin:16px 0 0;">This link expires in 1 hour.</p>
+     <p style="color:#5B7472;font-size:12px;line-height:1.5;margin:8px 0 0;">If you didn't request this, you can safely ignore this email.</p>`
   )
 
   return sendEmail({ to, subject, html })
@@ -132,12 +132,12 @@ export async function sendNewMessageEmail({
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Νέο μήνυμα</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${safeSenderName}</strong> σας έστειλε μήνυμα:</p>
        <blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;font-style:italic;line-height:1.6;">${safeMessage}</blockquote>
-       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:0;">Συνδεθείτε στον πίνακα ελέγχου για να απαντήσετε.</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:0;">Συνδεθείτε στον πίνακα ελέγχου για να απαντήσετε.</p>
        ${cta('Προβολή μηνύματος', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">You have a new message</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${safeSenderName}</strong> sent you a message:</p>
        <blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;font-style:italic;line-height:1.6;">${safeMessage}</blockquote>
-       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:0;">Log in to your dashboard to reply.</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:0;">Log in to your dashboard to reply.</p>
        ${cta('View message', dashboardUrl)}`)
 
   return sendEmail({ to: recipientEmail, subject, html })
@@ -173,13 +173,13 @@ export async function sendNewBookingRequestEmail({
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${safeCustomerName}</strong> ζήτησε κράτηση:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime} · ${durationHours} ώρες</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:8px 0 0;">📍 ${safeAddress}</p>
-       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:16px 0 0;">Έχετε 24 ώρες για να απαντήσετε.</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:16px 0 0;">Έχετε 24 ώρες για να απαντήσετε.</p>
        ${cta('Προβολή αιτήματος', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">New booking request</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${safeCustomerName}</strong> requested a booking:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime} · ${durationHours}h</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:8px 0 0;">📍 ${safeAddress}</p>
-       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:16px 0 0;">You have 24 hours to respond.</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:16px 0 0;">You have 24 hours to respond.</p>
        ${cta('View request', dashboardUrl)}`)
 
   return sendEmail({ to: cleanerEmail, subject, html })
@@ -322,12 +322,12 @@ export async function sendDisputeResolvedEmail({
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">${heading}</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${outcomeLineEl}</p>
-       ${safeNote ? `<p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Σημείωση από τη διαχείριση:</p>
+       ${safeNote ? `<p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Σημείωση από τη διαχείριση:</p>
        <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
        ${cta('Μετάβαση στον πίνακα ελέγχου', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">${heading}</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${outcomeLineEn}</p>
-       ${safeNote ? `<p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Note from admin:</p>
+       ${safeNote ? `<p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Note from admin:</p>
        <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
        ${cta('Go to dashboard', dashboardUrl)}`)
 
@@ -377,11 +377,11 @@ export async function sendBookingCompletedEmail({
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η εργασία ολοκληρώθηκε</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Ο/Η <strong>${safeCleanerName}</strong> σήμανε την κράτησή σας ως ολοκληρωμένη. Ρίξτε μια ματιά στις φωτογραφίες και αφήστε μια κριτική.</p>
-       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Αν έχετε κάποιο πρόβλημα με την εργασία, έχετε 7 ημέρες για να το αναφέρετε μέσω του πίνακα ελέγχου σας.</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Αν έχετε κάποιο πρόβλημα με την εργασία, έχετε 7 ημέρες για να το αναφέρετε μέσω του πίνακα ελέγχου σας.</p>
        ${cta('Προβολή στον πίνακα ελέγχου', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Job complete</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;"><strong>${safeCleanerName}</strong> marked your booking complete. Take a look at the photos and leave a review.</p>
-       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">If you have any concerns about the service, you have 7 days to raise them through your dashboard.</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">If you have any concerns about the service, you have 7 days to raise them through your dashboard.</p>
        ${cta('View in dashboard', dashboardUrl)}`)
 
   return sendEmail({ to: customerEmail, subject, html })
@@ -413,12 +413,12 @@ export async function sendBookingDeclinedEmail({
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Το αίτημα απορρίφθηκε</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${safeCleanerName}</strong> δεν μπόρεσε να αναλάβει την κράτησή σας:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime}</p>
-       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:16px 0 0;">Δεν χρεωθήκατε. Μπορείτε να βρείτε άλλον καθαριστή όποτε θέλετε.</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:16px 0 0;">Δεν χρεωθήκατε. Μπορείτε να βρείτε άλλον καθαριστή όποτε θέλετε.</p>
        ${cta('Βρείτε άλλον καθαριστή', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Request declined</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${safeCleanerName}</strong> wasn't able to take your booking:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime}</p>
-       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:16px 0 0;">You haven't been charged. Feel free to find another cleaner whenever you're ready.</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:16px 0 0;">You haven't been charged. Feel free to find another cleaner whenever you're ready.</p>
        ${cta('Find another cleaner', dashboardUrl)}`)
 
   return sendEmail({ to: customerEmail, subject, html })
@@ -455,13 +455,13 @@ export async function sendBookingCancelledEmail({
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η κράτηση ακυρώθηκε</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">${whoLineEl}</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime}</p>
-       ${safeReason ? `<p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Λόγος:</p>
+       ${safeReason ? `<p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Λόγος:</p>
        <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeReason}</blockquote>` : ''}
        ${cta('Προβολή στον πίνακα ελέγχου', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Booking cancelled</h2>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">${whoLineEn}</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime}</p>
-       ${safeReason ? `<p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Reason given:</p>
+       ${safeReason ? `<p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Reason given:</p>
        <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeReason}</blockquote>` : ''}
        ${cta('View in dashboard', dashboardUrl)}`)
 
@@ -506,10 +506,10 @@ export async function sendRefundFailedAlertEmail({
   const bodyHtml =
     `<p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 12px;">A cancellation refund failed to process. The booking is cancelled but the customer has <strong>not</strong> been refunded — this needs a manual retry.</p>
      <table style="width:100%;font-size:13px;color:#0D1F1E;border-collapse:collapse;margin-top:8px;">
-       <tr><td style="padding:4px 0;color:#6B8886;">Booking</td><td style="padding:4px 0;">${escapeHtml(bookingId)}</td></tr>
-       <tr><td style="padding:4px 0;color:#6B8886;">Customer</td><td style="padding:4px 0;">${escapeHtml(customerName)} — ${escapeHtml(customerEmail)}</td></tr>
-       <tr><td style="padding:4px 0;color:#6B8886;">Amount</td><td style="padding:4px 0;">€${amountEur.toFixed(2)}</td></tr>
-       <tr><td style="padding:4px 0;color:#6B8886;">Stripe error</td><td style="padding:4px 0;">${escapeHtml(stripeError)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Booking</td><td style="padding:4px 0;">${escapeHtml(bookingId)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Customer</td><td style="padding:4px 0;">${escapeHtml(customerName)} — ${escapeHtml(customerEmail)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Amount</td><td style="padding:4px 0;">€${amountEur.toFixed(2)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Stripe error</td><td style="padding:4px 0;">${escapeHtml(stripeError)}</td></tr>
      </table>
      ${cta('Open cancellations ledger', adminUrl)}`
 
@@ -534,11 +534,11 @@ export async function sendBookingConfirmedAdminAlertEmail({
   const bodyHtml =
     `<p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 12px;">A booking was confirmed and the customer's card was charged.</p>
      <table style="width:100%;font-size:13px;color:#0D1F1E;border-collapse:collapse;margin-top:8px;">
-       <tr><td style="padding:4px 0;color:#6B8886;">Booking</td><td style="padding:4px 0;">${escapeHtml(bookingId)}</td></tr>
-       <tr><td style="padding:4px 0;color:#6B8886;">Customer</td><td style="padding:4px 0;">${escapeHtml(customerName)}</td></tr>
-       <tr><td style="padding:4px 0;color:#6B8886;">Cleaner</td><td style="padding:4px 0;">${escapeHtml(cleanerName)}</td></tr>
-       <tr><td style="padding:4px 0;color:#6B8886;">Amount charged</td><td style="padding:4px 0;">€${amountEur.toFixed(2)}</td></tr>
-       <tr><td style="padding:4px 0;color:#6B8886;">Scheduled</td><td style="padding:4px 0;">${escapeHtml(date)} at ${escapeHtml(startTime)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Booking</td><td style="padding:4px 0;">${escapeHtml(bookingId)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Customer</td><td style="padding:4px 0;">${escapeHtml(customerName)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Cleaner</td><td style="padding:4px 0;">${escapeHtml(cleanerName)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Amount charged</td><td style="padding:4px 0;">€${amountEur.toFixed(2)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Scheduled</td><td style="padding:4px 0;">${escapeHtml(date)} at ${escapeHtml(startTime)}</td></tr>
      </table>
      ${cta('Open cancellations ledger', adminUrl)}`
 
@@ -561,11 +561,11 @@ export async function sendDisputeFiledAlertEmail({
   const bodyHtml =
     `<p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 12px;">A customer has filed a dispute on a completed booking — it needs review.</p>
      <table style="width:100%;font-size:13px;color:#0D1F1E;border-collapse:collapse;margin-top:8px;">
-       <tr><td style="padding:4px 0;color:#6B8886;">Booking</td><td style="padding:4px 0;">${escapeHtml(bookingId)}</td></tr>
-       <tr><td style="padding:4px 0;color:#6B8886;">Customer</td><td style="padding:4px 0;">${escapeHtml(customerName)}</td></tr>
-       <tr><td style="padding:4px 0;color:#6B8886;">Cleaner</td><td style="padding:4px 0;">${escapeHtml(cleanerName)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Booking</td><td style="padding:4px 0;">${escapeHtml(bookingId)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Customer</td><td style="padding:4px 0;">${escapeHtml(customerName)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Cleaner</td><td style="padding:4px 0;">${escapeHtml(cleanerName)}</td></tr>
      </table>
-     <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Claim:</p>
+     <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Claim:</p>
      <blockquote style="border-left:3px solid #B5541F;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${escapeHtml(claim)}</blockquote>
      ${cta('Open dispute queue', adminUrl)}`
 

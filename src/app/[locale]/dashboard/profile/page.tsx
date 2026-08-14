@@ -76,7 +76,7 @@ export default function ProfilePage() {
           </div>
           <div className="min-w-0">
             <p className="text-[16px] font-medium text-[#0D1F1E] truncate">{session.user.name}</p>
-            <p className="text-[13px] text-[#6B8886] truncate">{session.user.email}</p>
+            <p className="text-[13px] text-[#5B7472] truncate">{session.user.email}</p>
             <span className="inline-block mt-1 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-[#E8F4F3] text-[#19706A]">
               {roleLabel}
             </span>
@@ -92,12 +92,12 @@ export default function ProfilePage() {
           <div className="card divide-y divide-[#E0EDEC]">
             <Link href="/dashboard/cleaner/edit" className="flex items-center justify-between px-5 py-4 hover:bg-[#F7FAF9] transition-colors">
               <span className="text-[14px] text-[#0D1F1E]">{t('editProfile')}</span>
-              <span className="text-[#6B8886]" aria-hidden="true">›</span>
+              <span className="text-[#5B7472]" aria-hidden="true">›</span>
             </Link>
             {cleanerSlug && (
               <Link href={`/cleaners/${cleanerSlug}`} className="flex items-center justify-between px-5 py-4 hover:bg-[#F7FAF9] transition-colors">
                 <span className="text-[14px] text-[#0D1F1E]">{t('viewPublicProfile')}</span>
-                <span className="text-[#6B8886]" aria-hidden="true">›</span>
+                <span className="text-[#5B7472]" aria-hidden="true">›</span>
               </Link>
             )}
           </div>
@@ -130,7 +130,7 @@ export default function ProfilePage() {
                 ))}
               </div>
             ) : (
-              <p className="text-[13px] text-[#6B8886]">{tAddr('noAddressesYet')}</p>
+              <p className="text-[13px] text-[#5B7472]">{tAddr('noAddressesYet')}</p>
             )}
           </div>
         )}
@@ -138,7 +138,7 @@ export default function ProfilePage() {
         <div className="text-center pt-2">
           <button
             onClick={() => signOut({ callbackUrl: '/' })}
-            className="text-[13px] text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+            className="text-[13px] text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
           >
             {t('signOut')}
           </button>

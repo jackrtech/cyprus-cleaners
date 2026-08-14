@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-[480px]">
         <div className="card p-8">
           <h1 className="text-[22px] font-medium text-[#0D1F1E] mb-1">Reset your password</h1>
-          <p className="text-[13px] text-[#6B8886] mb-6">Enter your email and we&apos;ll send you a reset link</p>
+          <p className="text-[13px] text-[#5B7472] mb-6">Enter your email and we&apos;ll send you a reset link</p>
 
           {submitted ? (
             <p className="text-[13px] text-[#0D1F1E] bg-[#E8F4F3] border border-[#E0EDEC] rounded-[10px] px-4 py-3">
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
           )}
         </div>
 
-        <div className="mt-5 text-center text-[13px] text-[#6B8886]">
+        <div className="mt-5 text-center text-[13px] text-[#5B7472]">
           <Link href="/login" className="text-[#19706A] hover:underline font-medium">
             Back to sign in
           </Link>

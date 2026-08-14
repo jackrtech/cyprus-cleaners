@@ -234,7 +234,7 @@ export default function AdminDisputesPage() {
                   type="button"
                   onClick={() => setViewingId(null)}
                   aria-label="Close"
-                  className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] border border-[#E0EDEC] text-[#6B8886] hover:text-[#0D1F1E] hover:border-[#19706A] transition-colors text-[20px] leading-none shrink-0"
+                  className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] border border-[#E0EDEC] text-[#5B7472] hover:text-[#0D1F1E] hover:border-[#19706A] transition-colors text-[20px] leading-none shrink-0"
                 >
                   ×
                 </button>

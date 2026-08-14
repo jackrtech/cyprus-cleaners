@@ -22,7 +22,7 @@ export default function LanguageToggle() {
           className={`text-xs font-medium tracking-wide px-3 py-1 rounded-full transition-all ${
             locale === lang
               ? 'bg-[#19706A] text-white'
-              : 'text-[#6B8886] hover:text-[#0D1F1E]'
+              : 'text-[#5B7472] hover:text-[#0D1F1E]'
           }`}
         >
           {lang.toUpperCase()}

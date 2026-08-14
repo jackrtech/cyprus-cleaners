@@ -61,7 +61,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[400px]">
         <div className="card p-8">
           <h1 className="text-[22px] font-medium text-[#0D1F1E] mb-1">{t('login')}</h1>
-          <p className="text-[13px] text-[#6B8886] text-center mb-6">{t('forCustomersAndCleaners')}</p>
+          <p className="text-[13px] text-[#5B7472] text-center mb-6">{t('forCustomersAndCleaners')}</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -103,7 +103,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPass(v => !v)}
                   aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
                 >
                   {showPassword ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -121,7 +121,7 @@ export default function LoginPage() {
               </div>
               <Link
                 href="/forgot-password"
-                className="text-[13px] text-[#6B8886] hover:text-[#19706A] text-right block mt-1"
+                className="text-[13px] text-[#5B7472] hover:text-[#19706A] text-right block mt-1"
               >
                 Forgot password?
               </Link>
@@ -138,7 +138,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <div className="mt-5 space-y-2 text-center text-[13px] text-[#6B8886]">
+        <div className="mt-5 space-y-2 text-center text-[13px] text-[#5B7472]">
           <p>
             {t('noAccount')}{' '}
             <Link href="/register" className="text-[#19706A] hover:underline font-medium">

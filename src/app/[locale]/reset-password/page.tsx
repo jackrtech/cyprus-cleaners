@@ -97,7 +97,7 @@ export default function ResetPasswordPage() {
               <circle cx="24" cy="24" r="20" stroke="#E0EDEC" strokeWidth="4" />
               <path d="M44 24a20 20 0 0 0-20-20" stroke="#19706A" strokeWidth="4" strokeLinecap="round" />
             </svg>
-            <p className="text-[14px] text-[#6B8886]">Checking your link...</p>
+            <p className="text-[14px] text-[#5B7472]">Checking your link...</p>
           </>
         )}
 
@@ -111,7 +111,7 @@ export default function ResetPasswordPage() {
             </div>
             <div>
               <h1 className="text-[20px] font-medium text-[#0D1F1E] mb-1">This link has expired</h1>
-              <p className="text-[13px] text-[#6B8886]">Password reset links expire after 1 hour.</p>
+              <p className="text-[13px] text-[#5B7472]">Password reset links expire after 1 hour.</p>
             </div>
             <Link href="/forgot-password" className="btn-secondary">
               Request a new link
@@ -148,7 +148,7 @@ export default function ResetPasswordPage() {
                     type="button"
                     onClick={() => setShowPassword(v => !v)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
                   >
                     <EyeIcon open={showPassword} />
                   </button>
@@ -173,7 +173,7 @@ export default function ResetPasswordPage() {
                     type="button"
                     onClick={() => setShowConfirm(v => !v)}
                     aria-label={showConfirm ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
                   >
                     <EyeIcon open={showConfirm} />
                   </button>
@@ -200,7 +200,7 @@ export default function ResetPasswordPage() {
             </div>
             <div>
               <h1 className="text-[20px] font-medium text-[#0D1F1E] mb-1">Password updated!</h1>
-              <p className="text-[13px] text-[#6B8886]">Your password has been changed successfully.</p>
+              <p className="text-[13px] text-[#5B7472]">Your password has been changed successfully.</p>
             </div>
             <Link href="/login" className="btn-primary">
               Sign in

@@ -202,7 +202,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] border border-[#E0EDEC] text-[#6B8886] hover:text-[#0D1F1E] hover:border-[#19706A] transition-colors text-[20px] leading-none shrink-0 ml-2"
+          className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] border border-[#E0EDEC] text-[#5B7472] hover:text-[#0D1F1E] hover:border-[#19706A] transition-colors text-[20px] leading-none shrink-0 ml-2"
         >
           ×
         </button>
@@ -231,7 +231,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
                     type="button"
                     onClick={() => handleSetDefault(a.id)}
                     disabled={settingDefaultId === a.id}
-                    className="shrink-0 text-[11px] font-medium text-[#6B8886] hover:text-[#19706A] transition-colors disabled:opacity-50"
+                    className="shrink-0 text-[11px] font-medium text-[#5B7472] hover:text-[#19706A] transition-colors disabled:opacity-50"
                   >
                     {settingDefaultId === a.id ? '…' : tAddr('setDefault')}
                   </button>
@@ -241,7 +241,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
                   onClick={() => handleDelete(a.id)}
                   disabled={deletingId === a.id}
                   aria-label={tAddr('deleteAddress')}
-                  className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-[#6B8886] hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 text-[16px] leading-none"
+                  className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-[#5B7472] hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 text-[16px] leading-none"
                 >
                   {deletingId === a.id ? '…' : '×'}
                 </button>
@@ -254,13 +254,13 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
           <div className="flex items-center justify-between pt-2">
             <p className="text-[13px] font-medium text-[#0D1F1E]">{editingId ? tAddr('editAddress') : tAddr('addNew')}</p>
             {editingId && (
-              <button type="button" onClick={cancelEdit} className="text-[12px] text-[#6B8886] hover:text-[#0D1F1E] transition-colors">
+              <button type="button" onClick={cancelEdit} className="text-[12px] text-[#5B7472] hover:text-[#0D1F1E] transition-colors">
                 {tAddr('cancelEdit')}
               </button>
             )}
           </div>
           <div>
-            <label htmlFor="address-label" className="block text-[11px] text-[#6B8886] mb-1">{tAddr('label')}</label>
+            <label htmlFor="address-label" className="block text-[11px] text-[#5B7472] mb-1">{tAddr('label')}</label>
             <input
               id="address-label"
               type="text"
@@ -271,7 +271,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
             />
           </div>
           <div>
-            <label htmlFor="address-line1" className="block text-[11px] text-[#6B8886] mb-1">{tAddr('line1')}</label>
+            <label htmlFor="address-line1" className="block text-[11px] text-[#5B7472] mb-1">{tAddr('line1')}</label>
             <input
               id="address-line1"
               type="text"
@@ -284,7 +284,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label htmlFor="address-city" className="block text-[11px] text-[#6B8886] mb-1">{tAddr('city')}</label>
+              <label htmlFor="address-city" className="block text-[11px] text-[#5B7472] mb-1">{tAddr('city')}</label>
               <select
                 id="address-city"
                 value={city}
@@ -299,7 +299,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
               </select>
             </div>
             <div>
-              <label htmlFor="address-postal-code" className="block text-[11px] text-[#6B8886] mb-1">{tAddr('postalCode')}</label>
+              <label htmlFor="address-postal-code" className="block text-[11px] text-[#5B7472] mb-1">{tAddr('postalCode')}</label>
               <input
                 id="address-postal-code"
                 type="text"
@@ -311,7 +311,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
             </div>
           </div>
           <div>
-            <label htmlFor="address-area" className="block text-[11px] text-[#6B8886] mb-1">{tAddr('area')}</label>
+            <label htmlFor="address-area" className="block text-[11px] text-[#5B7472] mb-1">{tAddr('area')}</label>
             <input
               id="address-area"
               type="text"
@@ -322,7 +322,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
             />
           </div>
           <div>
-            <label className="block text-[11px] text-[#6B8886] mb-1">{tAddr('mapPin')}</label>
+            <label className="block text-[11px] text-[#5B7472] mb-1">{tAddr('mapPin')}</label>
             <AddressMapPicker
               lat={pin?.lat ?? null}
               lng={pin?.lng ?? null}
@@ -334,7 +334,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
             </p>
           </div>
           <div>
-            <label htmlFor="address-finding-us-notes" className="block text-[11px] text-[#6B8886] mb-1">{tAddr('findingUsNotes')}</label>
+            <label htmlFor="address-finding-us-notes" className="block text-[11px] text-[#5B7472] mb-1">{tAddr('findingUsNotes')}</label>
             <textarea
               id="address-finding-us-notes"
               value={findingUsNotes}

@@ -478,7 +478,7 @@ export default function ChatPanel({
                 type="button"
                 onClick={onClose}
                 aria-label="Close"
-                className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] border border-[#E0EDEC] text-[#6B8886] hover:text-[#0D1F1E] hover:border-[#19706A] transition-colors text-[20px] leading-none"
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] border border-[#E0EDEC] text-[#5B7472] hover:text-[#0D1F1E] hover:border-[#19706A] transition-colors text-[20px] leading-none"
               >
                 ×
               </button>
@@ -515,7 +515,7 @@ export default function ChatPanel({
             </>
           ) : (
             <>
-              <p className="text-[11px] text-[#6B8886] mb-1.5">{tBooking('bookingNudge')}</p>
+              <p className="text-[11px] text-[#5B7472] mb-1.5">{tBooking('bookingNudge')}</p>
               <button
                 type="button"
                 onClick={() => setShowBookingModal(true)}
@@ -552,7 +552,7 @@ export default function ChatPanel({
           </div>
         ) : messages.length === 0 ? (
           <div className="flex items-center justify-center h-full min-h-[120px]">
-            <p className="text-[13px] text-[#6B8886]">{t('noMessages')}</p>
+            <p className="text-[13px] text-[#5B7472]">{t('noMessages')}</p>
           </div>
         ) : (
           <>
@@ -565,7 +565,7 @@ export default function ChatPanel({
                     onClick={() => setViewingBookingId(m.booking_id)}
                     className="w-full flex justify-center mb-3"
                   >
-                    <span className={`inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity ${SYSTEM_EVENT_BADGE[m.system_event] ?? 'bg-[#F7FAF9] text-[#6B8886]'}`}>
+                    <span className={`inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity ${SYSTEM_EVENT_BADGE[m.system_event] ?? 'bg-[#F7FAF9] text-[#5B7472]'}`}>
                       {tBooking(SYSTEM_EVENT_KEY[m.system_event] ?? 'systemUnknown')}
                       <span className="opacity-70">· {timeFormatter.format(new Date(m.created_at))}</span>
                     </span>
@@ -597,7 +597,7 @@ export default function ChatPanel({
                       {m.body}
                     </div>
                   )}
-                  <span className="text-[11px] text-[#6B8886] mt-1 px-1">
+                  <span className="text-[11px] text-[#5B7472] mt-1 px-1">
                     {timeFormatter.format(new Date(m.created_at))}
                   </span>
                 </div>
@@ -615,7 +615,7 @@ export default function ChatPanel({
             <button
               type="button"
               onClick={handleRemovePhoto}
-              className="text-[12px] text-[#6B8886] hover:text-red-600 transition-colors"
+              className="text-[12px] text-[#5B7472] hover:text-red-600 transition-colors"
             >
               {t('removePhoto')}
             </button>
@@ -639,7 +639,7 @@ export default function ChatPanel({
               maxLength={2000}
               className="input w-full resize-none max-h-[96px]"
             />
-            <div className="text-[11px] text-[#6B8886] text-right mt-1">
+            <div className="text-[11px] text-[#5B7472] text-right mt-1">
               {draft.length}/2000 {t('characters')}
             </div>
           </div>
@@ -654,7 +654,7 @@ export default function ChatPanel({
             type="button"
             onClick={handlePhotoButtonClick}
             aria-label="Attach photo"
-            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-[#E0EDEC] text-[#6B8886] hover:text-[#19706A] hover:border-[#19706A] cursor-pointer transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-[#E0EDEC] text-[#5B7472] hover:text-[#19706A] hover:border-[#19706A] cursor-pointer transition-colors"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M11.5 6.5v4a3.5 3.5 0 0 1-7 0v-5a2.5 2.5 0 0 1 5 0v5a1.5 1.5 0 0 1-3 0v-4" />
@@ -664,7 +664,7 @@ export default function ChatPanel({
             type="button"
             onClick={handleSecretClick}
             aria-label="?"
-            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-[#E0EDEC] text-[#6B8886] cursor-pointer transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-[#E0EDEC] text-[#5B7472] cursor-pointer transition-colors"
           >
             ?
           </button>

@@ -126,7 +126,7 @@ export default function ForCleanersPage() {
           </Link>
 
           <nav className="fc-hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-            <Link href="/cleaners" style={{ fontSize: '14px', color: '#6B8886', textDecoration: 'none' }}>
+            <Link href="/cleaners" style={{ fontSize: '14px', color: '#5B7472', textDecoration: 'none' }}>
               {t('navCustomers')}
             </Link>
             <Link href="/for-cleaners" style={{ fontSize: '14px', color: '#19706A', fontWeight: 500, textDecoration: 'none' }}>
@@ -235,7 +235,7 @@ export default function ForCleanersPage() {
             <p
               style={{
                 fontSize: 'clamp(15px,1.5vw,17px)',
-                color: '#6B8886',
+                color: '#5B7472',
                 lineHeight: 1.65,
                 maxWidth: '460px',
                 marginBottom: 'clamp(28px,4vw,40px)',
@@ -261,7 +261,7 @@ export default function ForCleanersPage() {
                     alignItems: 'center',
                     gap: '6px',
                     fontSize: '13px',
-                    color: '#6B8886',
+                    color: '#5B7472',
                     fontWeight: 500,
                   }}
                 >
@@ -335,7 +335,7 @@ export default function ForCleanersPage() {
               <p style={{ fontSize: 'clamp(22px,2.5vw,30px)', fontWeight: 500, color: '#0D1F1E', lineHeight: 1, marginBottom: '4px' }}>
                 {t('heroStatNum')}
               </p>
-              <p style={{ fontSize: '12px', color: '#6B8886', fontWeight: 500 }}>
+              <p style={{ fontSize: '12px', color: '#5B7472', fontWeight: 500 }}>
                 {t('heroStatLabel')}
               </p>
             </div>
@@ -393,7 +393,7 @@ export default function ForCleanersPage() {
               style={{
                 fontSize: '12px',
                 fontWeight: 500,
-                color: '#6B8886',
+                color: '#5B7472',
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
                 marginBottom: '16px',
@@ -417,7 +417,7 @@ export default function ForCleanersPage() {
             <p
               style={{
                 fontSize: 'clamp(14px,1.4vw,16px)',
-                color: '#6B8886',
+                color: '#5B7472',
                 lineHeight: 1.65,
                 marginBottom: 'clamp(28px,4vw,44px)',
               }}
@@ -478,7 +478,7 @@ export default function ForCleanersPage() {
                     display: 'block',
                     fontSize: '12px',
                     fontWeight: 500,
-                    color: '#6B8886',
+                    color: '#5B7472',
                     letterSpacing: '0.06em',
                     marginBottom: '10px',
                   }}
@@ -497,7 +497,7 @@ export default function ForCleanersPage() {
                 >
                   {t(step.title)}
                 </p>
-                <p style={{ fontSize: 'clamp(14px,1.3vw,15px)', color: '#6B8886', lineHeight: 1.65 }}>
+                <p style={{ fontSize: 'clamp(14px,1.3vw,15px)', color: '#5B7472', lineHeight: 1.65 }}>
                   {t(step.body)}
                 </p>
               </div>
@@ -652,7 +652,7 @@ export default function ForCleanersPage() {
                 {t('quote')}
               </p>
               <footer>
-                <cite style={{ fontSize: '14px', fontStyle: 'normal', fontWeight: 500, color: '#6B8886' }}>
+                <cite style={{ fontSize: '14px', fontStyle: 'normal', fontWeight: 500, color: '#5B7472' }}>
                   {t('quoteAttr')}
                 </cite>
               </footer>
@@ -677,11 +677,11 @@ export default function ForCleanersPage() {
                   ✓ Verified
                 </span>
               </div>
-              <p style={{ fontSize: '12px', color: '#6B8886', marginBottom: '10px' }}>Limassol · €18/hr</p>
+              <p style={{ fontSize: '12px', color: '#5B7472', marginBottom: '10px' }}>Limassol · €18/hr</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <span style={{ color: '#F2C94C', fontSize: '12px', letterSpacing: '-0.5px' }}>★★★★★</span>
                 <span style={{ fontSize: '12px', fontWeight: 500, color: '#0D1F1E' }}>4.9</span>
-                <span style={{ fontSize: '12px', color: '#6B8886' }}>(38 reviews)</span>
+                <span style={{ fontSize: '12px', color: '#5B7472' }}>(38 reviews)</span>
               </div>
             </div>
           </div>

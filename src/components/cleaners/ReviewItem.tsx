@@ -81,7 +81,7 @@ export default function ReviewItem({ review, locale }: Props) {
     <div className="py-4 border-b border-[#F0F5F4] last:border-none">
       <div className="flex justify-between items-start mb-1.5">
         <span className="text-[13px] font-medium text-[#0D1F1E]">{review.reviewer_name}</span>
-        <span className="text-[11px] text-[#6B8886]">{formattedDate}</span>
+        <span className="text-[11px] text-[#5B7472]">{formattedDate}</span>
       </div>
 
       <div className="mb-2">
@@ -95,7 +95,7 @@ export default function ReviewItem({ review, locale }: Props) {
           <div className="h-3 bg-[#F0F5F4] rounded animate-pulse w-3/5" />
         </div>
       ) : (
-        <p className="text-[13px] text-[#6B8886] leading-relaxed">{displayText}</p>
+        <p className="text-[13px] text-[#5B7472] leading-relaxed">{displayText}</p>
       )}
 
       {translated && !loading && (

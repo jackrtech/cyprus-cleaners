@@ -93,7 +93,7 @@ module.exports = {
         // Teal-tinted shadows — not generic greys
         'card':   '0 1px 3px rgba(25, 112, 106, 0.08), 0 4px 12px rgba(25, 112, 106, 0.06)',
         'card-hover': '0 4px 16px rgba(25, 112, 106, 0.14), 0 1px 4px rgba(25, 112, 106, 0.08)',
-        'focus':  '0 0 0 3px rgba(25, 112, 106, 0.25)',
+        'focus':  '0 0 0 3px rgba(25, 112, 106, 0.75)', // matches --shadow-focus in globals.css — see DESIGN.md/that file for the WCAG 1.4.11 contrast math
         'modal':  '0 20px 60px rgba(13, 31, 30, 0.2)',
       },
       keyframes: {

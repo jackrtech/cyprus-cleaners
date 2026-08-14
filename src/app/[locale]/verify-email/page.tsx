@@ -47,7 +47,7 @@ export default function VerifyEmailPage() {
               <circle cx="24" cy="24" r="20" stroke="#E0EDEC" strokeWidth="4" />
               <path d="M44 24a20 20 0 0 0-20-20" stroke="#19706A" strokeWidth="4" strokeLinecap="round" />
             </svg>
-            <p className="text-[14px] text-[#6B8886]">Verifying your email address...</p>
+            <p className="text-[14px] text-[#5B7472]">Verifying your email address...</p>
           </>
         )}
 
@@ -60,7 +60,7 @@ export default function VerifyEmailPage() {
             </div>
             <div>
               <h1 className="text-[20px] font-medium text-[#0D1F1E] mb-1">Email verified!</h1>
-              <p className="text-[13px] text-[#6B8886]">Your account is now fully active.</p>
+              <p className="text-[13px] text-[#5B7472]">Your account is now fully active.</p>
             </div>
             <Link href={dashboardHref} className="btn-primary">
               Go to dashboard
@@ -78,7 +78,7 @@ export default function VerifyEmailPage() {
             </div>
             <div>
               <h1 className="text-[20px] font-medium text-[#0D1F1E] mb-1">This link has expired</h1>
-              <p className="text-[13px] text-[#6B8886]">Request a new verification email from your dashboard.</p>
+              <p className="text-[13px] text-[#5B7472]">Request a new verification email from your dashboard.</p>
             </div>
             <Link href="/dashboard" className="btn-secondary">
               Go to dashboard

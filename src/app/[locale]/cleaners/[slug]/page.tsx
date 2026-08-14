@@ -341,7 +341,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
             </Link>
           </div>
         ) : (
-          <nav className="flex items-center gap-1.5 text-[12px] text-[#6B8886] mb-5">
+          <nav className="flex items-center gap-1.5 text-[12px] text-[#5B7472] mb-5">
             <Link href="/" className="text-[#19706A] hover:underline">{t('breadcrumbHome')}</Link>
             <span>›</span>
             <Link href="/cleaners" className="text-[#19706A] hover:underline">{t('breadcrumbFind')}</Link>
@@ -391,7 +391,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
                 <span key={city} className="bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2.5 py-0.5 text-[12px] font-medium">{getCityName(city)}</span>
               ))}
             </div>
-            <div className="flex flex-col gap-1.5 sm:flex-row sm:gap-4 sm:items-center sm:flex-wrap text-[13px] text-[#6B8886] mb-3">
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:gap-4 sm:items-center sm:flex-wrap text-[13px] text-[#5B7472] mb-3">
               <button
                 onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
                 className="flex items-center gap-1.5 hover:opacity-70 transition-opacity cursor-pointer group"
@@ -420,9 +420,9 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
               original right-aligned stack from sm: up */}
           <div className="flex flex-row items-center justify-between sm:flex-col sm:items-end gap-2 shrink-0 w-full sm:w-auto">
             <div className="sm:text-right">
-              <p className="text-[12px] text-[#6B8886]">{t('hourlyRate')}</p>
+              <p className="text-[12px] text-[#5B7472]">{t('hourlyRate')}</p>
               <p className="text-[20px] sm:text-[26px] font-medium text-[#0D1F1E] leading-none">
-                €{cleaner.hourly_rate_eur}<span className="text-[14px] text-[#6B8886] font-normal">{tCommon('perHour')}</span>
+                €{cleaner.hourly_rate_eur}<span className="text-[14px] text-[#5B7472] font-normal">{tCommon('perHour')}</span>
               </p>
             </div>
             {isOwnProfile ? (
@@ -463,7 +463,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           {/* About */}
           <div className="bg-white border border-[#E0EDEC] rounded-[16px] p-6 mb-4">
             <h2 className="text-[15px] font-medium text-[#0D1F1E] mb-3">{t('about', { name: firstName })}</h2>
-            <p className="text-[14px] text-[#6B8886] leading-relaxed">{cleaner.bio}</p>
+            <p className="text-[14px] text-[#5B7472] leading-relaxed">{cleaner.bio}</p>
           </div>
 
           {/* Reviews */}
@@ -496,11 +496,11 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           <div className="sticky top-6 bg-white border border-[#E0EDEC] rounded-[16px] p-6">
             <div className="mb-1">
               <span className="text-[28px] font-medium text-[#0D1F1E]">€{cleaner.hourly_rate_eur}</span>
-              <span className="text-[14px] text-[#6B8886]">{tCommon('perHour')}</span>
+              <span className="text-[14px] text-[#5B7472]">{tCommon('perHour')}</span>
             </div>
             <button
               onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
-              className="flex items-center gap-1.5 text-[13px] text-[#6B8886] mb-5 hover:opacity-70 transition-opacity cursor-pointer group"
+              className="flex items-center gap-1.5 text-[13px] text-[#5B7472] mb-5 hover:opacity-70 transition-opacity cursor-pointer group"
             >
               <StarRow rating={cleaner.avg_rating} />
               <span className="group-hover:text-[#19706A] transition-colors">{cleaner.avg_rating} · {cleaner.review_count} reviews</span>
@@ -517,7 +517,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
                 ...(cleaner.has_transport ? [{ label: t('transport'), value: t('hasOwnTransport') }] : []),
               ].map(row => (
                 <div key={row.label} className="flex justify-between text-[13px]">
-                  <span className="text-[#6B8886]">{row.label}</span>
+                  <span className="text-[#5B7472]">{row.label}</span>
                   <span className="text-[#0D1F1E] font-medium text-right ml-4">{row.value}</span>
                 </div>
               ))}

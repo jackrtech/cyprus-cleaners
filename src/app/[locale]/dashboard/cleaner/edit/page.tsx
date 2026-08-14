@@ -271,7 +271,7 @@ export default function EditProfilePage() {
                   {t('uploadCoverPhoto')}
                 </button>
               </div>
-              <p className="text-[11px] text-[#6B8886] mt-1.5">{t('coverPhotoHint')}</p>
+              <p className="text-[11px] text-[#5B7472] mt-1.5">{t('coverPhotoHint')}</p>
             </div>
 
             {/* 2. Profile photo */}
@@ -334,7 +334,7 @@ export default function EditProfilePage() {
                 placeholder={t('bioPlaceholder')}
                 className="input w-full resize-none"
               />
-              <p className="text-[11px] text-[#6B8886] text-right mt-1">{bio.length}/{MAX_BIO}</p>
+              <p className="text-[11px] text-[#5B7472] text-right mt-1">{bio.length}/{MAX_BIO}</p>
             </div>
 
             {/* 4. Cities */}
@@ -369,7 +369,7 @@ export default function EditProfilePage() {
                 {t('hourlyRate')}
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B8886] text-[14px] pointer-events-none">€</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5B7472] text-[14px] pointer-events-none">€</span>
                 <input
                   id="cleaner-edit-hourly-rate"
                   type="number"
@@ -397,7 +397,7 @@ export default function EditProfilePage() {
                     className={`flex-1 py-2 text-[13px] transition-colors ${
                       cleanerType === type
                         ? 'bg-[#19706A] text-white'
-                        : 'bg-white text-[#6B8886] hover:text-[#0D1F1E]'
+                        : 'bg-white text-[#5B7472] hover:text-[#0D1F1E]'
                     }`}
                   >
                     {t(type)}

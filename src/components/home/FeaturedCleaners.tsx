@@ -149,7 +149,7 @@ export default function FeaturedCleaners() {
             className={`rounded-full border-[1.5px] px-4 py-[7px] text-[13px] font-medium cursor-pointer transition-colors ${
               activeCity === tab.value
                 ? 'bg-[#E8F4F3] text-[#19706A] border-[#19706A]'
-                : 'bg-white text-[#6B8886] border-[#E0EDEC]'
+                : 'bg-white text-[#5B7472] border-[#E0EDEC]'
             }`}
           >
             {tab.label === 'allCities' ? t('allCities') : getCityName(tab.label)}

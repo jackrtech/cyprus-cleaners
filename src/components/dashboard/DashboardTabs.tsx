@@ -61,7 +61,7 @@ export default function DashboardTabs({ tabs, activeKey, onChange, idPrefix, ari
             tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(tab.key)}
             className={`flex-1 flex items-center justify-center gap-2 rounded-full py-2.5 text-[13px] font-medium transition-colors ${
-              isActive ? 'bg-[#19706A] text-white' : 'text-[#6B8886] hover:text-[#0D1F1E]'
+              isActive ? 'bg-[#19706A] text-white' : 'text-[#5B7472] hover:text-[#0D1F1E]'
             }`}
           >
             {tab.label}

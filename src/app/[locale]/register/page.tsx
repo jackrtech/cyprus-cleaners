@@ -118,7 +118,7 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowPass(v => !v)}
                   aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
                 >
                   {showPassword ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -153,7 +153,7 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowConfirm(v => !v)}
                   aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B8886] hover:text-[#0D1F1E] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
                 >
                   {showConfirm ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -182,7 +182,7 @@ export default function RegisterPage() {
           </form>
         </div>
 
-        <div className="mt-5 space-y-2 text-center text-[13px] text-[#6B8886]">
+        <div className="mt-5 space-y-2 text-center text-[13px] text-[#5B7472]">
           <p>
             {t('alreadyHaveAccount')}{' '}
             <Link href="/login" className="text-[#19706A] hover:underline font-medium">
