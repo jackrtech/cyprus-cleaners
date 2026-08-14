@@ -334,8 +334,9 @@ export default function AdminDisputesPage() {
                   </div>
                 ) : (
                   <div>
-                    <label className="label">{t('adminNote')}</label>
+                    <label htmlFor="dispute-admin-note" className="label">{t('adminNote')}</label>
                     <textarea
+                      id="dispute-admin-note"
                       value={noteText}
                       onChange={e => setNoteText(e.target.value.slice(0, 1000))}
                       placeholder={t('adminNotePlaceholder')}
@@ -350,8 +351,9 @@ export default function AdminDisputesPage() {
               {viewing.status === 'OPEN' && (
                 <div className="px-4 py-3 border-t border-[#E0EDEC] shrink-0 space-y-2">
                   <div className="flex items-center gap-2">
-                    <label className="text-body text-muted shrink-0">{t('splitRefundLabel')}</label>
+                    <label htmlFor="dispute-split-percentage" className="text-body text-muted shrink-0">{t('splitRefundLabel')}</label>
                     <input
+                      id="dispute-split-percentage"
                       type="number"
                       min={0}
                       max={100}

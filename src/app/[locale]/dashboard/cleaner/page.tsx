@@ -631,8 +631,9 @@ export default function CleanerDashboardPage() {
             {idVerifyOpen && (
               <div className="mt-4 space-y-3">
                 <div>
-                  <label className="label block mb-1">{t('verificationIdLabel')}</label>
+                  <label htmlFor="cleaner-verification-id" className="label block mb-1">{t('verificationIdLabel')}</label>
                   <input
+                    id="cleaner-verification-id"
                     type="file"
                     accept="image/jpeg,image/png,image/webp,application/pdf"
                     onChange={e => setIdVerifyFile(e.target.files?.[0] ?? null)}
@@ -640,8 +641,9 @@ export default function CleanerDashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="label block mb-1">{t('verificationSelfieLabel')}</label>
+                  <label htmlFor="cleaner-verification-selfie" className="label block mb-1">{t('verificationSelfieLabel')}</label>
                   <input
+                    id="cleaner-verification-selfie"
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     onChange={e => setSelfieVerifyFile(e.target.files?.[0] ?? null)}

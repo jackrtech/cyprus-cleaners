@@ -214,8 +214,9 @@ export default function AdminPage() {
               )}
 
               <div>
-                <label className="label">{t('adminNote')}</label>
+                <label htmlFor="admin-verification-note" className="label">{t('adminNote')}</label>
                 <textarea
+                  id="admin-verification-note"
                   value={noteText}
                   onChange={e => setNoteText(e.target.value.slice(0, 1000))}
                   placeholder={t('adminNotePlaceholder')}

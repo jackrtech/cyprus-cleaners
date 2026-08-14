@@ -95,10 +95,11 @@ export default function RegisterCleanerPage() {
 
             {/* Display name */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-register-display-name" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
                 {t('displayName')}
               </label>
               <input
+                id="cleaner-register-display-name"
                 type="text"
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
@@ -160,7 +161,7 @@ export default function RegisterCleanerPage() {
 
             {/* Hourly rate */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-register-hourly-rate" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
                 {t('hourlyRate')}
               </label>
               <div className="relative">
@@ -168,6 +169,7 @@ export default function RegisterCleanerPage() {
                   €
                 </span>
                 <input
+                  id="cleaner-register-hourly-rate"
                   type="number"
                   value={hourlyRate}
                   onChange={e => setHourlyRate(e.target.value)}
@@ -183,10 +185,11 @@ export default function RegisterCleanerPage() {
 
             {/* Email */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-register-email" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
                 {t('email')}
               </label>
               <input
+                id="cleaner-register-email"
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -198,11 +201,12 @@ export default function RegisterCleanerPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-register-password" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
                 {t('password')}
               </label>
               <div className="relative">
                 <input
+                  id="cleaner-register-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -234,11 +238,12 @@ export default function RegisterCleanerPage() {
 
             {/* Confirm password */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-register-confirm-password" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
                 {t('confirmPassword')}
               </label>
               <div className="relative">
                 <input
+                  id="cleaner-register-confirm-password"
                   type={showConfirm ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={e => setConfirm(e.target.value)}

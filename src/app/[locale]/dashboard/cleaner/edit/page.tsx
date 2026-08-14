@@ -248,7 +248,7 @@ export default function EditProfilePage() {
 
             {/* 1. Cover photo — shown behind the avatar on your search card and profile */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
+              <label htmlFor="cleaner-edit-cover-photo" className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
                 {t('coverPhoto')}
               </label>
               <div
@@ -256,6 +256,7 @@ export default function EditProfilePage() {
                 style={coverPhotoPreview ? { backgroundImage: `url(${coverPhotoPreview})` } : undefined}
               >
                 <input
+                  id="cleaner-edit-cover-photo"
                   ref={coverFileInputRef}
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -275,7 +276,7 @@ export default function EditProfilePage() {
 
             {/* 2. Profile photo */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
+              <label htmlFor="cleaner-edit-profile-photo" className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
                 {t('profilePhoto')}
               </label>
               <div className="flex items-center gap-4">
@@ -288,6 +289,7 @@ export default function EditProfilePage() {
                   }
                 </div>
                 <input
+                  id="cleaner-edit-profile-photo"
                   ref={fileInputRef}
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -306,10 +308,11 @@ export default function EditProfilePage() {
 
             {/* 3. Display name */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-edit-display-name" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
                 {t('displayName')}
               </label>
               <input
+                id="cleaner-edit-display-name"
                 type="text"
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
@@ -320,10 +323,11 @@ export default function EditProfilePage() {
 
             {/* 3. Bio */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-edit-bio" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
                 {t('bio')}
               </label>
               <textarea
+                id="cleaner-edit-bio"
                 value={bio}
                 onChange={e => setBio(e.target.value.slice(0, MAX_BIO))}
                 rows={5}
@@ -361,12 +365,13 @@ export default function EditProfilePage() {
 
             {/* 5. Hourly rate */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-edit-hourly-rate" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
                 {t('hourlyRate')}
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B8886] text-[14px] pointer-events-none">€</span>
                 <input
+                  id="cleaner-edit-hourly-rate"
                   type="number"
                   value={hourlyRate}
                   onChange={e => setHourlyRate(e.target.value)}
@@ -437,8 +442,9 @@ export default function EditProfilePage() {
               </label>
               <div className="space-y-2.5">
                 {LANGUAGES.map(lang => (
-                  <label key={lang.code} className="flex items-center gap-2.5 cursor-pointer">
+                  <label key={lang.code} htmlFor={`cleaner-edit-language-${lang.code}`} className="flex items-center gap-2.5 cursor-pointer">
                     <input
+                      id={`cleaner-edit-language-${lang.code}`}
                       type="checkbox"
                       checked={languages.includes(lang.code)}
                       onChange={() => toggleLanguage(lang.code)}
@@ -457,8 +463,9 @@ export default function EditProfilePage() {
               </label>
               <div className="space-y-2.5">
                 {(['weekdays', 'weekends', 'evenings'] as const).map(slot => (
-                  <label key={slot} className="flex items-center gap-2.5 cursor-pointer">
+                  <label key={slot} htmlFor={`cleaner-edit-availability-${slot}`} className="flex items-center gap-2.5 cursor-pointer">
                     <input
+                      id={`cleaner-edit-availability-${slot}`}
                       type="checkbox"
                       checked={availability.includes(slot)}
                       onChange={() => toggleAvailability(slot)}
@@ -472,8 +479,9 @@ export default function EditProfilePage() {
 
             {/* 9b. Transport */}
             <div>
-              <label className="flex items-center gap-2.5 cursor-pointer">
+              <label htmlFor="cleaner-edit-has-transport" className="flex items-center gap-2.5 cursor-pointer">
                 <input
+                  id="cleaner-edit-has-transport"
                   type="checkbox"
                   checked={hasTransport}
                   onChange={() => setHasTransport(v => !v)}
@@ -488,8 +496,8 @@ export default function EditProfilePage() {
               <label className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
                 {t('services')}
               </label>
-              <label className="flex items-center gap-2.5 opacity-60 cursor-not-allowed select-none">
-                <input type="checkbox" checked readOnly disabled className="w-4 h-4 accent-[#19706A]" />
+              <label htmlFor="cleaner-edit-house-cleaning" className="flex items-center gap-2.5 opacity-60 cursor-not-allowed select-none">
+                <input id="cleaner-edit-house-cleaning" type="checkbox" checked readOnly disabled className="w-4 h-4 accent-[#19706A]" />
                 <span className="text-[13px] text-[#0D1F1E]">{t('houseCleaning')}</span>
               </label>
             </div>

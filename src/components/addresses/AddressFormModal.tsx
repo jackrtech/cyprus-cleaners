@@ -260,8 +260,9 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
             )}
           </div>
           <div>
-            <label className="block text-[11px] text-[#6B8886] mb-1">{tAddr('label')}</label>
+            <label htmlFor="address-label" className="block text-[11px] text-[#6B8886] mb-1">{tAddr('label')}</label>
             <input
+              id="address-label"
               type="text"
               value={label}
               onChange={e => setLabel(e.target.value.slice(0, 50))}
@@ -270,8 +271,9 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
             />
           </div>
           <div>
-            <label className="block text-[11px] text-[#6B8886] mb-1">{tAddr('line1')}</label>
+            <label htmlFor="address-line1" className="block text-[11px] text-[#6B8886] mb-1">{tAddr('line1')}</label>
             <input
+              id="address-line1"
               type="text"
               value={line1}
               onChange={e => setLine1(e.target.value.slice(0, 200))}
@@ -282,8 +284,9 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] text-[#6B8886] mb-1">{tAddr('city')}</label>
+              <label htmlFor="address-city" className="block text-[11px] text-[#6B8886] mb-1">{tAddr('city')}</label>
               <select
+                id="address-city"
                 value={city}
                 onChange={e => setCity(e.target.value)}
                 className="input !py-2 text-[13px]"
@@ -296,8 +299,9 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
               </select>
             </div>
             <div>
-              <label className="block text-[11px] text-[#6B8886] mb-1">{tAddr('postalCode')}</label>
+              <label htmlFor="address-postal-code" className="block text-[11px] text-[#6B8886] mb-1">{tAddr('postalCode')}</label>
               <input
+                id="address-postal-code"
                 type="text"
                 value={postalCode}
                 onChange={e => setPostalCode(e.target.value.slice(0, 10))}
@@ -307,8 +311,9 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
             </div>
           </div>
           <div>
-            <label className="block text-[11px] text-[#6B8886] mb-1">{tAddr('area')}</label>
+            <label htmlFor="address-area" className="block text-[11px] text-[#6B8886] mb-1">{tAddr('area')}</label>
             <input
+              id="address-area"
               type="text"
               value={area}
               onChange={e => setArea(e.target.value.slice(0, 100))}
@@ -329,8 +334,9 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
             </p>
           </div>
           <div>
-            <label className="block text-[11px] text-[#6B8886] mb-1">{tAddr('findingUsNotes')}</label>
+            <label htmlFor="address-finding-us-notes" className="block text-[11px] text-[#6B8886] mb-1">{tAddr('findingUsNotes')}</label>
             <textarea
+              id="address-finding-us-notes"
               value={findingUsNotes}
               onChange={e => setFindingUsNotes(e.target.value.slice(0, 500))}
               placeholder={tAddr('findingUsNotesPlaceholder')}

@@ -194,8 +194,9 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('cleaningType')}</label>
+            <label htmlFor="booking-cleaning-type" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('cleaningType')}</label>
             <select
+              id="booking-cleaning-type"
               value={cleaningType}
               onChange={e => setCleaningType(e.target.value as CleaningType)}
               className="input !py-2 text-[13px]"
@@ -205,8 +206,9 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
             </select>
           </div>
           <div>
-            <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('duration')}</label>
+            <label htmlFor="booking-duration" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('duration')}</label>
             <input
+              id="booking-duration"
               type="number"
               min={1}
               max={12}
@@ -221,8 +223,9 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
         <p className="text-[11px] text-[#6B8886] -mt-1">{tBooking('durationEstimateHint')}</p>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('bedrooms')}</label>
+            <label htmlFor="booking-bedrooms" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('bedrooms')}</label>
             <input
+              id="booking-bedrooms"
               type="number"
               min={0}
               max={10}
@@ -234,8 +237,9 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
             />
           </div>
           <div>
-            <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('bathrooms')}</label>
+            <label htmlFor="booking-bathrooms" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('bathrooms')}</label>
             <input
+              id="booking-bathrooms"
               type="number"
               min={1}
               max={10}
@@ -249,8 +253,9 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('date')}</label>
+            <label htmlFor="booking-date" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('date')}</label>
             <input
+              id="booking-date"
               type="date"
               value={bookingDate}
               min={todayStr}
@@ -260,8 +265,9 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
             />
           </div>
           <div>
-            <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('startTime')}</label>
+            <label htmlFor="booking-start-time" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('startTime')}</label>
             <select
+              id="booking-start-time"
               value={startTime}
               onChange={e => setStartTime(e.target.value)}
               className="input !py-2 text-[13px]"
@@ -275,8 +281,9 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
           </div>
         </div>
         <div>
-          <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('address')}</label>
+          <label htmlFor="booking-address" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('address')}</label>
           <select
+            id="booking-address"
             value={selectedAddressId}
             onChange={e => {
               if (e.target.value === ADD_NEW_ADDRESS) { setShowAddressModal(true); return }
@@ -301,8 +308,9 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
           )}
         </div>
         <div>
-          <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('notes')}</label>
+          <label htmlFor="booking-notes" className="block text-[11px] text-[#6B8886] mb-1">{tBooking('notes')}</label>
           <textarea
+            id="booking-notes"
             value={bookingNotes}
             onChange={e => setBookingNotes(e.target.value.slice(0, 1000))}
             placeholder={tBooking('notesPlaceholder')}

@@ -70,10 +70,11 @@ export default function RegisterPage() {
             )}
 
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="register-full-name" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
                 {t('fullName')}
               </label>
               <input
+                id="register-full-name"
                 type="text"
                 value={fullName}
                 onChange={e => setFullName(e.target.value)}
@@ -85,10 +86,11 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="register-email" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
                 {t('email')}
               </label>
               <input
+                id="register-email"
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -99,11 +101,12 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="register-password" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
                 {t('password')}
               </label>
               <div className="relative">
                 <input
+                  id="register-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -134,11 +137,12 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="register-confirm-password" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
                 {t('confirmPassword')}
               </label>
               <div className="relative">
                 <input
+                  id="register-confirm-password"
                   type={showConfirm ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={e => setConfirm(e.target.value)}
