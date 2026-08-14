@@ -20,6 +20,7 @@ export interface SavedAddress {
   lat:              number | null
   lng:              number | null
   finding_us_notes: string | null
+  is_default:       boolean
 }
 
 interface Props {
@@ -36,13 +37,18 @@ interface Props {
   mode?:      'picker' | 'manage'
   // Fired on create/update in 'manage' mode so the caller can sync its list.
   onSaved?:   (address: SavedAddress) => void
+  // Fired when an address is set as default ('manage' mode only) — since
+  // setting one clears the flag on every other address for this user, the
+  // caller re-derives is_default across its whole list rather than us
+  // trying to patch every row's flag from a response that only reflects one.
+  onDefaultChanged?: (id: string) => void
 }
 
 // Manages a customer's saved addresses: pick an existing one, delete one, or
 // add a new one in Cyprus format (street+number, city, postal code). Reached
 // from the booking form's "+ Add new address" option, and from the Profile
 // tab's Addresses section (in 'manage' mode, which also allows editing).
-export default function AddressFormModal({ isOpen, onClose, addresses, onSelect, onDeleted, mode = 'picker', onSaved }: Props) {
+export default function AddressFormModal({ isOpen, onClose, addresses, onSelect, onDeleted, mode = 'picker', onSaved, onDefaultChanged }: Props) {
   const tAddr    = useTranslations('address')
   const tCities  = useTranslations('cities')
 
@@ -56,6 +62,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
   const [saving,     setSaving]     = useState(false)
   const [error,      setError]      = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null)
   const [editingId,  setEditingId]  = useState<string | null>(null)
   const [panTarget,  setPanTarget]  = useState<[number, number] | null>(null)
 
@@ -122,6 +129,19 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
   function formatAddress(a: SavedAddress): string {
     const place = a.area ? `${a.area}, ${a.city}` : a.city
     return a.label ? `${a.label} — ${a.line1}, ${place}` : `${a.line1}, ${place}`
+  }
+
+  async function handleSetDefault(id: string) {
+    setSettingDefaultId(id)
+    try {
+      const res = await fetch(`/api/addresses/${id}/default`, { method: 'POST' })
+      if (!res.ok) throw new Error(await extractErrorMessage(res, tAddr('saveError')))
+      onDefaultChanged?.(id)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tAddr('saveError'))
+    } finally {
+      setSettingDefaultId(null)
+    }
   }
 
   async function handleDelete(id: string) {
@@ -203,8 +223,19 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
                   onClick={() => mode === 'manage' ? startEdit(a) : onSelect?.(a)}
                   className="flex-1 min-w-0 text-left text-[13px] text-[#0D1F1E] hover:text-[#19706A] transition-colors truncate"
                 >
+                  {a.is_default && <span className="text-[11px] font-medium text-[#19706A] mr-1.5">{tAddr('defaultBadge')}</span>}
                   {formatAddress(a)}
                 </button>
+                {mode === 'manage' && !a.is_default && (
+                  <button
+                    type="button"
+                    onClick={() => handleSetDefault(a.id)}
+                    disabled={settingDefaultId === a.id}
+                    className="shrink-0 text-[11px] font-medium text-[#6B8886] hover:text-[#19706A] transition-colors disabled:opacity-50"
+                  >
+                    {settingDefaultId === a.id ? '…' : tAddr('setDefault')}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => handleDelete(a.id)}

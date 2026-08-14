@@ -124,6 +124,7 @@ export default function ProfilePage() {
                     onClick={() => setShowAddressModal(true)}
                     className="w-full text-left text-[13px] text-[#0D1F1E] hover:text-[#19706A] transition-colors rounded-[10px] border border-[#E0EDEC] px-3 py-2.5 truncate"
                   >
+                    {a.is_default && <span className="text-[11px] font-medium text-[#19706A] mr-1.5">{tAddr('defaultBadge')}</span>}
                     {formatAddress(a)}
                   </button>
                 ))}
@@ -155,6 +156,7 @@ export default function ProfilePage() {
               ? prev.map(a => a.id === address.id ? address : a)
               : [...prev, address])
           }}
+          onDefaultChanged={id => setAddresses(prev => prev.map(a => ({ ...a, is_default: a.id === id })))}
           onDeleted={id => setAddresses(prev => prev.filter(a => a.id !== id))}
         />
       )}

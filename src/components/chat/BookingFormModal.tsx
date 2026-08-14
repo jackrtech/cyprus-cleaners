@@ -85,8 +85,9 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
   }, [bedrooms, bathrooms, cleaningType, durationTouched])
 
   // Fetch the customer's saved addresses once the form opens — with exactly
-  // one on file, pre-select it; with zero or several, leave it unselected so
-  // a customer with multiple properties has to pick explicitly rather than
+  // one on file, pre-select it; with several, pre-select whichever is marked
+  // default; with zero or several-and-no-default, leave it unselected so a
+  // customer with multiple properties has to pick explicitly rather than
   // risk a cleaner going to the wrong address.
   useEffect(() => {
     if (!isOpen) return
@@ -96,7 +97,8 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
       .then((data: SavedAddress[]) => {
         if (cancelled) return
         setSavedAddresses(data)
-        if (data.length === 1) setSelectedAddressId(prev => prev || data[0].id)
+        const preselect = data.length === 1 ? data[0] : data.find(a => a.is_default)
+        if (preselect) setSelectedAddressId(prev => prev || preselect.id)
       })
       .catch(() => {})
     return () => { cancelled = true }

@@ -528,6 +528,8 @@
     "cancelEdit": "Cancel",
     "saveChanges": "Save changes",
     "noAddressesYet": "No addresses saved yet",
+    "defaultBadge": "Default ·",
+    "setDefault": "Set as default",
     "area": "Village / area (optional)",
     "areaPlaceholder": "e.g. Pyrgos, Geroskipou — beyond the city centre?",
     "mapPin": "Map location",

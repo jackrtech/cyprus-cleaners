@@ -175,6 +175,7 @@ create table addresses (
   lat                numeric(9,6),  -- map pin, both null until the customer drops one
   lng                numeric(9,6),
   finding_us_notes   text,  -- free-text help finding the property, e.g. "blue gate, park on the street"
+  is_default         boolean not null default false,  -- at most one true per user, enforced in application code (see POST /api/addresses/[id]/default) rather than a DB constraint, since "at most one" per user needs a partial unique index — simpler to own it in the one place that ever sets it. Applying to an existing database: `alter table addresses add column is_default boolean not null default false;`
   created_at         timestamptz not null default now()
 );
 -- Applying area/lat/lng/finding_us_notes to an existing database:

@@ -68,7 +68,7 @@ export async function PATCH(
       finding_us_notes: finding_us_notes?.trim() || null,
     })
     .eq('id', params.id)
-    .select('id, label, line1, city, area, postal_code, lat, lng, finding_us_notes, created_at')
+    .select('id, label, line1, city, area, postal_code, lat, lng, finding_us_notes, is_default, created_at')
     .single()
 
   if (error || !data) {

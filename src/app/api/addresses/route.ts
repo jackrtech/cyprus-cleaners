@@ -15,7 +15,7 @@ export async function GET() {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('addresses')
-    .select('id, label, line1, city, area, postal_code, lat, lng, finding_us_notes, created_at')
+    .select('id, label, line1, city, area, postal_code, lat, lng, finding_us_notes, is_default, created_at')
     .eq('user_id', session.user.id)
     .order('created_at', { ascending: true })
 
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       lng,
       finding_us_notes: finding_us_notes?.trim() || null,
     })
-    .select('id, label, line1, city, area, postal_code, lat, lng, finding_us_notes, created_at')
+    .select('id, label, line1, city, area, postal_code, lat, lng, finding_us_notes, is_default, created_at')
     .single()
 
   if (error || !data) {
