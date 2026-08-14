@@ -39,13 +39,8 @@ export async function PATCH(
   if (finding_us_notes !== undefined && finding_us_notes !== null && (typeof finding_us_notes !== 'string' || finding_us_notes.length > 500)) {
     return NextResponse.json({ error: 'Finding-us notes must be 500 characters or fewer' }, { status: 400 })
   }
-  const hasLat = lat !== undefined && lat !== null
-  const hasLng = lng !== undefined && lng !== null
-  if (hasLat !== hasLng) {
-    return NextResponse.json({ error: 'A map pin needs both a latitude and a longitude' }, { status: 400 })
-  }
-  if (hasLat && (typeof lat !== 'number' || lat < -90 || lat > 90 || typeof lng !== 'number' || lng < -180 || lng > 180)) {
-    return NextResponse.json({ error: 'Invalid map pin coordinates' }, { status: 400 })
+  if (typeof lat !== 'number' || lat < -90 || lat > 90 || typeof lng !== 'number' || lng < -180 || lng > 180) {
+    return NextResponse.json({ error: 'A map pin is required' }, { status: 400 })
   }
 
   const supabase = createAdminClient()
@@ -68,8 +63,8 @@ export async function PATCH(
       city,
       area:             area?.trim() || null,
       postal_code:      postal_code?.trim() || null,
-      lat:              hasLat ? lat : null,
-      lng:              hasLat ? lng : null,
+      lat,
+      lng,
       finding_us_notes: finding_us_notes?.trim() || null,
     })
     .eq('id', params.id)

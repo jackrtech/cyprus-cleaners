@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -23,6 +24,10 @@ interface Props {
   lat: number | null
   lng: number | null
   onChange: (lat: number, lng: number) => void
+  // Set from a geocoded area/city name as the customer types — pans the map
+  // there to help them navigate, but never moves the pin itself. Only the
+  // customer's own click/drag sets the actual pin.
+  panTo?: [number, number] | null
 }
 
 function ClickHandler({ onChange }: { onChange: (lat: number, lng: number) => void }) {
@@ -53,40 +58,90 @@ function InvalidateSizeOnMount() {
   return null
 }
 
+// react-leaflet's `center` prop only applies on first render — this reacts
+// to panTo changing (a geocoded area/city name) and flies the view there
+// without touching the pin.
+function PanController({ target }: { target: [number, number] | null }) {
+  const map = useMap()
+  useEffect(() => {
+    if (target) map.flyTo(target, 13, { duration: 1 })
+  }, [target, map])
+  return null
+}
+
+function LocateControl({ onLocate }: { onLocate: (lat: number, lng: number) => void }) {
+  const t = useTranslations('address')
+  const map = useMap()
+  const [locating, setLocating] = useState(false)
+
+  function handleClick() {
+    if (!navigator.geolocation || locating) return
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude, longitude } = pos.coords
+        onLocate(latitude, longitude)
+        map.flyTo([latitude, longitude], 16, { duration: 1 })
+        setLocating(false)
+      },
+      () => {
+        // Permission denied or unavailable — fail silently, the customer can
+        // still drop a pin manually.
+        setLocating(false)
+      }
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={locating}
+      className="absolute top-2 right-2 z-[1000] bg-white border border-[#E0EDEC] rounded-full px-3 py-1.5 text-[12px] font-medium text-[#19706A] shadow-sm hover:border-[#19706A] transition-colors disabled:opacity-50"
+    >
+      {locating ? '…' : `📍 ${t('useMyLocation')}`}
+    </button>
+  )
+}
+
 // Click-or-drag pin picker for a saved address's map location. Rendered only
 // client-side (see the dynamic() import in AddressFormModal) since Leaflet
 // touches the DOM directly and has no SSR support.
-export default function AddressMapPicker({ lat, lng, onChange }: Props) {
+export default function AddressMapPicker({ lat, lng, onChange, panTo }: Props) {
   const hasPin = lat != null && lng != null
   const center: [number, number] = hasPin ? [lat, lng] : CYPRUS_CENTER
 
   return (
-    <MapContainer
-      center={center}
-      zoom={hasPin ? 15 : 8}
-      scrollWheelZoom={false}
-      style={{ height: 200, width: '100%', borderRadius: 10 }}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <ClickHandler onChange={onChange} />
-      <InvalidateSizeOnMount />
-      {hasPin && (
-        <Marker
-          position={[lat, lng]}
-          icon={pinIcon}
-          draggable
-          eventHandlers={{
-            dragend: e => {
-              const marker = e.target as L.Marker
-              const p = marker.getLatLng()
-              onChange(p.lat, p.lng)
-            },
-          }}
+    <div className="relative">
+      <MapContainer
+        center={center}
+        zoom={hasPin ? 15 : 8}
+        scrollWheelZoom={false}
+        style={{ height: 200, width: '100%', borderRadius: 10 }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
-      )}
-    </MapContainer>
+        <ClickHandler onChange={onChange} />
+        <InvalidateSizeOnMount />
+        <PanController target={panTo ?? null} />
+        <LocateControl onLocate={onChange} />
+        {hasPin && (
+          <Marker
+            position={[lat, lng]}
+            icon={pinIcon}
+            draggable
+            eventHandlers={{
+              dragend: e => {
+                const marker = e.target as L.Marker
+                const p = marker.getLatLng()
+                onChange(p.lat, p.lng)
+              },
+            }}
+          />
+        )}
+      </MapContainer>
+    </div>
   )
 }

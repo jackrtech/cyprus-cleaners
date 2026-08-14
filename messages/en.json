@@ -523,8 +523,10 @@
     "noAddressesYet": "No addresses saved yet",
     "area": "Village / area (optional)",
     "areaPlaceholder": "e.g. Pyrgos, Geroskipou — beyond the city centre?",
-    "mapPin": "Map location (optional)",
-    "mapPinHint": "Tap the map to drop a pin, or drag it to adjust",
+    "mapPin": "Map location",
+    "mapPinHint": "Tap the map to drop a pin so your cleaner can find you",
+    "mapPinSet": "Location pinned — drag the marker to adjust",
+    "useMyLocation": "Use my location",
     "findingUsNotes": "Finding us (optional)",
     "findingUsNotesPlaceholder": "Blue gate, park on the street, 2nd floor…"
   },

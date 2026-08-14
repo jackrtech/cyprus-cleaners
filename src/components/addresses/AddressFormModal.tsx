@@ -57,6 +57,32 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
   const [error,      setError]      = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingId,  setEditingId]  = useState<string | null>(null)
+  const [panTarget,  setPanTarget]  = useState<[number, number] | null>(null)
+
+  // Geocode the typed area/city (via Nominatim, OSM's free geocoder) so the
+  // map pans somewhere useful before the customer drops a pin — debounced to
+  // avoid hammering the API on every keystroke. Only pans the view; never
+  // moves the pin itself.
+  useEffect(() => {
+    const query = area.trim() || city
+    if (!query || query.length < 3) return
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${query}, Cyprus`)}&format=json&limit=1`
+        )
+        if (!res.ok) return
+        const results: { lat: string; lon: string }[] = await res.json()
+        if (results[0]) setPanTarget([parseFloat(results[0].lat), parseFloat(results[0].lon)])
+      } catch {
+        // Best-effort navigation hint only — a failed geocode just means the
+        // map doesn't pan; it never blocks dropping a pin manually.
+      }
+    }, 600)
+
+    return () => clearTimeout(timer)
+  }, [area, city])
 
   function resetForm() {
     setLabel('')
@@ -67,6 +93,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
     setPin(null)
     setFindingUsNotes('')
     setError(null)
+    setPanTarget(null)
   }
 
   useEffect(() => {
@@ -112,7 +139,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    if (!line1.trim() || !city || saving) return
+    if (!line1.trim() || !city || !pin || saving) return
 
     setSaving(true)
     setError(null)
@@ -264,8 +291,11 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
               lat={pin?.lat ?? null}
               lng={pin?.lng ?? null}
               onChange={(lat, lng) => setPin({ lat, lng })}
+              panTo={panTarget}
             />
-            <p className="text-[11px] text-[#6B8886] mt-1">{tAddr('mapPinHint')}</p>
+            <p className={`text-[11px] mt-1 ${pin ? 'text-[#19706A]' : 'text-[#B5541F]'}`}>
+              {pin ? tAddr('mapPinSet') : tAddr('mapPinHint')}
+            </p>
           </div>
           <div>
             <label className="block text-[11px] text-[#6B8886] mb-1">{tAddr('findingUsNotes')}</label>
@@ -279,7 +309,7 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
           </div>
           <button
             type="submit"
-            disabled={saving || !line1.trim() || !city}
+            disabled={saving || !line1.trim() || !city || !pin}
             className="btn-primary !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
           >
             {saving ? tAddr('saving') : editingId ? tAddr('saveChanges') : tAddr('save')}
