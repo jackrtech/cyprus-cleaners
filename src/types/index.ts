@@ -91,6 +91,7 @@ export interface Booking {
   review_prompted_at: string | null
   cancellation_reason: string | null
   cancelled_by: string | null
+  review_skipped_at: string | null
   created_at: string
   // Joins
   customer?: User

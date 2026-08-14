@@ -54,6 +54,7 @@ export default function ReviewPrompt({ bookingId, cleanerName, subtitle, onSubmi
   const [bodyText,     setBodyText]    = useState('')
   const [submitting,   setSubmitting]  = useState(false)
   const [submitted,    setSubmitted]   = useState(false)
+  const [skipping,     setSkipping]    = useState(false)
   const [error,        setError]       = useState<string | null>(null)
 
   async function handleSubmit() {
@@ -74,6 +75,21 @@ export default function ReviewPrompt({ bookingId, cleanerName, subtitle, onSubmi
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleSkip() {
+    if (skipping) return
+    setSkipping(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}/skip-review`, { method: 'POST' })
+      if (!res.ok) throw new Error(await extractErrorMessage(res, 'Something went wrong. Please try again.'))
+      onSkip?.()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+    } finally {
+      setSkipping(false)
     }
   }
 
@@ -114,8 +130,9 @@ export default function ReviewPrompt({ bookingId, cleanerName, subtitle, onSubmi
         </button>
         <button
           type="button"
-          onClick={onSkip}
-          className="btn-ghost !px-4 !py-2 text-[13px] rounded-full"
+          onClick={handleSkip}
+          disabled={skipping}
+          className="btn-ghost !px-4 !py-2 text-[13px] rounded-full disabled:opacity-50"
         >
           {t('skip')}
         </button>

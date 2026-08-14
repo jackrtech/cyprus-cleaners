@@ -63,6 +63,7 @@ interface Booking {
   disputes:           { id: string; status: string }[] | null
   photo_urls:         string[]
   cancellation_reason: string | null
+  review_skipped_at:  string | null
 }
 
 const BOOKING_STATUS_BADGE: Record<BookingStatus, string> = {
@@ -229,6 +230,7 @@ export default function DashboardPage() {
     })
     const needsReview = booking.status === 'COMPLETED'
       && (!booking.reviews || booking.reviews.length === 0)
+      && !booking.review_skipped_at
       && !skippedReviewIds.has(booking.id)
 
     return (

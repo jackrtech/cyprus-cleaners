@@ -115,6 +115,7 @@ create table bookings (
   review_prompted_at  timestamptz,  -- Set when status → COMPLETED; triggers review prompt
   cancellation_reason text,  -- Free-text reason, set on CANCEL/DECLINE
   cancelled_by        uuid references users(id),  -- Who initiated the cancellation
+  review_skipped_at   timestamptz,  -- Customer dismissed the review prompt; suppresses it going forward instead of re-showing on every reload. Applying to an existing database: `alter table bookings add column review_skipped_at timestamptz;`
   created_at          timestamptz not null default now()
 );
 
