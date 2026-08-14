@@ -36,16 +36,16 @@ const DEFAULT_STORAGE_BUCKET = {
 
 // createAdminClient()/createClient() both return an object shaped like this
 // (a subset of SupabaseClient covering what API routes actually call).
-// `setFromResult(table, result)` controls what the *next* `.from(table)`
-// call resolves to — call it again mid-test to change the response between
-// assertions (e.g. "not found" then "found" after an insert).
 export function createMockSupabaseClient() {
-  const fromResults = new Map<string, QueryResult>()
+  const fromResults = new Map<string, QueryResult[]>()
   const storageBuckets = new Map<string, Record<string, unknown>>()
 
   const client = {
     from: vi.fn((table: string) => {
-      const result = fromResults.get(table) ?? { data: null, error: null }
+      const queue = fromResults.get(table)
+      const result: QueryResult = !queue || queue.length === 0
+        ? { data: null, error: null }
+        : queue.length > 1 ? queue.shift()! : queue[0]
       return createQueryBuilderMock(result)
     }),
     storage: {
@@ -53,13 +53,27 @@ export function createMockSupabaseClient() {
     },
   }
 
+  // Sets what every `.from(table)` call resolves to from here on — replaces
+  // any previous queue for that table, so it's safe to call once per test
+  // without needing a reset between tests. Covers the common case: a route
+  // that only touches this table once, or touches it several times but
+  // always expects the same thing back.
   function setFromResult<T>(table: string, result: QueryResult<T>) {
-    fromResults.set(table, result as QueryResult)
+    fromResults.set(table, [result as QueryResult])
+  }
+
+  // For a route that queries the same table more than once for *different*
+  // reasons within a single request (e.g. an existence check that should
+  // come back empty, then an insert that should come back with a row) —
+  // each `.from(table)` call consumes the next result in order; the last one
+  // is reused for any further calls past the end of the list.
+  function queueFromResults<T>(table: string, ...results: QueryResult<T>[]) {
+    fromResults.set(table, results as QueryResult[])
   }
 
   function setStorageBucket(bucket: string, impl: Record<string, unknown>) {
     storageBuckets.set(bucket, impl)
   }
 
-  return { client, setFromResult, setStorageBucket }
+  return { client, setFromResult, queueFromResults, setStorageBucket }
 }
