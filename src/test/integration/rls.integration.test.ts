@@ -91,6 +91,14 @@ describe.skipIf(!hasLiveCreds)('RLS policies (live DB)', () => {
     jackId = jack.id
     sashaId = sasha.id
 
+    const { data: jackProfile } = await admin
+      .from('cleaner_profiles')
+      .select('id')
+      .eq('user_id', jackId)
+      .single()
+    if (!jackProfile) throw new Error('Jack has no cleaner_profiles row.')
+    jackProfileId = jackProfile.id
+
     jackClient = clientAs(await signAccessToken(jackId))
     outsiderClient = clientAs(await signAccessToken(OUTSIDER_ID))
   })
@@ -111,6 +119,7 @@ describe.skipIf(!hasLiveCreds)('RLS policies (live DB)', () => {
       .from('introductions')
       .select('id')
       .eq('customer_id', sashaId)
+      .eq('cleaner_profile_id', jackProfileId)
       .single()
     if (!intro) throw new Error('No jack<->sasha introduction found — run `npm run seed` first.')
 
