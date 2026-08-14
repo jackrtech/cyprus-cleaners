@@ -7,6 +7,7 @@ const TABS = [
   { href: '/admin', labelKey: 'navVerifications' },
   { href: '/admin/disputes', labelKey: 'navDisputes' },
   { href: '/admin/cancellations', labelKey: 'navCancellations' },
+  { href: '/admin/users', labelKey: 'navUsers' },
 ] as const
 
 export default function AdminNav() {
