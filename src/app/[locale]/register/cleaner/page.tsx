@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import Footer from '@/components/Footer'
+import Spinner from '@/components/ui/Spinner'
 import { CITIES } from '@/lib/cities'
 
 export default function RegisterCleanerPage() {
@@ -269,9 +270,10 @@ export default function RegisterCleanerPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full py-3 rounded-full text-[14px] disabled:opacity-50"
+              className="btn-primary w-full py-3 rounded-full text-[14px] disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? '…' : t('registerAsCleaner')}
+              {loading && <Spinner size={14} />}
+              {t('registerAsCleaner')}
             </button>
           </form>
         </div>

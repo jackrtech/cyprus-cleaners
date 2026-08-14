@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import Footer from '@/components/Footer'
+import Spinner from '@/components/ui/Spinner'
 
 // Only ever honoured for a CUSTOMER login (see handleSubmit) — a cleaner or
 // admin always lands on their own dashboard regardless of where they came
@@ -127,9 +128,10 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full py-3 rounded-full text-[14px] disabled:opacity-50"
+              className="btn-primary w-full py-3 rounded-full text-[14px] disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? '…' : t('login')}
+              {loading && <Spinner size={14} />}
+              {t('login')}
             </button>
           </form>
         </div>

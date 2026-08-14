@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import Footer from '@/components/Footer'
+import Spinner from '@/components/ui/Spinner'
 
 export default function RegisterPage() {
   const t = useTranslations('auth')
@@ -169,9 +170,10 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full py-3 rounded-full text-[14px] disabled:opacity-50"
+              className="btn-primary w-full py-3 rounded-full text-[14px] disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? '…' : t('register')}
+              {loading && <Spinner size={14} />}
+              {t('register')}
             </button>
           </form>
         </div>

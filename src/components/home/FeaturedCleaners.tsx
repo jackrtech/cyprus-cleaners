@@ -99,12 +99,14 @@ export default function FeaturedCleaners() {
   const getCityName = useCity()
   const [activeCity, setActiveCity] = useState('all')
   const [cleaners, setCleaners] = useState<MockCleaner[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetch('/api/cleaners', { cache: 'no-store' })
       .then(r => { if (!r.ok) throw new Error(); return r.json() })
       .then((rows: DbCleanerRow[]) => setCleaners(rows.map(mapCleaner)))
       .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   const featured = useMemo(() => {
@@ -156,11 +158,26 @@ export default function FeaturedCleaners() {
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map(cleaner => (
-          <CleanerCard key={cleaner.id} cleaner={cleaner} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white border border-[#E0EDEC] rounded-[16px] overflow-hidden animate-pulse">
+              <div className="h-[120px] bg-[#E0EDEC]" />
+              <div className="p-3 pb-3.5 space-y-2">
+                <div className="h-3.5 bg-[#E0EDEC] rounded w-3/4" />
+                <div className="h-3 bg-[#E0EDEC] rounded w-1/2" />
+                <div className="h-3 bg-[#E0EDEC] rounded w-2/3" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(cleaner => (
+            <CleanerCard key={cleaner.id} cleaner={cleaner} />
+          ))}
+        </div>
+      )}
     </section>
   )
 }
