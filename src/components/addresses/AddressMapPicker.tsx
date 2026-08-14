@@ -1,6 +1,7 @@
 'use client'
 
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
+import { useEffect } from 'react'
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -33,6 +34,25 @@ function ClickHandler({ onChange }: { onChange: (lat: number, lng: number) => vo
   return null
 }
 
+// This map only ever mounts inside FullScreenModal, which renders `null`
+// until open — so Leaflet's first size measurement can land before the
+// modal has actually finished layout/paint, leaving it convinced its
+// container is 0×0. Tiles then never get requested and you're left with a
+// grey box. Re-measuring on the next frame (and once more shortly after, to
+// catch a slower modal-open transition) fixes it.
+function InvalidateSizeOnMount() {
+  const map = useMap()
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => map.invalidateSize())
+    const timer = setTimeout(() => map.invalidateSize(), 250)
+    return () => {
+      cancelAnimationFrame(raf)
+      clearTimeout(timer)
+    }
+  }, [map])
+  return null
+}
+
 // Click-or-drag pin picker for a saved address's map location. Rendered only
 // client-side (see the dynamic() import in AddressFormModal) since Leaflet
 // touches the DOM directly and has no SSR support.
@@ -52,6 +72,7 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <ClickHandler onChange={onChange} />
+      <InvalidateSizeOnMount />
       {hasPin && (
         <Marker
           position={[lat, lng]}
