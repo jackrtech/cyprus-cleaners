@@ -480,6 +480,35 @@ export async function sendRefundFailedAlertEmail({
   })
 }
 
+export async function sendBookingConfirmedAdminAlertEmail({
+  bookingId, customerName, cleanerName, amountEur, date, startTime, adminUrl,
+}: {
+  bookingId:    string
+  customerName: string
+  cleanerName:  string
+  amountEur:    number
+  date:         string // ISO date
+  startTime:    string // HH:MM
+  adminUrl:     string
+}) {
+  const bodyHtml =
+    `<p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 12px;">A booking was confirmed and the customer's card was charged.</p>
+     <table style="width:100%;font-size:13px;color:#0D1F1E;border-collapse:collapse;margin-top:8px;">
+       <tr><td style="padding:4px 0;color:#6B8886;">Booking</td><td style="padding:4px 0;">${escapeHtml(bookingId)}</td></tr>
+       <tr><td style="padding:4px 0;color:#6B8886;">Customer</td><td style="padding:4px 0;">${escapeHtml(customerName)}</td></tr>
+       <tr><td style="padding:4px 0;color:#6B8886;">Cleaner</td><td style="padding:4px 0;">${escapeHtml(cleanerName)}</td></tr>
+       <tr><td style="padding:4px 0;color:#6B8886;">Amount charged</td><td style="padding:4px 0;">€${amountEur.toFixed(2)}</td></tr>
+       <tr><td style="padding:4px 0;color:#6B8886;">Scheduled</td><td style="padding:4px 0;">${escapeHtml(date)} at ${escapeHtml(startTime)}</td></tr>
+     </table>
+     ${cta('Open cancellations ledger', adminUrl)}`
+
+  return sendAdminAlertEmail({
+    subject:  `Booking confirmed — ${bookingId}`,
+    heading:  'Booking confirmed',
+    bodyHtml,
+  })
+}
+
 export async function sendDisputeFiledAlertEmail({
   bookingId, customerName, cleanerName, claim, adminUrl,
 }: {

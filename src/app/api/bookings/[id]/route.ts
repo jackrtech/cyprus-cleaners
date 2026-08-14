@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
-import { sendBookingConfirmedEmail, sendBookingCompletedEmail, sendBookingDeclinedEmail, sendBookingCancelledEmail, sendRefundFailedAlertEmail } from '@/lib/email'
+import { sendBookingConfirmedEmail, sendBookingCompletedEmail, sendBookingDeclinedEmail, sendBookingCancelledEmail, sendRefundFailedAlertEmail, sendBookingConfirmedAdminAlertEmail } from '@/lib/email'
 import Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe'
 
@@ -284,7 +284,7 @@ export async function PATCH(
     try {
       const { data: customerUser } = await supabase
         .from('users')
-        .select('email')
+        .select('email, full_name')
         .eq('id', booking.customer_id)
         .single()
 
@@ -298,6 +298,22 @@ export async function PATCH(
             startTime:      booking.start_time,
             durationHours:  data.duration_hours,
             dashboardUrl:   `${BASE_URL}/dashboard`,
+          })
+
+          const { data: paidPayment } = await supabase
+            .from('payments')
+            .select('amount_eur')
+            .eq('booking_id', booking.id)
+            .single()
+
+          await sendBookingConfirmedAdminAlertEmail({
+            bookingId:    booking.id,
+            customerName: customerUser.full_name ?? customerUser.email,
+            cleanerName:  cleanerProfile?.display_name ?? '',
+            amountEur:    paidPayment?.amount_eur ?? 0,
+            date:         booking.date,
+            startTime:    booking.start_time,
+            adminUrl:     `${BASE_URL}/admin/cancellations`,
           })
         } else {
           await sendBookingCompletedEmail({
