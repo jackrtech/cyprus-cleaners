@@ -347,6 +347,87 @@ export async function sendBookingCompletedEmail({
   return sendEmail({ to: customerEmail, subject, html })
 }
 
+// ─── 6b. Booking declined → customer ─────────────────────────────────────────
+
+export async function sendBookingDeclinedEmail({
+  customerEmail, customerLocale, cleanerName, date, startTime, dashboardUrl,
+}: {
+  customerEmail:  string
+  customerLocale: string | null
+  cleanerName:    string
+  date:           string // ISO date
+  startTime:      string // HH:MM
+  dashboardUrl:   string
+}) {
+  const isEl = customerLocale === 'el'
+
+  const formattedDate = new Intl.DateTimeFormat(isEl ? 'el-GR' : 'en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  }).format(new Date(`${date}T00:00:00`))
+
+  const subject = isEl ? 'Το αίτημα κράτησής σας απορρίφθηκε' : 'Your booking request was declined'
+
+  const safeCleanerName = escapeHtml(cleanerName)
+
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Το αίτημα απορρίφθηκε</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${safeCleanerName}</strong> δεν μπόρεσε να αναλάβει την κράτησή σας:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime}</p>
+       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:16px 0 0;">Δεν χρεωθήκατε. Μπορείτε να βρείτε άλλον καθαριστή όποτε θέλετε.</p>
+       ${cta('Βρείτε άλλον καθαριστή', dashboardUrl)}`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Request declined</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${safeCleanerName}</strong> wasn't able to take your booking:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime}</p>
+       <p style="color:#6B8886;font-size:13px;line-height:1.5;margin:16px 0 0;">You haven't been charged. Feel free to find another cleaner whenever you're ready.</p>
+       ${cta('Find another cleaner', dashboardUrl)}`)
+
+  return sendEmail({ to: customerEmail, subject, html })
+}
+
+// ─── 6c. Booking cancelled → the other party ─────────────────────────────────
+// Reused in both directions: a customer cancelling notifies the cleaner, a
+// cleaner cancelling notifies the customer — cancelledByRole is whoever acted.
+
+export async function sendBookingCancelledEmail({
+  to, locale, cancelledByRole, date, startTime, reason, dashboardUrl,
+}: {
+  to:              string
+  locale:          string | null
+  cancelledByRole: 'CUSTOMER' | 'CLEANER'
+  date:            string // ISO date
+  startTime:       string // HH:MM
+  reason:          string | null
+  dashboardUrl:    string
+}) {
+  const isEl = locale === 'el'
+
+  const formattedDate = new Intl.DateTimeFormat(isEl ? 'el-GR' : 'en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  }).format(new Date(`${date}T00:00:00`))
+
+  const subject = isEl ? 'Η κράτηση ακυρώθηκε' : 'Booking cancelled'
+  const safeReason = reason ? escapeHtml(reason) : null
+
+  const whoLineEl = cancelledByRole === 'CUSTOMER' ? 'Ο πελάτης ακύρωσε την κράτηση:' : 'Ο καθαριστής ακύρωσε την κράτηση:'
+  const whoLineEn = cancelledByRole === 'CUSTOMER' ? 'The customer cancelled the booking:' : 'The cleaner cancelled the booking:'
+
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η κράτηση ακυρώθηκε</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">${whoLineEl}</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime}</p>
+       ${safeReason ? `<p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Λόγος:</p>
+       <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeReason}</blockquote>` : ''}
+       ${cta('Προβολή στον πίνακα ελέγχου', dashboardUrl)}`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Booking cancelled</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">${whoLineEn}</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime}</p>
+       ${safeReason ? `<p style="color:#6B8886;font-size:13px;line-height:1.5;margin:12px 0 0;">Reason given:</p>
+       <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeReason}</blockquote>` : ''}
+       ${cta('View in dashboard', dashboardUrl)}`)
+
+  return sendEmail({ to, subject, html })
+}
+
 // ─── 7. Admin alerts — internal only, English only, no locale branching ──────
 
 // Generic shell for any "something needs an admin's attention" email — reused

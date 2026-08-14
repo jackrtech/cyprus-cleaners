@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
-import { sendBookingConfirmedEmail, sendBookingCompletedEmail, sendRefundFailedAlertEmail } from '@/lib/email'
+import { sendBookingConfirmedEmail, sendBookingCompletedEmail, sendBookingDeclinedEmail, sendBookingCancelledEmail, sendRefundFailedAlertEmail } from '@/lib/email'
 import Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe'
 
@@ -310,6 +310,75 @@ export async function PATCH(
       }
     } catch (emailErr) {
       console.error(`Email send error (booking ${newStatus.toLowerCase()}):`, emailErr)
+    }
+  }
+
+  // Notify the customer on decline — non-blocking, errors are swallowed
+  if (action === 'DECLINE') {
+    try {
+      const { data: customerUser } = await supabase
+        .from('users')
+        .select('email, locale')
+        .eq('id', booking.customer_id)
+        .single()
+
+      if (customerUser?.email) {
+        await sendBookingDeclinedEmail({
+          customerEmail:  customerUser.email,
+          customerLocale: customerUser.locale,
+          cleanerName:    cleanerProfile?.display_name ?? '',
+          date:           booking.date,
+          startTime:      booking.start_time,
+          dashboardUrl:   `${BASE_URL}/dashboard`,
+        })
+      }
+    } catch (emailErr) {
+      console.error('Email send error (booking declined):', emailErr)
+    }
+  }
+
+  // Notify whichever party didn't act on cancel — non-blocking, errors swallowed
+  if (action === 'CANCEL') {
+    try {
+      if (isCustomer && cleanerProfile?.user_id) {
+        const { data: cleanerUser } = await supabase
+          .from('users')
+          .select('email, locale')
+          .eq('id', cleanerProfile.user_id)
+          .single()
+
+        if (cleanerUser?.email) {
+          await sendBookingCancelledEmail({
+            to:              cleanerUser.email,
+            locale:          cleanerUser.locale,
+            cancelledByRole: 'CUSTOMER',
+            date:            booking.date,
+            startTime:       booking.start_time,
+            reason:          reason || null,
+            dashboardUrl:    `${BASE_URL}/dashboard/cleaner`,
+          })
+        }
+      } else if (isCleaner) {
+        const { data: customerUser } = await supabase
+          .from('users')
+          .select('email, locale')
+          .eq('id', booking.customer_id)
+          .single()
+
+        if (customerUser?.email) {
+          await sendBookingCancelledEmail({
+            to:              customerUser.email,
+            locale:          customerUser.locale,
+            cancelledByRole: 'CLEANER',
+            date:            booking.date,
+            startTime:       booking.start_time,
+            reason:          reason || null,
+            dashboardUrl:    `${BASE_URL}/dashboard`,
+          })
+        }
+      }
+    } catch (emailErr) {
+      console.error('Email send error (booking cancelled):', emailErr)
     }
   }
 
