@@ -10,6 +10,7 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
     "db:sql": "node src/scripts/run-sql.js",
