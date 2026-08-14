@@ -284,7 +284,7 @@ export async function PATCH(
     try {
       const { data: customerUser } = await supabase
         .from('users')
-        .select('email, full_name')
+        .select('email, full_name, locale')
         .eq('id', booking.customer_id)
         .single()
 
@@ -292,7 +292,7 @@ export async function PATCH(
         if (newStatus === 'CONFIRMED') {
           await sendBookingConfirmedEmail({
             customerEmail:  customerUser.email,
-            customerLocale: null, // locale not stored in users table — defaults to EN
+            customerLocale: customerUser.locale,
             cleanerName:    cleanerProfile?.display_name ?? '',
             date:           booking.date,
             startTime:      booking.start_time,
@@ -318,7 +318,7 @@ export async function PATCH(
         } else {
           await sendBookingCompletedEmail({
             customerEmail:  customerUser.email,
-            customerLocale: null, // locale not stored in users table — defaults to EN
+            customerLocale: customerUser.locale,
             cleanerName:    cleanerProfile?.display_name ?? '',
             dashboardUrl:   `${BASE_URL}/dashboard`,
           })

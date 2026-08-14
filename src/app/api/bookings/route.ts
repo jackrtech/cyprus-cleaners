@@ -230,14 +230,14 @@ export async function POST(req: NextRequest) {
     if (cleanerProfile?.user_id) {
       const { data: cleanerUser } = await supabase
         .from('users')
-        .select('email')
+        .select('email, locale')
         .eq('id', cleanerProfile.user_id)
         .single()
 
       if (cleanerUser?.email) {
         await sendNewBookingRequestEmail({
           cleanerEmail:  cleanerUser.email,
-          cleanerLocale: null, // locale not stored in users table — defaults to EN
+          cleanerLocale: cleanerUser.locale,
           customerName:  session.user.name ?? session.user.email,
           date,
           startTime:     start_time,
