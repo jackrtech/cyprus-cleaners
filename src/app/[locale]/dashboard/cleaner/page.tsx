@@ -672,6 +672,15 @@ export default function CleanerDashboardPage() {
           </div>
         )}
 
+        {/* Page heading — was missing entirely; the page went straight from
+            banners to h3 group headers with no h1/h2, breaking the heading
+            hierarchy for screen-reader nav. */}
+        {session?.user?.name && (
+          <h1 className="text-[24px] font-medium text-[#0D1F1E] mb-8">
+            {t('welcomeBack', { name: session.user.name })}
+          </h1>
+        )}
+
         {/* Inline error */}
         {error && (
           <p className="text-[13px] text-red-600 bg-red-50 border border-red-200 rounded-[10px] px-4 py-3">
@@ -768,25 +777,25 @@ export default function CleanerDashboardPage() {
               )}
               {bookingGroups.requested.length > 0 && (
                 <div>
-                  <h3 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
+                  <h2 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
                     {tBooking('needsResponse')}
-                  </h3>
+                  </h2>
                   <div className="space-y-3">{bookingGroups.requested.map(renderBookingCard)}</div>
                 </div>
               )}
               {bookingGroups.confirmed.length > 0 && (
                 <div>
-                  <h3 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
+                  <h2 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
                     {tBooking('upcoming')}
-                  </h3>
+                  </h2>
                   <div className="space-y-3">{bookingGroups.confirmed.map(renderBookingCard)}</div>
                 </div>
               )}
               {bookingGroups.history.length > 0 && (
                 <div>
-                  <h3 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
+                  <h2 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
                     {tBooking('bookingHistory')}
-                  </h3>
+                  </h2>
                   <div className="space-y-3">{bookingGroups.history.map(renderBookingCard)}</div>
                 </div>
               )}

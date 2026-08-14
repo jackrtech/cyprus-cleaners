@@ -486,25 +486,25 @@ export default function DashboardPage() {
                   )}
                   {bookingGroups.requested.length > 0 && (
                     <div>
-                      <h3 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
+                      <h2 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
                         {tBooking('awaitingConfirmation')}
-                      </h3>
+                      </h2>
                       <div className="space-y-3">{bookingGroups.requested.map(renderBookingCard)}</div>
                     </div>
                   )}
                   {bookingGroups.confirmed.length > 0 && (
                     <div>
-                      <h3 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
+                      <h2 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
                         {tBooking('upcoming')}
-                      </h3>
+                      </h2>
                       <div className="space-y-3">{bookingGroups.confirmed.map(renderBookingCard)}</div>
                     </div>
                   )}
                   {bookingGroups.history.length > 0 && (
                     <div>
-                      <h3 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
+                      <h2 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
                         {tBooking('bookingHistory')}
-                      </h3>
+                      </h2>
                       <div className="space-y-3">{bookingGroups.history.map(renderBookingCard)}</div>
                     </div>
                   )}
