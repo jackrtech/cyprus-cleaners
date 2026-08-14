@@ -110,6 +110,9 @@ create table bookings (
   duration_hours      numeric(4,2),  -- Set by the cleaner on CONFIRM, not by the customer on request
   notes               text,
   address             text,  -- Free-text property address for this job; nullable so pre-existing bookings aren't broken
+  address_lat         numeric(9,6),  -- Snapshot of the selected address's map pin at request time, same rationale as `address` itself
+  address_lng         numeric(9,6),
+  finding_us_notes    text,  -- Snapshot of the selected address's finding-us notes at request time. Applying address_lat/address_lng/finding_us_notes to an existing database: `alter table bookings add column address_lat numeric(9,6), add column address_lng numeric(9,6), add column finding_us_notes text;`
   photo_paths         text[] not null default '{}',  -- Private storage paths in 'booking-photos' bucket; signed URLs generated at read time
   status              booking_status not null default 'REQUESTED',
   review_prompted_at  timestamptz,  -- Set when status → COMPLETED; triggers review prompt
@@ -161,14 +164,20 @@ create index idx_payments_status on payments (status);
 -- address here never rewrites a past booking's record.
 
 create table addresses (
-  id            uuid primary key default gen_random_uuid(),
-  user_id       uuid not null references users(id) on delete cascade,
-  label         text,  -- optional friendly name, e.g. "Home", "Office"
-  line1         text not null,  -- street + number
-  city          text not null,
-  postal_code   text,
-  created_at    timestamptz not null default now()
+  id                 uuid primary key default gen_random_uuid(),
+  user_id            uuid not null references users(id) on delete cascade,
+  label              text,  -- optional friendly name, e.g. "Home", "Office"
+  line1              text not null,  -- street + number
+  city               text not null,  -- one of the fixed CITIES list — kept for cleaner service-area matching
+  area               text,  -- free-text village/neighbourhood beyond the fixed city list, e.g. "Pyrgos", "Geroskipou"
+  postal_code        text,
+  lat                numeric(9,6),  -- map pin, both null until the customer drops one
+  lng                numeric(9,6),
+  finding_us_notes   text,  -- free-text help finding the property, e.g. "blue gate, park on the street"
+  created_at         timestamptz not null default now()
 );
+-- Applying area/lat/lng/finding_us_notes to an existing database:
+-- `alter table addresses add column area text, add column lat numeric(9,6), add column lng numeric(9,6), add column finding_us_notes text;`
 
 create index idx_addresses_user on addresses (user_id);
 

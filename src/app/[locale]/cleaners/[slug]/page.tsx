@@ -35,6 +35,7 @@ interface DbCleanerRow {
   is_mock:               boolean
   is_company:            boolean
   is_own_profile:        boolean
+  has_transport:         boolean
 }
 
 interface DbReviewRow {
@@ -108,6 +109,7 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
     bio:                    row.bio ?? '',
     photo_url:              row.photo_url,
     cover_photo_url:        row.cover_photo_url,
+    has_transport:          row.has_transport,
   }
 }
 
@@ -512,6 +514,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
                 { label: t('city'), value: cleaner.cities.map(getCityName).join(', ') },
                 { label: t('type'), value: cleanerTypeLabel },
                 { label: t('availability'), value: availabilityLabel },
+                ...(cleaner.has_transport ? [{ label: t('transport'), value: t('hasOwnTransport') }] : []),
               ].map(row => (
                 <div key={row.label} className="flex justify-between text-[13px]">
                   <span className="text-[#6B8886]">{row.label}</span>

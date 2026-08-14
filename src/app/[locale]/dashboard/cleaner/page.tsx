@@ -61,6 +61,9 @@ interface Booking {
   duration_hours: number | null
   notes:          string | null
   address:        string | null
+  address_lat:    number | null
+  address_lng:    number | null
+  finding_us_notes: string | null
   created_at:     string
   users:          IntroUser | null
   photo_paths:    string[]
@@ -820,6 +823,9 @@ export default function CleanerDashboardPage() {
             cleaning_type:  b.cleaning_type,
             notes:          b.notes,
             address:        b.address,
+            addressLat:     b.address_lat,
+            addressLng:     b.address_lng,
+            findingUsNotes: b.finding_us_notes,
             photo_urls:     b.photo_urls,
             cancellationReason: b.cancellation_reason,
           }

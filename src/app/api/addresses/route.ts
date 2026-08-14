@@ -15,7 +15,7 @@ export async function GET() {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('addresses')
-    .select('id, label, line1, city, postal_code, created_at')
+    .select('id, label, line1, city, area, postal_code, lat, lng, finding_us_notes, created_at')
     .eq('user_id', session.user.id)
     .order('created_at', { ascending: true })
 
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { label, line1, city, postal_code } = body
+  const { label, line1, city, area, postal_code, lat, lng, finding_us_notes } = body
 
   if (typeof line1 !== 'string' || line1.trim().length === 0) {
     return NextResponse.json({ error: 'Street address is required' }, { status: 400 })
@@ -51,18 +51,36 @@ export async function POST(req: NextRequest) {
   if (postal_code !== undefined && postal_code !== null && (typeof postal_code !== 'string' || postal_code.length > 10)) {
     return NextResponse.json({ error: 'Postal code must be 10 characters or fewer' }, { status: 400 })
   }
+  if (area !== undefined && area !== null && (typeof area !== 'string' || area.length > 100)) {
+    return NextResponse.json({ error: 'Area must be 100 characters or fewer' }, { status: 400 })
+  }
+  if (finding_us_notes !== undefined && finding_us_notes !== null && (typeof finding_us_notes !== 'string' || finding_us_notes.length > 500)) {
+    return NextResponse.json({ error: 'Finding-us notes must be 500 characters or fewer' }, { status: 400 })
+  }
+  const hasLat = lat !== undefined && lat !== null
+  const hasLng = lng !== undefined && lng !== null
+  if (hasLat !== hasLng) {
+    return NextResponse.json({ error: 'A map pin needs both a latitude and a longitude' }, { status: 400 })
+  }
+  if (hasLat && (typeof lat !== 'number' || lat < -90 || lat > 90 || typeof lng !== 'number' || lng < -180 || lng > 180)) {
+    return NextResponse.json({ error: 'Invalid map pin coordinates' }, { status: 400 })
+  }
 
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('addresses')
     .insert({
-      user_id:     session.user.id,
-      label:       label?.trim() || null,
-      line1:       line1.trim(),
+      user_id:          session.user.id,
+      label:            label?.trim() || null,
+      line1:            line1.trim(),
       city,
-      postal_code: postal_code?.trim() || null,
+      area:             area?.trim() || null,
+      postal_code:      postal_code?.trim() || null,
+      lat:              hasLat ? lat : null,
+      lng:              hasLat ? lng : null,
+      finding_us_notes: finding_us_notes?.trim() || null,
     })
-    .select('id, label, line1, city, postal_code, created_at')
+    .select('id, label, line1, city, area, postal_code, lat, lng, finding_us_notes, created_at')
     .single()
 
   if (error || !data) {

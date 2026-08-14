@@ -59,7 +59,8 @@ export default function ProfilePage() {
     : tNav('admin')
 
   function formatAddress(a: SavedAddress): string {
-    return a.label ? `${a.label} — ${a.line1}, ${a.city}` : `${a.line1}, ${a.city}`
+    const place = a.area ? `${a.area}, ${a.city}` : a.city
+    return a.label ? `${a.label} — ${a.line1}, ${place}` : `${a.line1}, ${place}`
   }
 
   return (

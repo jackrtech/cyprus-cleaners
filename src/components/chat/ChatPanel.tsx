@@ -57,6 +57,9 @@ interface Booking {
   duration_hours:  number | null
   notes:           string | null
   address:         string | null
+  address_lat:     number | null
+  address_lng:     number | null
+  finding_us_notes: string | null
   created_at:      string
   photo_paths:     string[]
   photo_urls:      string[]
@@ -537,7 +540,10 @@ export default function ChatPanel({
           start_time:       startTime,
           duration_hours:   Number(durationHours),
           notes:            bookingNotes.trim() || undefined,
-          address:          `${selectedAddress.line1}, ${selectedAddress.city}`,
+          address:          `${selectedAddress.line1}, ${selectedAddress.area ? selectedAddress.area + ', ' : ''}${selectedAddress.city}`,
+          address_lat:      selectedAddress.lat ?? undefined,
+          address_lng:      selectedAddress.lng ?? undefined,
+          finding_us_notes: selectedAddress.finding_us_notes ?? undefined,
           payment_method_id: paymentMethodId,
         }),
       })
@@ -746,13 +752,19 @@ export default function ChatPanel({
                   required
                 >
                   <option value="" disabled>{tAddr('selectAddress')}</option>
-                  {savedAddresses.map(a => (
-                    <option key={a.id} value={a.id}>
-                      {a.label ? `${a.label} — ${a.line1}, ${a.city}` : `${a.line1}, ${a.city}`}
-                    </option>
-                  ))}
+                  {savedAddresses.map(a => {
+                    const place = a.area ? `${a.area}, ${a.city}` : a.city
+                    return (
+                      <option key={a.id} value={a.id}>
+                        {a.label ? `${a.label} — ${a.line1}, ${place}` : `${a.line1}, ${place}`}
+                      </option>
+                    )
+                  })}
                   <option value={ADD_NEW_ADDRESS}>{tAddr('addNewOption')}</option>
                 </select>
+                {selectedAddress?.area && (
+                  <p className="text-[11px] text-[#6B8886] mt-1">{tBooking('outsideCityCentreNudge')}</p>
+                )}
               </div>
               <div>
                 <label className="block text-[11px] text-[#6B8886] mb-1">{tBooking('notes')}</label>
@@ -973,6 +985,9 @@ export default function ChatPanel({
           cleaning_type:  b.cleaning_type,
           notes:          b.notes,
           address:        b.address,
+          addressLat:     b.address_lat,
+          addressLng:     b.address_lng,
+          findingUsNotes: b.finding_us_notes,
           photo_urls:     b.photo_urls,
         }
       })()}

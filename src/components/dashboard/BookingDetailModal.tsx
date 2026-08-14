@@ -19,6 +19,9 @@ export interface BookingDetailData {
   cleaning_type:      CleaningType | null
   notes:              string | null
   address:            string | null
+  addressLat?:        number | null
+  addressLng?:        number | null
+  findingUsNotes?:    string | null
   photo_urls:         string[]
   cancellationReason?: string | null
 }
@@ -167,6 +170,19 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
           <div>
             <p className="text-[12px] font-medium text-[#6B8886] mb-0.5">{tBooking('propertyAddress')}</p>
             <p className="text-[13px] text-[#0D1F1E]">{booking.address ?? tBooking('noAddressProvided')}</p>
+            {booking.addressLat != null && booking.addressLng != null && (
+              <a
+                href={`https://www.openstreetmap.org/?mlat=${booking.addressLat}&mlon=${booking.addressLng}#map=17/${booking.addressLat}/${booking.addressLng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[12px] text-[#19706A] hover:underline inline-block mt-0.5"
+              >
+                {tBooking('viewOnMap')}
+              </a>
+            )}
+            {booking.findingUsNotes && (
+              <p className="text-[13px] text-[#0D1F1E] bg-[#F7FAF9] rounded-lg p-3 mt-2">{booking.findingUsNotes}</p>
+            )}
           </div>
         </div>
 

@@ -1,17 +1,25 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import FullScreenModal from '@/components/ui/FullScreenModal'
 import { CITIES } from '@/lib/cities'
 import { extractErrorMessage } from '@/lib/utils'
 
+// Leaflet touches the DOM directly at mount and has no SSR support.
+const AddressMapPicker = dynamic(() => import('./AddressMapPicker'), { ssr: false })
+
 export interface SavedAddress {
-  id:          string
-  label:       string | null
-  line1:       string
-  city:        string
-  postal_code: string | null
+  id:               string
+  label:            string | null
+  line1:            string
+  city:             string
+  area:             string | null
+  postal_code:      string | null
+  lat:              number | null
+  lng:              number | null
+  finding_us_notes: string | null
 }
 
 interface Props {
@@ -38,22 +46,32 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
   const tAddr    = useTranslations('address')
   const tCities  = useTranslations('cities')
 
-  const [label,      setLabel]      = useState('')
-  const [line1,      setLine1]      = useState('')
-  const [city,       setCity]       = useState('')
-  const [postalCode, setPostalCode] = useState('')
+  const [label,            setLabel]            = useState('')
+  const [line1,            setLine1]            = useState('')
+  const [city,             setCity]             = useState('')
+  const [area,             setArea]             = useState('')
+  const [postalCode,       setPostalCode]       = useState('')
+  const [pin,               setPin]             = useState<{ lat: number; lng: number } | null>(null)
+  const [findingUsNotes,   setFindingUsNotes]   = useState('')
   const [saving,     setSaving]     = useState(false)
   const [error,      setError]      = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingId,  setEditingId]  = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!isOpen) return
+  function resetForm() {
     setLabel('')
     setLine1('')
     setCity('')
+    setArea('')
     setPostalCode('')
+    setPin(null)
+    setFindingUsNotes('')
     setError(null)
+  }
+
+  useEffect(() => {
+    if (!isOpen) return
+    resetForm()
     setEditingId(null)
   }, [isOpen])
 
@@ -62,21 +80,21 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
     setLabel(a.label ?? '')
     setLine1(a.line1)
     setCity(a.city)
+    setArea(a.area ?? '')
     setPostalCode(a.postal_code ?? '')
+    setPin(a.lat != null && a.lng != null ? { lat: a.lat, lng: a.lng } : null)
+    setFindingUsNotes(a.finding_us_notes ?? '')
     setError(null)
   }
 
   function cancelEdit() {
     setEditingId(null)
-    setLabel('')
-    setLine1('')
-    setCity('')
-    setPostalCode('')
-    setError(null)
+    resetForm()
   }
 
   function formatAddress(a: SavedAddress): string {
-    return a.label ? `${a.label} — ${a.line1}, ${a.city}` : `${a.line1}, ${a.city}`
+    const place = a.area ? `${a.area}, ${a.city}` : a.city
+    return a.label ? `${a.label} — ${a.line1}, ${place}` : `${a.line1}, ${place}`
   }
 
   async function handleDelete(id: string) {
@@ -103,10 +121,14 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
         method:  editingId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          label:       label.trim() || undefined,
-          line1:       line1.trim(),
+          label:            label.trim() || undefined,
+          line1:            line1.trim(),
           city,
-          postal_code: postalCode.trim() || undefined,
+          area:             area.trim() || undefined,
+          postal_code:      postalCode.trim() || undefined,
+          lat:              pin?.lat,
+          lng:              pin?.lng,
+          finding_us_notes: findingUsNotes.trim() || undefined,
         }),
       })
       if (!res.ok) throw new Error(await extractErrorMessage(res, tAddr('saveError')))
@@ -225,6 +247,35 @@ export default function AddressFormModal({ isOpen, onClose, addresses, onSelect,
                 className="input !py-2 text-[13px] w-full"
               />
             </div>
+          </div>
+          <div>
+            <label className="block text-[11px] text-[#6B8886] mb-1">{tAddr('area')}</label>
+            <input
+              type="text"
+              value={area}
+              onChange={e => setArea(e.target.value.slice(0, 100))}
+              placeholder={tAddr('areaPlaceholder')}
+              className="input !py-2 text-[13px] w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] text-[#6B8886] mb-1">{tAddr('mapPin')}</label>
+            <AddressMapPicker
+              lat={pin?.lat ?? null}
+              lng={pin?.lng ?? null}
+              onChange={(lat, lng) => setPin({ lat, lng })}
+            />
+            <p className="text-[11px] text-[#6B8886] mt-1">{tAddr('mapPinHint')}</p>
+          </div>
+          <div>
+            <label className="block text-[11px] text-[#6B8886] mb-1">{tAddr('findingUsNotes')}</label>
+            <textarea
+              value={findingUsNotes}
+              onChange={e => setFindingUsNotes(e.target.value.slice(0, 500))}
+              placeholder={tAddr('findingUsNotesPlaceholder')}
+              rows={2}
+              className="input !py-2 text-[13px] w-full resize-none"
+            />
           </div>
           <button
             type="submit"

@@ -46,6 +46,7 @@ export default function EditProfilePage() {
   const [hourlyRate,   setHourlyRate]   = useState('10')
   const [languages,    setLanguages]    = useState<string[]>([])
   const [availability, setAvailability] = useState<string[]>([])
+  const [hasTransport, setHasTransport] = useState(false)
 
   // Auth guard
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function EditProfilePage() {
         setHourlyRate(String(data.hourly_rate_eur ?? 10))
         setLanguages((data.languages as string[]) ?? [])
         setAvailability((data.availability as string[]) ?? [])
+        setHasTransport(Boolean(data.has_transport))
         if (data.photo_url) setPhotoPreview(data.photo_url as string)
         if (data.cover_photo_url) setCoverPhotoPreview(data.cover_photo_url as string)
       })
@@ -165,6 +167,7 @@ export default function EditProfilePage() {
         gender:          cleanerType === 'company' ? null : gender,
         languages,
         availability,
+        has_transport: hasTransport,
       }
       if (photoUrl) body.photo_url = photoUrl
       if (coverPhotoUrl) body.cover_photo_url = coverPhotoUrl
@@ -465,6 +468,19 @@ export default function EditProfilePage() {
                   </label>
                 ))}
               </div>
+            </div>
+
+            {/* 9b. Transport */}
+            <div>
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hasTransport}
+                  onChange={() => setHasTransport(v => !v)}
+                  className="w-4 h-4 accent-[#19706A]"
+                />
+                <span className="text-[13px] text-[#0D1F1E]">{t('hasTransport')}</span>
+              </label>
             </div>
 
             {/* 10. Services — pre-ticked, disabled */}

@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { introduction_id, bedrooms, bathrooms, cleaning_type, date, start_time, duration_hours, notes, address, payment_method_id } = body
+  const { introduction_id, bedrooms, bathrooms, cleaning_type, date, start_time, duration_hours, notes, address, address_lat, address_lng, finding_us_notes, payment_method_id } = body
 
   if (!introduction_id || typeof introduction_id !== 'string') {
     return NextResponse.json({ error: 'introduction_id is required' }, { status: 400 })
@@ -126,6 +126,17 @@ export async function POST(req: NextRequest) {
   }
   if (address.trim().length > 200) {
     return NextResponse.json({ error: 'Address must be 200 characters or fewer' }, { status: 400 })
+  }
+  if (finding_us_notes !== undefined && finding_us_notes !== null && (typeof finding_us_notes !== 'string' || finding_us_notes.length > 500)) {
+    return NextResponse.json({ error: 'Finding-us notes must be 500 characters or fewer' }, { status: 400 })
+  }
+  const hasLat = address_lat !== undefined && address_lat !== null
+  const hasLng = address_lng !== undefined && address_lng !== null
+  if (hasLat !== hasLng) {
+    return NextResponse.json({ error: 'A map pin needs both a latitude and a longitude' }, { status: 400 })
+  }
+  if (hasLat && (typeof address_lat !== 'number' || address_lat < -90 || address_lat > 90 || typeof address_lng !== 'number' || address_lng < -180 || address_lng > 180)) {
+    return NextResponse.json({ error: 'Invalid map pin coordinates' }, { status: 400 })
   }
 
   const supabase = createAdminClient()
@@ -172,6 +183,9 @@ export async function POST(req: NextRequest) {
       duration_hours,
       notes: notes?.trim() || null,
       address: address.trim(),
+      address_lat: hasLat ? address_lat : null,
+      address_lng: hasLat ? address_lng : null,
+      finding_us_notes: finding_us_notes?.trim() || null,
       status: 'REQUESTED',
     })
     .select('*')

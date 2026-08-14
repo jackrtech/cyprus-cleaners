@@ -87,6 +87,9 @@ export interface Booking {
   duration_hours: number
   notes: string | null
   address: string | null
+  address_lat: number | null
+  address_lng: number | null
+  finding_us_notes: string | null
   status: BookingStatus
   review_prompted_at: string | null
   cancellation_reason: string | null

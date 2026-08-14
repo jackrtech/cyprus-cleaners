@@ -25,7 +25,7 @@ export async function GET() {
 
 const ALLOWED_FIELDS = new Set([
   'display_name', 'bio', 'photo_url', 'cover_photo_url', 'cities',
-  'hourly_rate_eur', 'cleaner_type', 'gender', 'languages', 'availability',
+  'hourly_rate_eur', 'cleaner_type', 'gender', 'languages', 'availability', 'has_transport',
 ])
 
 export async function PATCH(req: NextRequest) {
