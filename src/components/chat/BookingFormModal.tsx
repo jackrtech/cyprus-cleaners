@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Link } from '@/navigation'
 import { extractErrorMessage, estimateCleaningHours } from '@/lib/utils'
 import FullScreenModal from '@/components/ui/FullScreenModal'
 import AddressFormModal, { type SavedAddress } from '@/components/addresses/AddressFormModal'
@@ -330,6 +331,12 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
           )}
         </div>
       </form>
+
+      <p className="text-[11px] text-[#5B7472] px-4 pt-2">
+        {tBooking.rich('cancellationPolicyNote', {
+          link: chunks => <Link href="/terms#cancellation" className="text-[#19706A] hover:underline font-medium">{chunks}</Link>,
+        })}
+      </p>
 
       <div className="flex gap-2 px-4 py-3 border-t border-[#E0EDEC] shrink-0">
         <button

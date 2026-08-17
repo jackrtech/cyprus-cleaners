@@ -57,6 +57,9 @@ export default function Footer() {
             <Link href="/privacy" className="text-[11px] md:text-[12px] text-[#5B7472] hover:text-white transition-colors">
               Privacy Policy
             </Link>
+            <Link href="/terms" className="text-[11px] md:text-[12px] text-[#5B7472] hover:text-white transition-colors">
+              Terms of Service
+            </Link>
           </div>
 
           {/* Dark locale toggle */}

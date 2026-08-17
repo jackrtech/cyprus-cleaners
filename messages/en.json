@@ -8,6 +8,8 @@
     "forCleanersDescription": "Grow your cleaning business on Cyprus Cleaners. Set your own rate, choose your own hours, and get paid securely.",
     "privacyTitle": "Privacy Policy",
     "privacyDescription": "How Cyprus Cleaners collects, uses, and protects your personal data.",
+    "termsTitle": "Terms of Service",
+    "termsDescription": "The terms that govern using Cyprus Cleaners, including our booking, payment, and cancellation policy.",
     "getStartedTitle": "Get started",
     "getStartedDescription": "Find a cleaner or sign up as a cleaner on Cyprus Cleaners."
   },
@@ -131,7 +133,9 @@
     "verifyEmailBanner": "Please verify your email address. Check your inbox for a verification link.",
     "emailSent": "Email sent!",
     "pleaseWait": "Please wait a few minutes before requesting another email",
-    "resendEmail": "Resend email"
+    "resendEmail": "Resend email",
+    "agreeToTerms": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+    "agreeToTermsRequired": "You must agree to the Terms of Service to create an account"
   },
   "forCleaners": {
     "joinHeading": "Join Cyprus Cleaners",
@@ -604,6 +608,7 @@
     "paymentNotReady": "Payment form isn't ready yet — please wait a moment and try again.",
     "submit": "Send request",
     "cancelForm": "Cancel",
+    "cancellationPolicyNote": "Full refund if you cancel 24h+ before the booking. No refund inside 24h. See our <link>Cancellation Policy</link>.",
     "submitError": "Failed to send booking request. Please try again.",
     "statusRequested": "Requested",
     "statusConfirmed": "Confirmed",

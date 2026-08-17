@@ -19,6 +19,7 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm]   = useState(false)
   const [error, setError]               = useState<string | null>(null)
   const [loading, setLoading]           = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -26,6 +27,10 @@ export default function RegisterPage() {
 
     if (password !== confirmPassword) {
       setError(t('passwordMismatch'))
+      return
+    }
+    if (!agreedToTerms) {
+      setError(t('agreeToTermsRequired'))
       return
     }
 
@@ -169,6 +174,22 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <input
+                id="register-agree-terms"
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={e => setAgreedToTerms(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#C9D6D4] text-[#19706A] focus:ring-[#19706A]"
+              />
+              <label htmlFor="register-agree-terms" className="text-[13px] text-[#3F4E4C] leading-snug">
+                {t.rich('agreeToTerms', {
+                  terms: chunks => <Link href="/terms" className="text-[#19706A] hover:underline font-medium">{chunks}</Link>,
+                  privacy: chunks => <Link href="/privacy" className="text-[#19706A] hover:underline font-medium">{chunks}</Link>,
+                })}
+              </label>
             </div>
 
             <button
