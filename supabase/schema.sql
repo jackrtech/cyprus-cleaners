@@ -35,6 +35,24 @@ create table users (
 create index idx_users_email on users (email);
 create index idx_users_role  on users (role);
 
+-- ─── VERIFICATION TOKENS ─────────────────────────────────────
+-- Backs email-verification and password-reset links. Only ever read/written
+-- via the service-role admin client, same as payments/disputes below — RLS
+-- is enabled purely to deny by default, no policies needed.
+
+create table verification_tokens (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references users(id) on delete cascade,
+  token       text not null unique,
+  type        text not null check (type in ('EMAIL_VERIFY', 'PASSWORD_RESET')),
+  expires_at  timestamptz not null,
+  used_at     timestamptz,
+  created_at  timestamptz not null default now()
+);
+
+create index verification_tokens_token_idx   on verification_tokens (token);
+create index verification_tokens_user_id_idx on verification_tokens (user_id);
+
 -- ─── CLEANER PROFILES ────────────────────────────────────────
 
 create table cleaner_profiles (
@@ -53,6 +71,11 @@ create table cleaner_profiles (
   languages             text[] not null default '{}',
   has_transport         boolean not null default false,
   is_company            boolean not null default false,
+  cleaner_type          text default 'individual',  -- 'individual' | 'company', validated in application code (no DB check constraint)
+  gender                text,  -- optional; used only to render grammatically correct Greek copy
+  cities                text[] default '{}',  -- cleaner's serviced cities; `city` above is kept for existing single-city callers
+  is_mock               boolean not null default false,  -- seeded demo profile, not a real signup
+  -- Applying to an existing database: `alter table cleaner_profiles add column cleaner_type text default 'individual', add column gender text, add column cities text[] default '{}', add column is_mock boolean not null default false;`
   -- Trust & verification
   verified              boolean not null default false,
   id_submitted_at       timestamptz,
@@ -337,9 +360,11 @@ alter table reviews             enable row level security;
 alter table chat_notifications  enable row level security;
 alter table payments            enable row level security;
 alter table disputes            enable row level security;
--- No policies beyond enabling it on payments/disputes — both are only ever
--- read/written via the service-role admin client (API routes), never the
--- anon-key browser client, so RLS just needs to deny by default here.
+alter table verification_tokens enable row level security;
+-- No policies beyond enabling it on payments/disputes/verification_tokens —
+-- all three are only ever read/written via the service-role admin client
+-- (API routes), never the anon-key browser client, so RLS just needs to
+-- deny by default here.
 
 -- Users: can only see and edit own record
 create policy "users_select_own" on users for select using (auth.uid()::text = id::text);
