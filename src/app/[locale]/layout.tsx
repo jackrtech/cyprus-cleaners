@@ -47,7 +47,18 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={`${dmSans.variable} bg-surface text-teal-900 antialiased`}>
+      <head>
+        {/* Sets the `dark` class before first paint so there's no flash of
+            the wrong theme — mirrors the logic in useTheme.ts. Must run
+            synchronously, before hydration, hence a plain inline script
+            rather than an effect. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('theme');var d=s?s==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark');}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className={`${dmSans.variable} bg-surface dark:bg-[#0F1817] text-teal-900 dark:text-[#ECF3F2] antialiased`}>
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[400] focus:rounded-full focus:bg-[#19706A] focus:px-5 focus:py-2.5 focus:text-white focus:text-[14px] focus:font-medium"

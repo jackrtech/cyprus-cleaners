@@ -164,7 +164,7 @@ export default function DashboardPage() {
   }
 
   if (sessionStatus === 'loading' || !session || session.user.role === 'CLEANER') {
-    return <div className="min-h-screen bg-[#F7FAF9]" />
+    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
   }
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
@@ -256,12 +256,12 @@ export default function DashboardPage() {
                   <Link
                     href={`/cleaners/${cp.slug}`}
                     onClick={e => e.stopPropagation()}
-                    className="text-[14px] font-medium text-[#0D1F1E] hover:text-[#19706A] hover:underline"
+                    className="text-[14px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] hover:text-[#19706A] hover:underline"
                   >
                     {tBooking('with', { name: cp.display_name })}
                   </Link>
                 ) : (
-                  <p className="text-[14px] font-medium text-[#0D1F1E]">
+                  <p className="text-[14px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">
                     {tBooking('with', { name: cp?.display_name ?? '—' })}
                   </p>
                 )}
@@ -274,9 +274,9 @@ export default function DashboardPage() {
                   )}
                 </span>
               </div>
-              <p className="text-[13px] text-[#5B7472]">{bookingSummary}</p>
+              <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">{bookingSummary}</p>
               {booking.address && (
-                <p className="text-[12px] text-[#5B7472] line-clamp-1 mt-0.5">📍 {booking.address}</p>
+                <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] line-clamp-1 mt-0.5">📍 {booking.address}</p>
               )}
               {(booking.status === 'REQUESTED' || booking.status === 'CONFIRMED') && (
                 cancellingId === booking.id ? (
@@ -301,7 +301,7 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={() => { setCancellingId(null); setCancelReasonText('') }}
-                        className="text-[12px] font-medium text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
+                        className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
                       >
                         {tBooking('neverMind')}
                       </button>
@@ -312,7 +312,7 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); setCancellingId(booking.id) }}
-                      className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#5B7472] hover:text-red-600 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] hover:text-red-600 transition-colors disabled:opacity-50"
                     >
                       {tBooking('cancelBooking')}
                     </button>
@@ -325,9 +325,9 @@ export default function DashboardPage() {
                   : null
                 const windowExpired = daysLeft !== null && daysLeft <= 0
                 return (booking.disputes?.length ?? 0) > 0 ? (
-                  <p className="text-[12px] text-[#5B7472] mt-2">{tBooking('disputeSubmitted')}</p>
+                  <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] mt-2">{tBooking('disputeSubmitted')}</p>
                 ) : windowExpired ? (
-                  <p className="text-[12px] text-[#5B7472] mt-2">{tBooking('disputeWindowPassed')}</p>
+                  <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] mt-2">{tBooking('disputeWindowPassed')}</p>
                 ) : disputingId === booking.id ? (
                   <div className="mt-2 space-y-2" onClick={e => e.stopPropagation()}>
                     <textarea
@@ -350,7 +350,7 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={() => { setDisputingId(null); setDisputeClaimText('') }}
-                        className="text-[12px] font-medium text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
+                        className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
                       >
                         {tBooking('neverMind')}
                       </button>
@@ -361,12 +361,12 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); setDisputingId(booking.id) }}
-                      className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#5B7472] hover:text-red-600 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] hover:text-red-600 transition-colors disabled:opacity-50"
                     >
                       {tBooking('fileDispute')}
                     </button>
                     {daysLeft !== null && (
-                      <span className="text-[11px] text-[#5B7472]">
+                      <span className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE]">
                         {tBooking('disputeDaysLeft', { days: daysLeft })}
                       </span>
                     )}
@@ -395,18 +395,18 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-8 pb-tabbar md:pb-8">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] px-4 sm:px-10 py-8 pb-tabbar md:pb-8">
       <div className="max-w-[720px] mx-auto">
 
         {/* Email verification banner */}
         {emailVerified === false && (
-          <div className="flex items-center gap-3 bg-[#FDF8E1] border-l-4 border-[#F2C94C] rounded-lg p-4 mb-4 flex-wrap">
+          <div className="flex items-center gap-3 bg-[#FDF8E1] dark:bg-[#332B0F] border-l-4 border-[#F2C94C] rounded-lg p-4 mb-4 flex-wrap">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#F2C94C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
               <path d="M9 1.5L1.5 15h15L9 1.5z" />
               <path d="M9 7.5v3" />
               <circle cx="9" cy="13" r="0.75" fill="#F2C94C" stroke="none" />
             </svg>
-            <p className="text-[13px] text-[#0D1F1E] flex-1">{tAuth('verifyEmailBanner')}</p>
+            <p className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] flex-1">{tAuth('verifyEmailBanner')}</p>
             {resendResult === 'sent' ? (
               <span className="text-[13px] text-[#19706A] shrink-0">{tAuth('emailSent')}</span>
             ) : resendResult === 'rate_limited' ? (
@@ -424,7 +424,7 @@ export default function DashboardPage() {
         )}
 
         {/* Page heading */}
-        <h1 className="text-[24px] font-medium text-[#0D1F1E] mb-8">
+        <h1 className="text-[24px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-8">
           {t('welcomeBack', { name: session.user.name })}
         </h1>
 
@@ -474,8 +474,8 @@ export default function DashboardPage() {
                 </div>
               ) : bookings.length === 0 ? (
                 <div className="card p-8 flex flex-col items-center text-center gap-2">
-                  <p className="text-[14px] font-medium text-[#0D1F1E]">{tBooking('noBookingsYet')}</p>
-                  <p className="text-[13px] text-[#5B7472]">{tBooking('noBookingsBodyCustomer')}</p>
+                  <p className="text-[14px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">{tBooking('noBookingsYet')}</p>
+                  <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">{tBooking('noBookingsBodyCustomer')}</p>
                 </div>
               ) : (
                 <div className="space-y-8">
@@ -486,7 +486,7 @@ export default function DashboardPage() {
                   )}
                   {bookingGroups.requested.length > 0 && (
                     <div>
-                      <h2 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
+                      <h2 className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] uppercase tracking-wide mb-3">
                         {tBooking('awaitingConfirmation')}
                       </h2>
                       <div className="space-y-3">{bookingGroups.requested.map(renderBookingCard)}</div>
@@ -494,7 +494,7 @@ export default function DashboardPage() {
                   )}
                   {bookingGroups.confirmed.length > 0 && (
                     <div>
-                      <h2 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
+                      <h2 className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] uppercase tracking-wide mb-3">
                         {tBooking('upcoming')}
                       </h2>
                       <div className="space-y-3">{bookingGroups.confirmed.map(renderBookingCard)}</div>
@@ -502,7 +502,7 @@ export default function DashboardPage() {
                   )}
                   {bookingGroups.history.length > 0 && (
                     <div>
-                      <h2 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
+                      <h2 className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] uppercase tracking-wide mb-3">
                         {tBooking('bookingHistory')}
                       </h2>
                       <div className="space-y-3">{bookingGroups.history.map(renderBookingCard)}</div>
@@ -521,15 +521,15 @@ export default function DashboardPage() {
             >
               {threads.length === 0 && !error ? (
                 <div className="card p-10 flex flex-col items-center text-center gap-5">
-                  <div className="w-16 h-16 rounded-full bg-[#E8F4F3] flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-[#E8F4F3] dark:bg-[#17302D] flex items-center justify-center">
                     <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#19706A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M4 12L14 3l10 9v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
                       <path d="M10 24V16h8v8" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-[16px] font-medium text-[#0D1F1E] mb-1">{t('noIntrosYet')}</p>
-                    <p className="text-[13px] text-[#5B7472]">{t('noIntrosBody')}</p>
+                    <p className="text-[16px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1">{t('noIntrosYet')}</p>
+                    <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">{t('noIntrosBody')}</p>
                   </div>
                   <Link href="/cleaners" className="btn-primary">{t('findACleaner')}</Link>
                 </div>
@@ -560,8 +560,8 @@ export default function DashboardPage() {
                                 }
                               </div>
                               <div className="min-w-0">
-                                <p className="text-[15px] font-medium text-[#0D1F1E] truncate">{name}</p>
-                                <p className="text-[12px] text-[#5B7472]">
+                                <p className="text-[15px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] truncate">{name}</p>
+                                <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">
                                   {t('sentOn')} {dateFormatter.format(new Date(intro.created_at))}
                                 </p>
                               </div>
@@ -584,7 +584,7 @@ export default function DashboardPage() {
                           {cp?.cities && cp.cities.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 mt-2">
                               {cp.cities.map(city => (
-                                <span key={city} className="inline-block bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2 py-0.5 text-[11px] font-medium">
+                                <span key={city} className="inline-block bg-[#E6F1FF] dark:bg-[#122A42] text-[#2D8CFF] rounded-[6px] px-2 py-0.5 text-[11px] font-medium">
                                   {city}
                                 </span>
                               ))}
@@ -593,7 +593,7 @@ export default function DashboardPage() {
 
                           {/* Most recent message preview — hidden once the chat is open below */}
                           {!isChatOpen && (
-                            <p className="text-[13px] text-[#5B7472] line-clamp-2 mt-2">{previewText}</p>
+                            <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] line-clamp-2 mt-2">{previewText}</p>
                           )}
                         </div>
 

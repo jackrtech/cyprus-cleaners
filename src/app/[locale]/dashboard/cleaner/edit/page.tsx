@@ -195,14 +195,14 @@ export default function EditProfilePage() {
   }
 
   if (sessionStatus === 'loading' || !session || session.user.role === 'CUSTOMER') {
-    return <div className="min-h-screen bg-[#F7FAF9]" />
+    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-8">
+      <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] px-4 sm:px-10 py-8">
         <div className="max-w-[600px] mx-auto space-y-3">
-          <div className="h-4 w-40 bg-[#E0EDEC] rounded animate-pulse" />
+          <div className="h-4 w-40 bg-[#E0EDEC] dark:bg-[#253634] rounded animate-pulse" />
           <div className="card p-8 h-[500px] animate-pulse" />
         </div>
       </div>
@@ -210,7 +210,7 @@ export default function EditProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-8">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] px-4 sm:px-10 py-8">
       <div className="max-w-[600px] mx-auto">
 
         {/* Back link */}
@@ -222,7 +222,7 @@ export default function EditProfilePage() {
 
         {/* Success banner — auto-dismisses after 3s */}
         {success && (
-          <div className="bg-[#E8F4F3] border border-[#19706A] rounded-[10px] px-4 py-3 mb-5">
+          <div className="bg-[#E8F4F3] dark:bg-[#17302D] border border-[#19706A] rounded-[10px] px-4 py-3 mb-5">
             <p className="text-[13px] text-[#19706A] font-medium">{t('profileSaved')}</p>
           </div>
         )}
@@ -235,7 +235,7 @@ export default function EditProfilePage() {
         )}
 
         <div className="card p-8">
-          <h1 className="text-[22px] font-medium text-[#0D1F1E] mb-6">{t('editProfileHeading')}</h1>
+          <h1 className="text-[22px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-6">{t('editProfileHeading')}</h1>
 
           <form onSubmit={handleSave} className="space-y-6">
 
@@ -248,11 +248,11 @@ export default function EditProfilePage() {
 
             {/* 1. Cover photo — shown behind the avatar on your search card and profile */}
             <div>
-              <label htmlFor="cleaner-edit-cover-photo" className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
+              <label htmlFor="cleaner-edit-cover-photo" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('coverPhoto')}
               </label>
               <div
-                className="relative h-28 rounded-[10px] bg-[#E8F4F3] bg-cover bg-center overflow-hidden"
+                className="relative h-28 rounded-[10px] bg-[#E8F4F3] dark:bg-[#17302D] bg-cover bg-center overflow-hidden"
                 style={coverPhotoPreview ? { backgroundImage: `url(${coverPhotoPreview})` } : undefined}
               >
                 <input
@@ -271,16 +271,16 @@ export default function EditProfilePage() {
                   {t('uploadCoverPhoto')}
                 </button>
               </div>
-              <p className="text-[11px] text-[#5B7472] mt-1.5">{t('coverPhotoHint')}</p>
+              <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mt-1.5">{t('coverPhotoHint')}</p>
             </div>
 
             {/* 2. Profile photo */}
             <div>
-              <label htmlFor="cleaner-edit-profile-photo" className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
+              <label htmlFor="cleaner-edit-profile-photo" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('profilePhoto')}
               </label>
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-[#E8F4F3] flex items-center justify-center overflow-hidden shrink-0">
+                <div className="w-16 h-16 rounded-full bg-[#E8F4F3] dark:bg-[#17302D] flex items-center justify-center overflow-hidden shrink-0">
                   {photoPreview
                     ? <img src={photoPreview} alt="" className="w-full h-full object-cover" />
                     : <span className="text-[#19706A] text-[20px] font-medium leading-none">
@@ -308,7 +308,7 @@ export default function EditProfilePage() {
 
             {/* 3. Display name */}
             <div>
-              <label htmlFor="cleaner-edit-display-name" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-edit-display-name" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('displayName')}
               </label>
               <input
@@ -323,7 +323,7 @@ export default function EditProfilePage() {
 
             {/* 3. Bio */}
             <div>
-              <label htmlFor="cleaner-edit-bio" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-edit-bio" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('bio')}
               </label>
               <textarea
@@ -334,12 +334,12 @@ export default function EditProfilePage() {
                 placeholder={t('bioPlaceholder')}
                 className="input w-full resize-none"
               />
-              <p className="text-[11px] text-[#5B7472] text-right mt-1">{bio.length}/{MAX_BIO}</p>
+              <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] text-right mt-1">{bio.length}/{MAX_BIO}</p>
             </div>
 
             {/* 4. Cities */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
+              <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('citiesLabel')}
               </label>
               <div className="flex flex-wrap gap-2">
@@ -353,7 +353,7 @@ export default function EditProfilePage() {
                       className={`px-3 py-1.5 rounded-full text-[13px] border transition-colors ${
                         selected
                           ? 'bg-[#19706A] border-[#19706A] text-white'
-                          : 'bg-white border-[#E0EDEC] text-[#0D1F1E] hover:border-[#19706A]'
+                          : 'bg-white border-[#E0EDEC] dark:border-[#253634] text-[#0D1F1E] dark:text-[#ECF3F2] hover:border-[#19706A]'
                       }`}
                     >
                       {tCities(city.key as Parameters<typeof tCities>[0])}
@@ -365,11 +365,11 @@ export default function EditProfilePage() {
 
             {/* 5. Hourly rate */}
             <div>
-              <label htmlFor="cleaner-edit-hourly-rate" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-edit-hourly-rate" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('hourlyRate')}
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5B7472] text-[14px] pointer-events-none">€</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5B7472] dark:text-[#9BB0AE] text-[14px] pointer-events-none">€</span>
                 <input
                   id="cleaner-edit-hourly-rate"
                   type="number"
@@ -385,10 +385,10 @@ export default function EditProfilePage() {
 
             {/* 6. Account type */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
+              <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('accountType')}
               </label>
-              <div className="flex rounded-[10px] border border-[#E0EDEC] overflow-hidden">
+              <div className="flex rounded-[10px] border border-[#E0EDEC] dark:border-[#253634] overflow-hidden">
                 {(['individual', 'company'] as const).map(type => (
                   <button
                     key={type}
@@ -397,7 +397,7 @@ export default function EditProfilePage() {
                     className={`flex-1 py-2 text-[13px] transition-colors ${
                       cleanerType === type
                         ? 'bg-[#19706A] text-white'
-                        : 'bg-white text-[#5B7472] hover:text-[#0D1F1E]'
+                        : 'bg-white text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2]'
                     }`}
                   >
                     {t(type)}
@@ -409,7 +409,7 @@ export default function EditProfilePage() {
             {/* 7. Gender — hidden for company */}
             {cleanerType === 'individual' && (
               <div>
-                <label className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
+                <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                   {t('gender')}
                 </label>
                 <div className="flex gap-2 flex-wrap">
@@ -425,7 +425,7 @@ export default function EditProfilePage() {
                       className={`px-4 py-1.5 rounded-full text-[13px] border transition-colors ${
                         gender === opt.value
                           ? 'bg-[#19706A] border-[#19706A] text-white'
-                          : 'bg-white border-[#E0EDEC] text-[#0D1F1E] hover:border-[#19706A]'
+                          : 'bg-white border-[#E0EDEC] dark:border-[#253634] text-[#0D1F1E] dark:text-[#ECF3F2] hover:border-[#19706A]'
                       }`}
                     >
                       {opt.label}
@@ -437,7 +437,7 @@ export default function EditProfilePage() {
 
             {/* 8. Languages */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
+              <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('languages')}
               </label>
               <div className="space-y-2.5">
@@ -450,7 +450,7 @@ export default function EditProfilePage() {
                       onChange={() => toggleLanguage(lang.code)}
                       className="w-4 h-4 accent-[#19706A]"
                     />
-                    <span className="text-[13px] text-[#0D1F1E]">{lang.label}</span>
+                    <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{lang.label}</span>
                   </label>
                 ))}
               </div>
@@ -458,7 +458,7 @@ export default function EditProfilePage() {
 
             {/* 9. Availability */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
+              <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('availability')}
               </label>
               <div className="space-y-2.5">
@@ -471,7 +471,7 @@ export default function EditProfilePage() {
                       onChange={() => toggleAvailability(slot)}
                       className="w-4 h-4 accent-[#19706A]"
                     />
-                    <span className="text-[13px] text-[#0D1F1E]">{t(slot)}</span>
+                    <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{t(slot)}</span>
                   </label>
                 ))}
               </div>
@@ -487,18 +487,18 @@ export default function EditProfilePage() {
                   onChange={() => setHasTransport(v => !v)}
                   className="w-4 h-4 accent-[#19706A]"
                 />
-                <span className="text-[13px] text-[#0D1F1E]">{t('hasTransport')}</span>
+                <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{t('hasTransport')}</span>
               </label>
             </div>
 
             {/* 10. Services — pre-ticked, disabled */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
+              <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('services')}
               </label>
               <label htmlFor="cleaner-edit-house-cleaning" className="flex items-center gap-2.5 opacity-60 cursor-not-allowed select-none">
                 <input id="cleaner-edit-house-cleaning" type="checkbox" checked readOnly disabled className="w-4 h-4 accent-[#19706A]" />
-                <span className="text-[13px] text-[#0D1F1E]">{t('houseCleaning')}</span>
+                <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{t('houseCleaning')}</span>
               </label>
             </div>
 

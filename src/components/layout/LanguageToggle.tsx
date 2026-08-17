@@ -14,7 +14,7 @@ export default function LanguageToggle() {
   }
 
   return (
-    <div className="flex items-center bg-[#F7FAF9] border border-[#E0EDEC] rounded-full p-0.5 gap-0.5">
+    <div className="flex items-center bg-[#F7FAF9] dark:bg-[#0F1817] border border-[#E0EDEC] dark:border-[#253634] rounded-full p-0.5 gap-0.5">
       {(['en', 'el'] as const).map((lang) => (
         <button
           key={lang}
@@ -22,7 +22,7 @@ export default function LanguageToggle() {
           className={`text-xs font-medium tracking-wide px-3 py-1 rounded-full transition-all ${
             locale === lang
               ? 'bg-[#19706A] text-white'
-              : 'text-[#5B7472] hover:text-[#0D1F1E]'
+              : 'text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2]'
           }`}
         >
           {lang.toUpperCase()}

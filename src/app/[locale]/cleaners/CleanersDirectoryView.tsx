@@ -129,16 +129,16 @@ export default function CleanersPage() {
   }, [filters, sort, cleaners])
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] pb-tabbar md:pb-0">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] pb-tabbar md:pb-0">
       {/* Page header */}
-      <div className="bg-white border-b border-[#E0EDEC] px-4 sm:px-10 pt-7 pb-0">
-        <nav className="flex items-center gap-1.5 text-[12px] text-[#5B7472] mb-2">
+      <div className="bg-white border-b border-[#E0EDEC] dark:border-[#253634] px-4 sm:px-10 pt-7 pb-0">
+        <nav className="flex items-center gap-1.5 text-[12px] text-[#5B7472] dark:text-[#9BB0AE] mb-2">
           <Link href="/" className="text-[#19706A] hover:underline">{t('breadcrumbHome')}</Link>
           <span>›</span>
           <span>{t('title')}</span>
         </nav>
-        <h1 className="text-[28px] font-medium text-[#0D1F1E] tracking-tight mb-1">{t('title')}</h1>
-        <p className="text-[13px] text-[#5B7472] mb-5">{t('subtitle', { count: cleaners.length })}</p>
+        <h1 className="text-[28px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] tracking-tight mb-1">{t('title')}</h1>
+        <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] mb-5">{t('subtitle', { count: cleaners.length })}</p>
       </div>
 
       <FilterBar filters={filters} onChange={setFilters}>
@@ -146,11 +146,11 @@ export default function CleanersPage() {
           pinned for the full scroll height of the list (see FilterBar.tsx) */}
       <div className="px-4 sm:px-10 py-6">
         <div className="flex justify-between items-center mb-5">
-          <span className="text-[13px] text-[#5B7472]">{t('found', { count: results.length })}</span>
+          <span className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">{t('found', { count: results.length })}</span>
           <select
             value={sort}
             onChange={e => setSort(e.target.value as SortKey)}
-            className="border border-[#E0EDEC] rounded-[8px] px-3 py-1.5 text-[13px] bg-white outline-none cursor-pointer"
+            className="border border-[#E0EDEC] dark:border-[#253634] rounded-[8px] px-3 py-1.5 text-[13px] bg-white outline-none cursor-pointer"
           >
             <option value="top-rated">{t('sortTopRated')}</option>
             <option value="price-asc">{t('sortPriceLow')}</option>
@@ -167,12 +167,12 @@ export default function CleanersPage() {
         ) : loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="bg-white border border-[#E0EDEC] rounded-[16px] overflow-hidden animate-pulse">
-                <div className="h-[120px] bg-[#E0EDEC]" />
+              <div key={i} className="bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] overflow-hidden animate-pulse">
+                <div className="h-[120px] bg-[#E0EDEC] dark:bg-[#253634]" />
                 <div className="p-3 pb-3.5 space-y-2">
-                  <div className="h-3.5 bg-[#E0EDEC] rounded w-3/4" />
-                  <div className="h-3 bg-[#E0EDEC] rounded w-1/2" />
-                  <div className="h-3 bg-[#E0EDEC] rounded w-2/3" />
+                  <div className="h-3.5 bg-[#E0EDEC] dark:bg-[#253634] rounded w-3/4" />
+                  <div className="h-3 bg-[#E0EDEC] dark:bg-[#253634] rounded w-1/2" />
+                  <div className="h-3 bg-[#E0EDEC] dark:bg-[#253634] rounded w-2/3" />
                 </div>
               </div>
             ))}
@@ -189,11 +189,11 @@ export default function CleanersPage() {
               <circle cx="21" cy="21" r="13" stroke="currentColor" strokeWidth="2.5" />
               <path d="M31 31l10 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
-            <p className="text-[16px] font-medium text-[#0D1F1E] mt-4">{t('noResults')}</p>
-            <p className="text-[13px] text-[#5B7472] mt-1">{t('noResultsSub')}</p>
+            <p className="text-[16px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mt-4">{t('noResults')}</p>
+            <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] mt-1">{t('noResultsSub')}</p>
             <button
               onClick={() => setFilters(DEFAULT_FILTERS)}
-              className="mt-5 border border-[#E0EDEC] rounded-full px-6 py-2 text-[13px] text-[#0D1F1E] hover:border-[#19706A] hover:text-[#19706A] transition-colors"
+              className="mt-5 border border-[#E0EDEC] dark:border-[#253634] rounded-full px-6 py-2 text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] hover:border-[#19706A] hover:text-[#19706A] transition-colors"
             >
               {t('emptyAction')}
             </button>

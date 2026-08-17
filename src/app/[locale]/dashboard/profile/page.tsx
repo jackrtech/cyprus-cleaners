@@ -5,6 +5,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import LanguageToggle from '@/components/layout/LanguageToggle'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import AddressFormModal, { type SavedAddress } from '@/components/addresses/AddressFormModal'
 import LoadingImage from '@/components/ui/LoadingImage'
 
@@ -17,6 +18,7 @@ export default function ProfilePage() {
   const t = useTranslations('dashboard')
   const tNav = useTranslations('nav')
   const tAddr = useTranslations('address')
+  const tCommon = useTranslations('common')
   const router = useRouter()
 
   const [cleanerSlug, setCleanerSlug] = useState<string | null>(null)
@@ -50,7 +52,7 @@ export default function ProfilePage() {
   }, [session])
 
   if (sessionStatus === 'loading' || !session) {
-    return <div className="min-h-screen bg-[#F7FAF9]" />
+    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
   }
 
   const role = session.user.role
@@ -64,9 +66,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-8 pb-tabbar md:pb-8">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] px-4 sm:px-10 py-8 pb-tabbar md:pb-8">
       <div className="max-w-[720px] mx-auto space-y-6">
-        <h1 className="text-[24px] font-medium text-[#0D1F1E]">{t('yourAccount')}</h1>
+        <h1 className="text-[24px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">{t('yourAccount')}</h1>
 
         <div className="card p-5 flex items-center gap-4">
           <div className="shrink-0 w-14 h-14 rounded-full bg-[#19706A] flex items-center justify-center text-white text-[16px] font-medium overflow-hidden">
@@ -75,29 +77,34 @@ export default function ProfilePage() {
               : getInitials(session.user.name ?? '')}
           </div>
           <div className="min-w-0">
-            <p className="text-[16px] font-medium text-[#0D1F1E] truncate">{session.user.name}</p>
-            <p className="text-[13px] text-[#5B7472] truncate">{session.user.email}</p>
-            <span className="inline-block mt-1 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-[#E8F4F3] text-[#19706A]">
+            <p className="text-[16px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] truncate">{session.user.name}</p>
+            <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] truncate">{session.user.email}</p>
+            <span className="inline-block mt-1 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A]">
               {roleLabel}
             </span>
           </div>
         </div>
 
         <div className="card p-5 flex items-center justify-between gap-3">
-          <span className="text-[14px] text-[#0D1F1E]">{tNav('language')}</span>
+          <span className="text-[14px] text-[#0D1F1E] dark:text-[#ECF3F2]">{tNav('language')}</span>
           <LanguageToggle />
         </div>
 
+        <div className="card p-5 flex items-center justify-between gap-3">
+          <span className="text-[14px] text-[#0D1F1E] dark:text-[#ECF3F2]">{tCommon('appearance')}</span>
+          <ThemeToggle />
+        </div>
+
         {role === 'CLEANER' && (
-          <div className="card divide-y divide-[#E0EDEC]">
-            <Link href="/dashboard/cleaner/edit" className="flex items-center justify-between px-5 py-4 hover:bg-[#F7FAF9] transition-colors">
-              <span className="text-[14px] text-[#0D1F1E]">{t('editProfile')}</span>
-              <span className="text-[#5B7472]" aria-hidden="true">›</span>
+          <div className="card divide-y divide-[#E0EDEC] dark:divide-[#253634]">
+            <Link href="/dashboard/cleaner/edit" className="flex items-center justify-between px-5 py-4 hover:bg-[#F7FAF9] dark:hover:bg-[#0F1817] transition-colors">
+              <span className="text-[14px] text-[#0D1F1E] dark:text-[#ECF3F2]">{t('editProfile')}</span>
+              <span className="text-[#5B7472] dark:text-[#9BB0AE]" aria-hidden="true">›</span>
             </Link>
             {cleanerSlug && (
-              <Link href={`/cleaners/${cleanerSlug}`} className="flex items-center justify-between px-5 py-4 hover:bg-[#F7FAF9] transition-colors">
-                <span className="text-[14px] text-[#0D1F1E]">{t('viewPublicProfile')}</span>
-                <span className="text-[#5B7472]" aria-hidden="true">›</span>
+              <Link href={`/cleaners/${cleanerSlug}`} className="flex items-center justify-between px-5 py-4 hover:bg-[#F7FAF9] dark:hover:bg-[#0F1817] transition-colors">
+                <span className="text-[14px] text-[#0D1F1E] dark:text-[#ECF3F2]">{t('viewPublicProfile')}</span>
+                <span className="text-[#5B7472] dark:text-[#9BB0AE]" aria-hidden="true">›</span>
               </Link>
             )}
           </div>
@@ -106,7 +113,7 @@ export default function ProfilePage() {
         {role === 'CUSTOMER' && (
           <div className="card p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[14px] font-medium text-[#0D1F1E]">{tAddr('yourAddresses')}</span>
+              <span className="text-[14px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">{tAddr('yourAddresses')}</span>
               <button
                 type="button"
                 onClick={() => setShowAddressModal(true)}
@@ -122,7 +129,7 @@ export default function ProfilePage() {
                     key={a.id}
                     type="button"
                     onClick={() => setShowAddressModal(true)}
-                    className="w-full text-left text-[13px] text-[#0D1F1E] hover:text-[#19706A] transition-colors rounded-[10px] border border-[#E0EDEC] px-3 py-2.5 truncate"
+                    className="w-full text-left text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] hover:text-[#19706A] transition-colors rounded-[10px] border border-[#E0EDEC] dark:border-[#253634] px-3 py-2.5 truncate"
                   >
                     {a.is_default && <span className="text-[11px] font-medium text-[#19706A] mr-1.5">{tAddr('defaultBadge')}</span>}
                     {formatAddress(a)}
@@ -130,7 +137,7 @@ export default function ProfilePage() {
                 ))}
               </div>
             ) : (
-              <p className="text-[13px] text-[#5B7472]">{tAddr('noAddressesYet')}</p>
+              <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">{tAddr('noAddressesYet')}</p>
             )}
           </div>
         )}
@@ -138,7 +145,7 @@ export default function ProfilePage() {
         <div className="text-center pt-2">
           <button
             onClick={() => signOut({ callbackUrl: '/' })}
-            className="text-[13px] text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
+            className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
           >
             {t('signOut')}
           </button>

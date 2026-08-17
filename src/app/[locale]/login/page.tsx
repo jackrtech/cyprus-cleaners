@@ -57,11 +57,11 @@ export default function LoginPage() {
 
   return (
     <>
-    <div className="min-h-screen bg-[#F7FAF9] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] flex items-center justify-center px-4">
       <div className="w-full max-w-[400px]">
         <div className="card p-8">
-          <h1 className="text-[22px] font-medium text-[#0D1F1E] mb-1">{t('login')}</h1>
-          <p className="text-[13px] text-[#5B7472] text-center mb-6">{t('forCustomersAndCleaners')}</p>
+          <h1 className="text-[22px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1">{t('login')}</h1>
+          <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] text-center mb-6">{t('forCustomersAndCleaners')}</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -71,7 +71,7 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label htmlFor="login-email" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="login-email" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('email')}
               </label>
               <input
@@ -87,7 +87,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="login-password" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="login-password" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('password')}
               </label>
               <div className="relative">
@@ -103,7 +103,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPass(v => !v)}
                   aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
                 >
                   {showPassword ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -121,7 +121,7 @@ export default function LoginPage() {
               </div>
               <Link
                 href="/forgot-password"
-                className="text-[13px] text-[#5B7472] hover:text-[#19706A] text-right block mt-1"
+                className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#19706A] text-right block mt-1"
               >
                 Forgot password?
               </Link>
@@ -138,7 +138,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <div className="mt-5 space-y-2 text-center text-[13px] text-[#5B7472]">
+        <div className="mt-5 space-y-2 text-center text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">
           <p>
             {t('noAccount')}{' '}
             <Link href="/register" className="text-[#19706A] hover:underline font-medium">

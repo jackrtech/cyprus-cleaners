@@ -17,7 +17,7 @@ export default function LoadingImage({ className, wrapperClassName, onLoad, alt 
   return (
     <div className={`relative overflow-hidden ${wrapperClassName ?? ''}`}>
       {!loaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#F7FAF9]">
+        <div className="absolute inset-0 flex items-center justify-center bg-[#F7FAF9] dark:bg-[#0F1817]">
           <svg className="animate-spin" width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
             <path d="M22 10.5C22 10.5 19.5 8 16 8C11.582 8 8 11.582 8 16" stroke="#19706A" strokeWidth="2.5" strokeLinecap="round" />
             <circle cx="8" cy="16" r="1.5" fill="#F2C94C" />

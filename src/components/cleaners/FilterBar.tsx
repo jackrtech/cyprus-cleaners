@@ -66,13 +66,13 @@ function CheckIcon() {
 }
 
 const pillBase = "flex items-center gap-1.5 px-3.5 py-[7px] rounded-full border-[1.5px] text-[13px] cursor-pointer whitespace-nowrap transition-all select-none"
-const pillOff = "border-[#E0EDEC] text-[#0D1F1E] bg-white hover:border-[#AACBC8]"
-const pillOn  = "bg-[#E8F4F3] border-[#19706A] text-[#19706A] font-medium"
+const pillOff = "border-[#E0EDEC] dark:border-[#253634] text-[#0D1F1E] dark:text-[#ECF3F2] bg-white hover:border-[#AACBC8] dark:hover:border-[#3D5652]"
+const pillOn  = "bg-[#E8F4F3] dark:bg-[#17302D] border-[#19706A] text-[#19706A] font-medium"
 
 function Panel({ children, onMouseDown }: { children: React.ReactNode; onMouseDown?: (e: React.MouseEvent) => void }) {
   return (
     <div
-      className="absolute top-full left-0 mt-1.5 bg-white border border-[#E0EDEC] rounded-[12px] p-4 min-w-[210px]"
+      className="absolute top-full left-0 mt-1.5 bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[12px] p-4 min-w-[210px]"
       style={{ boxShadow: '0 8px 24px rgba(25,112,106,0.10)', zIndex: 200 }}
       onMouseDown={onMouseDown ?? (e => e.stopPropagation())}
     >
@@ -97,7 +97,7 @@ function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: ()
       aria-checked={checked}
       aria-label={label}
       tabIndex={0}
-      className={`w-4 h-4 rounded border-[1.5px] flex items-center justify-center shrink-0 cursor-pointer transition-colors ${checked ? 'bg-[#19706A] border-[#19706A]' : 'bg-white border-[#D0DCD9]'}`}
+      className={`w-4 h-4 rounded border-[1.5px] flex items-center justify-center shrink-0 cursor-pointer transition-colors ${checked ? 'bg-[#19706A] border-[#19706A]' : 'bg-white border-[#D0DCD9] dark:border-[#2A3A38]'}`}
       onMouseDown={e => { e.preventDefault(); onChange() }}
       onKeyDown={toggleKeyHandler(onChange)}
     >
@@ -113,7 +113,7 @@ function Radio({ checked, onChange, label }: { checked: boolean; onChange: () =>
       aria-checked={checked}
       aria-label={label}
       tabIndex={0}
-      className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center shrink-0 cursor-pointer transition-colors ${checked ? 'border-[#19706A]' : 'border-[#D0DCD9]'}`}
+      className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center shrink-0 cursor-pointer transition-colors ${checked ? 'border-[#19706A]' : 'border-[#D0DCD9] dark:border-[#2A3A38]'}`}
       onMouseDown={e => { e.preventDefault(); onChange() }}
       onKeyDown={toggleKeyHandler(onChange)}
     >
@@ -182,7 +182,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
         z-[60]: above navbar z-50, so dropdowns (z-200 within this context) also render above navbar
         NO overflow property — overflow on this element would clip the dropdown panels
       */}
-      <div className="sticky top-16 z-[60] bg-white border-b border-[#E0EDEC]">
+      <div className="sticky top-16 z-[60] bg-white border-b border-[#E0EDEC] dark:border-[#253634]">
         {/* Mobile: a single "Filters" button opening a full sheet, instead of
             9 dropdown pills fighting for space on a narrow screen */}
         <div className="lg:hidden flex items-center justify-between gap-3 px-4 py-3">
@@ -205,7 +205,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             <button
               type="button"
               onClick={() => onChange(DEFAULT_FILTERS)}
-              className="text-[12px] text-[#5B7472] hover:text-[#19706A] transition-colors whitespace-nowrap"
+              className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#19706A] transition-colors whitespace-nowrap"
             >
               {t('clearAll')}
             </button>
@@ -230,7 +230,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'city' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">{t('city')}</p>
+                <p className="text-[11px] font-medium text-[#5B7472] dark:text-[#9BB0AE] uppercase tracking-wide mb-3">{t('city')}</p>
                 <div className="space-y-2.5">
                   {ALL_CITIES.map(city => {
                     const count = cityCounts[city] || 0
@@ -238,8 +238,8 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                     return (
                       <label key={city} className="flex items-center gap-2.5 cursor-pointer">
                         <Checkbox checked={checked} onChange={() => update({ cities: checked ? filters.cities.filter(c => c !== city) : [...filters.cities, city] })} label={getCityName(city)} />
-                        <span className="text-[13px] text-[#0D1F1E] flex-1">{getCityName(city)}</span>
-                        <span className="text-[11px] text-[#5B7472]">{count}</span>
+                        <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] flex-1">{getCityName(city)}</span>
+                        <span className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE]">{count}</span>
                       </label>
                     )
                   })}
@@ -261,7 +261,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'price' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-1">
+                <p className="text-[11px] font-medium text-[#5B7472] dark:text-[#9BB0AE] uppercase tracking-wide mb-1">
                   {filters.maxRate < 60 ? t('upTo', { value: filters.maxRate }) : t('anyPrice')}
                 </p>
                 <input
@@ -269,7 +269,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                   onChange={e => update({ maxRate: parseInt(e.target.value) })}
                   className="w-full mt-3 accent-[#19706A]"
                 />
-                <div className="flex justify-between text-[11px] text-[#5B7472] mt-1">
+                <div className="flex justify-between text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mt-1">
                   <span>€5</span><span>€60</span>
                 </div>
                 <button onMouseDown={e => { e.stopPropagation(); close() }} className="mt-3 w-full bg-[#19706A] text-white rounded-full px-4 py-1.5 text-[12px] font-medium hover:bg-[#0D5752] transition-colors">{t('apply')}</button>
@@ -289,7 +289,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'rating' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-1">
+                <p className="text-[11px] font-medium text-[#5B7472] dark:text-[#9BB0AE] uppercase tracking-wide mb-1">
                   {filters.minRating > 0 ? `${filters.minRating}+ ★` : t('anyRating')}
                 </p>
                 <input
@@ -297,7 +297,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                   onChange={e => update({ minRating: parseFloat(e.target.value) })}
                   className="w-full mt-3 accent-[#19706A]"
                 />
-                <div className="flex justify-between text-[11px] text-[#5B7472] mt-1">
+                <div className="flex justify-between text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mt-1">
                   <span>0</span><span>5</span>
                 </div>
                 <button onMouseDown={e => { e.stopPropagation(); close() }} className="mt-3 w-full bg-[#19706A] text-white rounded-full px-4 py-1.5 text-[12px] font-medium hover:bg-[#0D5752] transition-colors">{t('apply')}</button>
@@ -317,12 +317,12 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'gender' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">{t('gender')}</p>
+                <p className="text-[11px] font-medium text-[#5B7472] dark:text-[#9BB0AE] uppercase tracking-wide mb-3">{t('gender')}</p>
                 <div className="space-y-2.5">
                   {(['any', 'female', 'male'] as const).map(g => (
                     <label key={g} className="flex items-center gap-2.5 cursor-pointer">
                       <Radio checked={filters.gender === g} onChange={() => update({ gender: g })} label={g === 'any' ? t('anyGender') : g === 'female' ? t('female') : t('male')} />
-                      <span className="text-[13px] text-[#0D1F1E]">{g === 'any' ? t('anyGender') : g === 'female' ? t('female') : t('male')}</span>
+                      <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{g === 'any' ? t('anyGender') : g === 'female' ? t('female') : t('male')}</span>
                     </label>
                   ))}
                 </div>
@@ -345,14 +345,14 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'language' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">{t('language')}</p>
+                <p className="text-[11px] font-medium text-[#5B7472] dark:text-[#9BB0AE] uppercase tracking-wide mb-3">{t('language')}</p>
                 <div className="space-y-2.5">
                   {LANGUAGES.map(lang => {
                     const checked = filters.languages.includes(lang.code)
                     return (
                       <label key={lang.code} className="flex items-center gap-2.5 cursor-pointer">
                         <Checkbox checked={checked} onChange={() => update({ languages: checked ? filters.languages.filter(l => l !== lang.code) : [...filters.languages, lang.code] })} label={`${lang.label} (${lang.code})`} />
-                        <span className="text-[13px] text-[#0D1F1E]">{lang.label} ({lang.code})</span>
+                        <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{lang.label} ({lang.code})</span>
                       </label>
                     )
                   })}
@@ -374,14 +374,14 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'availability' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">{t('availability')}</p>
+                <p className="text-[11px] font-medium text-[#5B7472] dark:text-[#9BB0AE] uppercase tracking-wide mb-3">{t('availability')}</p>
                 <div className="space-y-2.5">
                   {AVAIL_KEYS.map(a => {
                     const checked = filters.availability.includes(a)
                     return (
                       <label key={a} className="flex items-center gap-2.5 cursor-pointer">
                         <Checkbox checked={checked} onChange={() => update({ availability: checked ? filters.availability.filter(x => x !== a) : [...filters.availability, a] })} label={t(a)} />
-                        <span className="text-[13px] text-[#0D1F1E]">{t(a)}</span>
+                        <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{t(a)}</span>
                       </label>
                     )
                   })}
@@ -403,12 +403,12 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </button>
             {openPanel === 'type' && (
               <Panel>
-                <p className="text-[11px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">{t('type')}</p>
+                <p className="text-[11px] font-medium text-[#5B7472] dark:text-[#9BB0AE] uppercase tracking-wide mb-3">{t('type')}</p>
                 <div className="space-y-2.5">
                   {(['any', 'individual', 'company'] as const).map(tp => (
                     <label key={tp} className="flex items-center gap-2.5 cursor-pointer">
                       <Radio checked={filters.cleanerType === tp} onChange={() => update({ cleanerType: tp })} label={tp === 'any' ? t('anyType') : tp === 'individual' ? t('individual') : t('company')} />
-                      <span className="text-[13px] text-[#0D1F1E]">{tp === 'any' ? t('anyType') : tp === 'individual' ? t('individual') : t('company')}</span>
+                      <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{tp === 'any' ? t('anyType') : tp === 'individual' ? t('individual') : t('company')}</span>
                     </label>
                   ))}
                 </div>
@@ -429,9 +429,9 @@ export default function FilterBar({ filters, onChange, children }: Props) {
           {/* Divider + Clear all */}
           {hasActive(filters) && (
             <>
-              <span className="w-px h-5 bg-[#E0EDEC] mx-1 shrink-0" />
+              <span className="w-px h-5 bg-[#E0EDEC] dark:bg-[#253634] mx-1 shrink-0" />
               <button
-                className="text-[12px] text-[#5B7472] hover:text-[#19706A] transition-colors whitespace-nowrap flex-shrink-0"
+                className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#19706A] transition-colors whitespace-nowrap flex-shrink-0"
                 onMouseDown={e => { e.stopPropagation(); onChange(DEFAULT_FILTERS); setOpenPanel(null) }}
               >
                 {t('clearAll')}
@@ -445,9 +445,9 @@ export default function FilterBar({ filters, onChange, children }: Props) {
           count badge + "Clear all" already cover this; a second removable-chip
           row on top of that was too much for a narrow screen. */}
       {activePills.length > 0 && (
-        <div className="hidden lg:flex bg-white border-b border-[#E0EDEC] px-10 py-2.5 items-center gap-2 overflow-x-auto whitespace-nowrap">
+        <div className="hidden lg:flex bg-white border-b border-[#E0EDEC] dark:border-[#253634] px-10 py-2.5 items-center gap-2 overflow-x-auto whitespace-nowrap">
           {activePills.map(pill => (
-            <span key={pill.key} className="flex-shrink-0 flex items-center gap-1.5 bg-[#E8F4F3] text-[#19706A] rounded-full px-3 py-1 text-[12px] font-medium">
+            <span key={pill.key} className="flex-shrink-0 flex items-center gap-1.5 bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A] rounded-full px-3 py-1 text-[12px] font-medium">
               {pill.label}
               <button
                 className="leading-none hover:text-[#0D5752] ml-0.5 text-[14px]"
@@ -466,13 +466,13 @@ export default function FilterBar({ filters, onChange, children }: Props) {
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileSheetOpen(false)} />
           <div className="absolute inset-x-0 bottom-0 top-16 bg-white rounded-t-[20px] flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#E0EDEC] shrink-0">
-              <h2 className="text-[16px] font-medium text-[#0D1F1E]">{t('filtersButton')}</h2>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#E0EDEC] dark:border-[#253634] shrink-0">
+              <h2 className="text-[16px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">{t('filtersButton')}</h2>
               <button
                 type="button"
                 onClick={() => setMobileSheetOpen(false)}
                 aria-label="Close"
-                className="text-[#5B7472] hover:text-[#0D1F1E] transition-colors text-[22px] leading-none"
+                className="text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors text-[22px] leading-none"
               >
                 ×
               </button>
@@ -481,7 +481,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             {/* Scrollable filter sections */}
             <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
               <div>
-                <p className="text-[13px] font-medium text-[#0D1F1E] mb-3">{t('city')}</p>
+                <p className="text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-3">{t('city')}</p>
                 <div className="flex flex-wrap gap-2">
                   {ALL_CITIES.map(city => {
                     const checked = filters.cities.includes(city)
@@ -500,7 +500,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
               </div>
 
               <div>
-                <p className="text-[13px] font-medium text-[#0D1F1E] mb-3">
+                <p className="text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-3">
                   {filters.maxRate < 60 ? t('upTo', { value: filters.maxRate }) : t('anyPrice')}
                 </p>
                 <input
@@ -508,13 +508,13 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                   onChange={e => update({ maxRate: parseInt(e.target.value) })}
                   className="w-full accent-[#19706A]"
                 />
-                <div className="flex justify-between text-[11px] text-[#5B7472] mt-1">
+                <div className="flex justify-between text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mt-1">
                   <span>€5</span><span>€60</span>
                 </div>
               </div>
 
               <div>
-                <p className="text-[13px] font-medium text-[#0D1F1E] mb-3">
+                <p className="text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-3">
                   {filters.minRating > 0 ? `${filters.minRating}+ ★` : t('anyRating')}
                 </p>
                 <input
@@ -522,13 +522,13 @@ export default function FilterBar({ filters, onChange, children }: Props) {
                   onChange={e => update({ minRating: parseFloat(e.target.value) })}
                   className="w-full accent-[#19706A]"
                 />
-                <div className="flex justify-between text-[11px] text-[#5B7472] mt-1">
+                <div className="flex justify-between text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mt-1">
                   <span>0</span><span>5</span>
                 </div>
               </div>
 
               <div>
-                <p className="text-[13px] font-medium text-[#0D1F1E] mb-3">{t('gender')}</p>
+                <p className="text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-3">{t('gender')}</p>
                 <div className="flex flex-wrap gap-2">
                   {(['any', 'female', 'male'] as const).map(g => (
                     <button
@@ -544,7 +544,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
               </div>
 
               <div>
-                <p className="text-[13px] font-medium text-[#0D1F1E] mb-3">{t('language')}</p>
+                <p className="text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-3">{t('language')}</p>
                 <div className="flex flex-wrap gap-2">
                   {LANGUAGES.map(lang => {
                     const checked = filters.languages.includes(lang.code)
@@ -563,7 +563,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
               </div>
 
               <div>
-                <p className="text-[13px] font-medium text-[#0D1F1E] mb-3">{t('availability')}</p>
+                <p className="text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-3">{t('availability')}</p>
                 <div className="flex flex-wrap gap-2">
                   {AVAIL_KEYS.map(a => {
                     const checked = filters.availability.includes(a)
@@ -582,7 +582,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
               </div>
 
               <div>
-                <p className="text-[13px] font-medium text-[#0D1F1E] mb-3">{t('type')}</p>
+                <p className="text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-3">{t('type')}</p>
                 <div className="flex flex-wrap gap-2">
                   {(['any', 'individual', 'company'] as const).map(tp => (
                     <button
@@ -610,12 +610,12 @@ export default function FilterBar({ filters, onChange, children }: Props) {
             </div>
 
             {/* Footer */}
-            <div className="shrink-0 border-t border-[#E0EDEC] px-5 py-4 flex gap-3" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+            <div className="shrink-0 border-t border-[#E0EDEC] dark:border-[#253634] px-5 py-4 flex gap-3" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
               {hasActive(filters) && (
                 <button
                   type="button"
                   onClick={() => onChange(DEFAULT_FILTERS)}
-                  className="flex-1 border-[1.5px] border-[#E0EDEC] rounded-full py-3 text-[14px] font-medium text-[#0D1F1E] hover:border-[#AACBC8] transition-colors"
+                  className="flex-1 border-[1.5px] border-[#E0EDEC] dark:border-[#253634] rounded-full py-3 text-[14px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] hover:border-[#AACBC8] dark:hover:border-[#3D5652] transition-colors"
                 >
                   {t('clearAll')}
                 </button>

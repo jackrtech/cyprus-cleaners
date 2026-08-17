@@ -103,7 +103,7 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
 
   return (
     <FullScreenModal isOpen={isOpen} onClose={onClose}>
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#E0EDEC] shrink-0">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#E0EDEC] dark:border-[#253634] shrink-0">
         {(() => {
           const avatar = (
             <div className="shrink-0 w-10 h-10 rounded-full bg-[#19706A] flex items-center justify-center text-white text-[13px] font-medium overflow-hidden">
@@ -113,7 +113,7 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
             </div>
           )
           const name = (
-            <span className="flex-1 min-w-0 text-[14px] font-medium text-[#0D1F1E] truncate">
+            <span className="flex-1 min-w-0 text-[14px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] truncate">
               {tBooking('with', { name: booking.otherPartyName })}
             </span>
           )
@@ -133,7 +133,7 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] border border-[#E0EDEC] text-[#5B7472] hover:text-[#0D1F1E] hover:border-[#19706A] transition-colors text-[20px] leading-none shrink-0"
+          className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] dark:bg-[#0F1817] border border-[#E0EDEC] dark:border-[#253634] text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] hover:border-[#19706A] transition-colors text-[20px] leading-none shrink-0"
         >
           ×
         </button>
@@ -146,14 +146,14 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
 
         {booking.status === 'CANCELLED' && booking.cancellationReason && (
           <div>
-            <p className="text-[12px] font-medium text-[#5B7472] mb-0.5">{tBooking('cancellationReason')}</p>
-            <p className="text-[13px] text-[#0D1F1E] bg-[#F7FAF9] rounded-lg p-3">{booking.cancellationReason}</p>
+            <p className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] mb-0.5">{tBooking('cancellationReason')}</p>
+            <p className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3">{booking.cancellationReason}</p>
           </div>
         )}
 
         <div className="flex items-start gap-2.5">
           <CalendarIcon />
-          <p className="text-[14px] text-[#0D1F1E]">
+          <p className="text-[14px] text-[#0D1F1E] dark:text-[#ECF3F2]">
             {tBooking(booking.duration_hours == null ? 'summaryNoDuration' : 'summary', {
               cleaningType: tBooking(booking.cleaning_type === 'DEEP' ? 'deepClean' : 'standardClean'),
               bedrooms:  booking.bedrooms ?? '—',
@@ -168,8 +168,8 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
         <div className="flex items-start gap-2.5">
           <PinIcon />
           <div>
-            <p className="text-[12px] font-medium text-[#5B7472] mb-0.5">{tBooking('propertyAddress')}</p>
-            <p className="text-[13px] text-[#0D1F1E]">{booking.address ?? tBooking('noAddressProvided')}</p>
+            <p className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] mb-0.5">{tBooking('propertyAddress')}</p>
+            <p className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{booking.address ?? tBooking('noAddressProvided')}</p>
             {booking.addressLat != null && booking.addressLng != null && (
               <a
                 href={`https://www.openstreetmap.org/?mlat=${booking.addressLat}&mlon=${booking.addressLng}#map=17/${booking.addressLat}/${booking.addressLng}`}
@@ -181,7 +181,7 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
               </a>
             )}
             {booking.findingUsNotes && (
-              <p className="text-[13px] text-[#0D1F1E] bg-[#F7FAF9] rounded-lg p-3 mt-2">{booking.findingUsNotes}</p>
+              <p className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3 mt-2">{booking.findingUsNotes}</p>
             )}
           </div>
         </div>
@@ -189,7 +189,7 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
         {booking.notes && (
           <div className="flex items-start gap-2.5">
             <NoteIcon />
-            <p className="flex-1 text-[13px] text-[#0D1F1E] whitespace-pre-wrap bg-[#F7FAF9] rounded-lg p-3">
+            <p className="flex-1 text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] whitespace-pre-wrap bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3">
               {booking.notes}
             </p>
           </div>
@@ -199,14 +199,14 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
           <div>
             <div className="flex items-center gap-2.5 mb-2">
               <CameraIcon />
-              <p className="text-[12px] font-medium text-[#5B7472]">{tBooking('jobPhotos')}</p>
+              <p className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE]">{tBooking('jobPhotos')}</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {booking.photo_urls.map((url, i) => (
                 <a key={i} href={url} target="_blank" rel="noopener noreferrer">
                   <LoadingImage
                     src={url}
-                    wrapperClassName="w-full aspect-square rounded-lg border border-[#E0EDEC]"
+                    wrapperClassName="w-full aspect-square rounded-lg border border-[#E0EDEC] dark:border-[#253634]"
                     className="object-cover"
                   />
                 </a>
@@ -217,7 +217,7 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
       </div>
 
       {showBookAgain && (
-        <div className="px-4 py-3 border-t border-[#E0EDEC] shrink-0">
+        <div className="px-4 py-3 border-t border-[#E0EDEC] dark:border-[#253634] shrink-0">
           <button type="button" onClick={onBookAgain} className="btn-primary w-full">
             {tBooking('bookAgain')}
           </button>

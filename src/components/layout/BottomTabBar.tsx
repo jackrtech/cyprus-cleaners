@@ -114,7 +114,7 @@ function BottomTabBarInner() {
   return (
     <nav
       aria-label={t('primaryNavigation')}
-      className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t border-[#E0EDEC] flex"
+      className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t border-[#E0EDEC] dark:border-[#253634] flex"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {tabs.map(({ key, label, href, active, Icon }) => (
@@ -125,7 +125,7 @@ function BottomTabBarInner() {
           className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5"
         >
           <Icon active={active} />
-          <span className={`text-[11px] leading-none ${active ? 'text-[#19706A] font-medium' : 'text-[#5B7472]'}`}>
+          <span className={`text-[11px] leading-none ${active ? 'text-[#19706A] font-medium' : 'text-[#5B7472] dark:text-[#9BB0AE]'}`}>
             {label}
           </span>
         </Link>

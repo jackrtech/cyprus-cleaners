@@ -79,7 +79,7 @@ export default function FullScreenModal({ isOpen, onClose, children }: Props) {
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
-        className="w-full h-full md:h-auto md:max-w-[560px] md:max-h-[85vh] bg-white flex flex-col md:rounded-[16px] md:border md:border-[#E0EDEC] overflow-hidden outline-none"
+        className="w-full h-full md:h-auto md:max-w-[560px] md:max-h-[85vh] bg-white flex flex-col md:rounded-[16px] md:border md:border-[#E0EDEC] dark:md:border-[#253634] overflow-hidden outline-none"
       >
         {children}
       </div>

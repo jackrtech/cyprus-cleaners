@@ -5,6 +5,7 @@ import { Link, usePathname } from '@/navigation'
 import { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import LanguageToggle from '@/components/layout/LanguageToggle'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 export default function Navbar() {
   const t = useTranslations('nav')
@@ -54,12 +55,12 @@ export default function Navbar() {
     return `text-[14px] transition-colors ${
       active
         ? 'text-[#19706A] font-medium border-b-2 border-[#19706A] pb-0.5'
-        : 'text-[#0D1F1E] hover:text-[#19706A]'
+        : 'text-[#0D1F1E] dark:text-[#ECF3F2] hover:text-[#19706A]'
     }`
   }
 
   return (
-    <header className={`sticky top-0 z-50 w-full bg-white border-b border-[#E0EDEC] ${isLoggedIn ? 'hidden md:block' : ''}`}>
+    <header className={`sticky top-0 z-50 w-full bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] ${isLoggedIn ? 'hidden md:block' : ''}`}>
       <div className="px-6 lg:px-12 flex items-center justify-between h-16">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
@@ -85,17 +86,18 @@ export default function Navbar() {
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-3">
           {isLoggedIn && session?.user?.name && (
-            <span className="hidden lg:block text-[13px] text-[#0D1F1E] whitespace-nowrap">
+            <span className="hidden lg:block text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] whitespace-nowrap">
               {session.user.name}
               {roleLabel && <span className="text-[#19706A] font-medium"> · {roleLabel}</span>}
             </span>
           )}
           <LanguageToggle />
+          <ThemeToggle />
           <Link href={ghostBtn.href} className="btn-ghost">{ghostBtn.label}</Link>
           {isLoggedIn ? (
             <>
               <Link href="/dashboard/profile" className={linkClass('/dashboard/profile')}>{t('profileTab')}</Link>
-              <button onClick={handleSignOut} className="text-[13px] text-[#5B7472] hover:text-[#0D1F1E] transition-colors">{t('signOut')}</button>
+              <button onClick={handleSignOut} className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors">{t('signOut')}</button>
             </>
           ) : (
             <Link href="/get-started" className="btn-primary">{t('getStarted')}</Link>
@@ -104,7 +106,7 @@ export default function Navbar() {
 
         {/* Mobile hamburger */}
         <button
-          className="md:hidden p-2 text-[#0D1F1E] text-xl leading-none"
+          className="md:hidden p-2 text-[#0D1F1E] dark:text-[#ECF3F2] text-xl leading-none"
           onClick={() => setDrawerOpen((o) => !o)}
           aria-label="Toggle menu"
         >
@@ -118,16 +120,16 @@ export default function Navbar() {
           across every plain row, leaving the Dashboard button as the one
           deliberately-emphasized action, same as it is on desktop. */}
       {drawerOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-[#E0EDEC] px-6 py-5 flex flex-col gap-4" style={{ boxShadow: '0 8px 24px rgba(25,112,106,0.08)' }}>
+        <div className="md:hidden absolute top-full left-0 w-full bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] px-6 py-5 flex flex-col gap-4" style={{ boxShadow: '0 8px 24px rgba(25,112,106,0.08)' }}>
           {isLoggedIn && session?.user?.name && (
-            <span className="text-[14px] font-medium text-[#0D1F1E]">
+            <span className="text-[14px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">
               {session.user.name}
               {roleLabel && <span className="text-[13px] text-[#19706A] font-normal"> · {roleLabel}</span>}
             </span>
           )}
 
           {navLinks.length > 0 && (
-            <div className="flex flex-col gap-3 pt-4 border-t border-[#E0EDEC]">
+            <div className="flex flex-col gap-3 pt-4 border-t border-[#E0EDEC] dark:border-[#253634]">
               {navLinks.map(link => (
                 <Link key={link.href} href={link.href} className={linkClass(link.href)} onClick={() => setDrawerOpen(false)}>
                   {link.label}
@@ -136,17 +138,17 @@ export default function Navbar() {
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-4 border-t border-[#E0EDEC]">
-            <span className="text-[14px] text-[#0D1F1E]">{t('language')}</span>
+          <div className="flex items-center justify-between pt-4 border-t border-[#E0EDEC] dark:border-[#253634]">
+            <span className="text-[14px] text-[#0D1F1E] dark:text-[#ECF3F2]">{t('language')}</span>
             <LanguageToggle />
           </div>
 
-          <div className="flex flex-col gap-3 pt-4 border-t border-[#E0EDEC]">
+          <div className="flex flex-col gap-3 pt-4 border-t border-[#E0EDEC] dark:border-[#253634]">
             <Link href={ghostBtn.href} className="btn-ghost justify-center" onClick={() => setDrawerOpen(false)}>
               {ghostBtn.label}
             </Link>
             {isLoggedIn ? (
-              <button onClick={handleSignOut} className="text-[14px] text-[#5B7472] hover:text-[#0D1F1E] transition-colors text-center">{t('signOut')}</button>
+              <button onClick={handleSignOut} className="text-[14px] text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors text-center">{t('signOut')}</button>
             ) : (
               <Link href="/get-started" className="btn-primary justify-center" onClick={() => setDrawerOpen(false)}>
                 {t('getStarted')}

@@ -128,7 +128,7 @@ export default function FeaturedCleaners() {
           <p className="text-[11px] font-medium text-[#19706A] tracking-[0.07em] uppercase mb-2">
             {t('topRated')}
           </p>
-          <h2 className="text-[32px] font-medium text-[#0D1F1E] tracking-[-0.01em]">
+          <h2 className="text-[32px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] tracking-[-0.01em]">
             {t('featuredTitle')}
           </h2>
         </div>
@@ -148,8 +148,8 @@ export default function FeaturedCleaners() {
             onClick={() => setActiveCity(tab.value)}
             className={`rounded-full border-[1.5px] px-4 py-[7px] text-[13px] font-medium cursor-pointer transition-colors ${
               activeCity === tab.value
-                ? 'bg-[#E8F4F3] text-[#19706A] border-[#19706A]'
-                : 'bg-white text-[#5B7472] border-[#E0EDEC]'
+                ? 'bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A] border-[#19706A]'
+                : 'bg-white text-[#5B7472] dark:text-[#9BB0AE] border-[#E0EDEC] dark:border-[#253634]'
             }`}
           >
             {tab.label === 'allCities' ? t('allCities') : getCityName(tab.label)}
@@ -161,12 +161,12 @@ export default function FeaturedCleaners() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="bg-white border border-[#E0EDEC] rounded-[16px] overflow-hidden animate-pulse">
-              <div className="h-[120px] bg-[#E0EDEC]" />
+            <div key={i} className="bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] overflow-hidden animate-pulse">
+              <div className="h-[120px] bg-[#E0EDEC] dark:bg-[#253634]" />
               <div className="p-3 pb-3.5 space-y-2">
-                <div className="h-3.5 bg-[#E0EDEC] rounded w-3/4" />
-                <div className="h-3 bg-[#E0EDEC] rounded w-1/2" />
-                <div className="h-3 bg-[#E0EDEC] rounded w-2/3" />
+                <div className="h-3.5 bg-[#E0EDEC] dark:bg-[#253634] rounded w-3/4" />
+                <div className="h-3 bg-[#E0EDEC] dark:bg-[#253634] rounded w-1/2" />
+                <div className="h-3 bg-[#E0EDEC] dark:bg-[#253634] rounded w-2/3" />
               </div>
             </div>
           ))}

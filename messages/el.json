@@ -222,7 +222,10 @@
   },
   "common": {
     "perHour": "/ώρα",
-    "skipToContent": "Μετάβαση στο κύριο περιεχόμενο"
+    "skipToContent": "Μετάβαση στο κύριο περιεχόμενο",
+    "switchToDarkMode": "Μετάβαση σε σκοτεινή λειτουργία",
+    "switchToLightMode": "Μετάβαση σε φωτεινή λειτουργία",
+    "appearance": "Εμφάνιση"
   },
   "filters": {
     "city": "Πόλη",

@@ -11,7 +11,7 @@ export default function Hero() {
   const [showBusinessModal, setShowBusinessModal] = useState(false)
 
   return (
-    <section className="relative w-full bg-[#F7FAF9] overflow-hidden">
+    <section className="relative w-full bg-[#F7FAF9] dark:bg-[#0F1817] overflow-hidden">
       <style>{`
         @media (prefers-reduced-motion: no-preference) {
           @keyframes blobPulse        { 0%,100%{opacity:.025} 50%{opacity:.05} }
@@ -82,7 +82,7 @@ export default function Hero() {
           <div className="max-w-[460px]">
 
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-[#E8F4F3] rounded-[6px] px-3 py-1.5 mb-6">
+            <div className="inline-flex items-center gap-2 bg-[#E8F4F3] dark:bg-[#17302D] rounded-[6px] px-3 py-1.5 mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-[#19706A] shrink-0" />
               <span className="text-[11px] font-medium text-[#19706A] tracking-[0.07em] uppercase">
                 {t('badge')}
@@ -90,7 +90,7 @@ export default function Hero() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-[38px] md:text-[52px] font-medium text-[#0D1F1E] leading-[1.04] tracking-[-0.02em] mb-4">
+            <h1 className="text-[38px] md:text-[52px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] leading-[1.04] tracking-[-0.02em] mb-4">
               {t('headline1')}{' '}
               {t('headline2')}{' '}
               <span className="text-[#19706A]">{t('headline3')}</span>
@@ -99,7 +99,7 @@ export default function Hero() {
             </h1>
 
             {/* Subline */}
-            <p className="text-[15px] text-[#5B7472] leading-relaxed max-w-[320px] mb-8">
+            <p className="text-[15px] text-[#5B7472] dark:text-[#9BB0AE] leading-relaxed max-w-[320px] mb-8">
               {t('sub')}
             </p>
 
@@ -114,7 +114,7 @@ export default function Hero() {
 
               <a
                 href="#how-it-works"
-                className="inline-flex items-center gap-2.5 border-[1.5px] border-[#E0EDEC] rounded-full px-[22px] py-3 text-[14px] text-[#0D1F1E] hover:border-[#19706A] transition-colors"
+                className="inline-flex items-center gap-2.5 border-[1.5px] border-[#E0EDEC] dark:border-[#253634] rounded-full px-[22px] py-3 text-[14px] text-[#0D1F1E] dark:text-[#ECF3F2] hover:border-[#19706A] transition-colors"
               >
                 <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#19706A] shrink-0">
                   <svg width="8" height="9" viewBox="0 0 8 9" fill="white">
@@ -130,7 +130,7 @@ export default function Hero() {
             <button
               type="button"
               onClick={() => setShowBusinessModal(true)}
-              className="mt-5 text-[13px] text-[#5B7472] hover:text-[#19706A] transition-colors underline underline-offset-2 decoration-[#E0EDEC] hover:decoration-[#19706A]"
+              className="mt-5 text-[13px] text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#19706A] transition-colors underline underline-offset-2 decoration-[#E0EDEC] dark:decoration-[#253634] hover:decoration-[#19706A]"
             >
               {t('businessCta')} →
             </button>
@@ -160,7 +160,7 @@ export default function Hero() {
 
           {/* Floating trust card */}
           <div
-            className="float-card absolute z-10 bg-white border border-[#E0EDEC] rounded-[16px] select-none"
+            className="float-card absolute z-10 bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] select-none"
             style={{
               bottom: '80px',
               left: '-20px',
@@ -194,9 +194,9 @@ export default function Hero() {
             </div>
             <div className="flex items-center gap-1.5 mb-0.5">
               <span aria-hidden="true" className="text-[#7A5F00] text-[13px] leading-none tracking-tight">★★★★★</span>
-              <span className="text-[13px] font-medium text-[#0D1F1E]">4.9/5</span>
+              <span className="text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">4.9/5</span>
             </div>
-            <p className="text-[11px] text-[#5B7472] leading-snug">{t('ratingLabel')}</p>
+            <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] leading-snug">{t('ratingLabel')}</p>
           </div>
         </div>
       </div>
@@ -210,19 +210,19 @@ export default function Hero() {
         >
           <div className="card w-full max-w-[440px] p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[17px] font-medium text-[#0D1F1E]">{t('businessModalHeading')}</h2>
+              <h2 className="text-[17px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">{t('businessModalHeading')}</h2>
               <button
                 type="button"
                 onClick={() => setShowBusinessModal(false)}
                 aria-label="Close"
-                className="text-[#5B7472] hover:text-[#0D1F1E] transition-colors text-[22px] leading-none"
+                className="text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors text-[22px] leading-none"
               >
                 ×
               </button>
             </div>
             <ul className="space-y-3 mb-6">
               {[t('businessModalBody1'), t('businessModalBody2'), t('businessModalBody3')].map((line, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-[13px] text-[#3F4E4C] leading-relaxed">
+                <li key={i} className="flex items-start gap-2.5 text-[13px] text-[#3F4E4C] dark:text-[#B8C7C5] leading-relaxed">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#19706A] shrink-0 mt-1.5" />
                   {line}
                 </li>

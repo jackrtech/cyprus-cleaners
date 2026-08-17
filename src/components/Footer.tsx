@@ -15,7 +15,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-[#0D1F1E] text-white">
+    <footer className="bg-[#0D1F1E] dark:bg-[#ECF3F2] text-white">
       <div className="px-4 md:px-12 py-8 md:py-16">
         {/* Two-column grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-12">
@@ -32,17 +32,17 @@ export default function Footer() {
               </svg>
               <span className="text-white text-[15px] md:text-[17px] font-medium">Cyprus Cleaners</span>
             </div>
-            <p className="text-[13px] text-[#5B7472] leading-relaxed max-w-[220px]">
+            <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] leading-relaxed max-w-[220px]">
               Connecting Cyprus homes with trusted local cleaners.
             </p>
           </div>
 
           {/* Col 2 — Links (just the two that matter, no headers needed) */}
           <div className="flex gap-6">
-            <Link href="/#how-it-works" className="text-[13px] md:text-[14px] text-[#B4B2A9] hover:text-white transition-colors">
+            <Link href="/#how-it-works" className="text-[13px] md:text-[14px] text-[#B4B2A9] dark:text-[#8C8A80] hover:text-white transition-colors">
               How it works
             </Link>
-            <Link href="/faq" className="text-[13px] md:text-[14px] text-[#B4B2A9] hover:text-white transition-colors">
+            <Link href="/faq" className="text-[13px] md:text-[14px] text-[#B4B2A9] dark:text-[#8C8A80] hover:text-white transition-colors">
               FAQ
             </Link>
           </div>
@@ -51,13 +51,13 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-white/10 mt-5 md:mt-12 pt-4 md:pt-6 flex justify-between items-center flex-wrap gap-3">
           <div className="flex items-center gap-3 flex-wrap">
-            <p className="text-[11px] md:text-[12px] text-[#5B7472]">
+            <p className="text-[11px] md:text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">
               © 2025 Cyprus Cleaners. All rights reserved.
             </p>
-            <Link href="/privacy" className="text-[11px] md:text-[12px] text-[#5B7472] hover:text-white transition-colors">
+            <Link href="/privacy" className="text-[11px] md:text-[12px] text-[#5B7472] dark:text-[#9BB0AE] hover:text-white transition-colors">
               Privacy Policy
             </Link>
-            <Link href="/terms" className="text-[11px] md:text-[12px] text-[#5B7472] hover:text-white transition-colors">
+            <Link href="/terms" className="text-[11px] md:text-[12px] text-[#5B7472] dark:text-[#9BB0AE] hover:text-white transition-colors">
               Terms of Service
             </Link>
           </div>
@@ -71,7 +71,7 @@ export default function Footer() {
                 className={`text-xs font-medium tracking-wide px-3 py-1 rounded-full transition-all ${
                   locale === lang
                     ? 'bg-white/20 text-white'
-                    : 'text-[#5B7472] hover:text-white'
+                    : 'text-[#5B7472] dark:text-[#9BB0AE] hover:text-white'
                 }`}
               >
                 {lang.toUpperCase()}

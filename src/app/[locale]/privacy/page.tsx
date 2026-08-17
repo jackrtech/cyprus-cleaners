@@ -20,23 +20,23 @@ const LAST_UPDATED = '[DATE — set when this is actually published]'
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-10">
-      <h2 className="text-[18px] font-medium text-[#0D1F1E] mb-3">{title}</h2>
-      <div className="text-[14px] text-[#3F4E4C] leading-relaxed space-y-3">{children}</div>
+      <h2 className="text-[18px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-3">{title}</h2>
+      <div className="text-[14px] text-[#3F4E4C] dark:text-[#B8C7C5] leading-relaxed space-y-3">{children}</div>
     </section>
   )
 }
 
 function Placeholder({ children }: { children: React.ReactNode }) {
-  return <span className="bg-[#FDF8E1] text-[#8A6A00] px-1.5 py-0.5 rounded-[4px] font-medium">{children}</span>
+  return <span className="bg-[#FDF8E1] dark:bg-[#332B0F] text-[#8A6A00] px-1.5 py-0.5 rounded-[4px] font-medium">{children}</span>
 }
 
 export default function PrivacyPolicyPage() {
   return (
     <>
-    <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-10 sm:py-14">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] px-4 sm:px-10 py-10 sm:py-14">
       <div className="max-w-[760px] mx-auto">
-        <h1 className="text-[28px] sm:text-[32px] font-medium text-[#0D1F1E] mb-2">Privacy Policy</h1>
-        <p className="text-[13px] text-[#5B7472] mb-10">Last updated: {LAST_UPDATED}</p>
+        <h1 className="text-[28px] sm:text-[32px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">Privacy Policy</h1>
+        <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] mb-10">Last updated: {LAST_UPDATED}</p>
 
         <Section title="1. Who we are">
           <p>
@@ -52,13 +52,13 @@ export default function PrivacyPolicyPage() {
         </Section>
 
         <Section title="2. Data we collect">
-          <p><strong className="text-[#0D1F1E]">Account data</strong> — when you register, we collect your email address, full name, a hashed password (we never store your password in plain text), your phone number if you provide one, and whether you signed up as a customer or a cleaner.</p>
-          <p><strong className="text-[#0D1F1E]">Cleaner profile data</strong> — if you register as a cleaner, additionally: a public display name, a bio, a profile photo, the cities and languages you serve, your hourly rate, gender (used only to render grammatically correct text in Greek and is optional), availability, and whether you operate as an individual or a company.</p>
-          <p><strong className="text-[#0D1F1E]">Introductions &amp; messages</strong> — the text of introduction requests and chat messages you send through the Service, and any photos you choose to attach to a chat message.</p>
-          <p><strong className="text-[#0D1F1E]">Booking data</strong> — details you provide when requesting or confirming a cleaning: bedrooms, bathrooms, cleaning type, date, time, duration, the property address for that job, and any notes. Customers may also save one or more addresses to their account so they don&rsquo;t need to re-enter them for future bookings — these are only ever visible to you and are shared with a cleaner only as part of a specific booking.</p>
-          <p><strong className="text-[#0D1F1E]">Completion &amp; review photos</strong> — cleaners may upload photos of completed jobs; customers may leave a star rating and written review after a booking is marked complete.</p>
-          <p><strong className="text-[#0D1F1E]">Payment data</strong> — bookings are paid for via Stripe, our payment processor. We never see or store your full card number — Stripe collects and stores your card details directly and provides us only with a payment method reference, the resulting charge/refund status, and transaction identifiers, which we use to run the booking, cancellation, and dispute-refund flows described in our <a href="/terms#payments" className="text-[#19706A] hover:underline font-medium">Terms of Service</a>. See <a href="https://stripe.com/privacy" className="text-[#19706A] hover:underline font-medium" target="_blank" rel="noopener noreferrer">Stripe&rsquo;s own privacy policy</a> for how they handle your card data.</p>
-          <p><strong className="text-[#0D1F1E]">Technical data</strong> — a session cookie that keeps you signed in, and your language preference (English/Greek). We do not currently use analytics, advertising, or third-party tracking cookies.</p>
+          <p><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Account data</strong> — when you register, we collect your email address, full name, a hashed password (we never store your password in plain text), your phone number if you provide one, and whether you signed up as a customer or a cleaner.</p>
+          <p><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Cleaner profile data</strong> — if you register as a cleaner, additionally: a public display name, a bio, a profile photo, the cities and languages you serve, your hourly rate, gender (used only to render grammatically correct text in Greek and is optional), availability, and whether you operate as an individual or a company.</p>
+          <p><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Introductions &amp; messages</strong> — the text of introduction requests and chat messages you send through the Service, and any photos you choose to attach to a chat message.</p>
+          <p><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Booking data</strong> — details you provide when requesting or confirming a cleaning: bedrooms, bathrooms, cleaning type, date, time, duration, the property address for that job, and any notes. Customers may also save one or more addresses to their account so they don&rsquo;t need to re-enter them for future bookings — these are only ever visible to you and are shared with a cleaner only as part of a specific booking.</p>
+          <p><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Completion &amp; review photos</strong> — cleaners may upload photos of completed jobs; customers may leave a star rating and written review after a booking is marked complete.</p>
+          <p><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Payment data</strong> — bookings are paid for via Stripe, our payment processor. We never see or store your full card number — Stripe collects and stores your card details directly and provides us only with a payment method reference, the resulting charge/refund status, and transaction identifiers, which we use to run the booking, cancellation, and dispute-refund flows described in our <a href="/terms#payments" className="text-[#19706A] hover:underline font-medium">Terms of Service</a>. See <a href="https://stripe.com/privacy" className="text-[#19706A] hover:underline font-medium" target="_blank" rel="noopener noreferrer">Stripe&rsquo;s own privacy policy</a> for how they handle your card data.</p>
+          <p><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Technical data</strong> — a session cookie that keeps you signed in, and your language preference (English/Greek). We do not currently use analytics, advertising, or third-party tracking cookies.</p>
         </Section>
 
         <Section title="3. How we use your data">
@@ -75,20 +75,20 @@ export default function PrivacyPolicyPage() {
         <Section title="4. Legal basis for processing (GDPR)">
           <p>Where the EU General Data Protection Regulation applies, we rely on:</p>
           <ul className="list-disc pl-5 space-y-1.5">
-            <li><strong className="text-[#0D1F1E]">Contract</strong> — processing needed to create your account and provide the Service you&rsquo;ve signed up for (e.g. introductions, chat, bookings).</li>
-            <li><strong className="text-[#0D1F1E]">Legitimate interest</strong> — securing the platform, preventing abuse, and improving the Service.</li>
-            <li><strong className="text-[#0D1F1E]">Consent</strong> — for optional data such as your profile photo or gender field, which you can withdraw at any time by editing or removing it from your profile.</li>
-            <li><strong className="text-[#0D1F1E]">Legal obligation</strong> — where we&rsquo;re required to retain or disclose data by law.</li>
+            <li><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Contract</strong> — processing needed to create your account and provide the Service you&rsquo;ve signed up for (e.g. introductions, chat, bookings).</li>
+            <li><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Legitimate interest</strong> — securing the platform, preventing abuse, and improving the Service.</li>
+            <li><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Consent</strong> — for optional data such as your profile photo or gender field, which you can withdraw at any time by editing or removing it from your profile.</li>
+            <li><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Legal obligation</strong> — where we&rsquo;re required to retain or disclose data by law.</li>
           </ul>
         </Section>
 
         <Section title="5. Who we share data with">
           <p>We do not sell your personal data. We share data with the following processors, each solely to help us run the Service:</p>
           <ul className="list-disc pl-5 space-y-1.5">
-            <li><strong className="text-[#0D1F1E]">Supabase</strong> — our database, authentication infrastructure, and file storage provider (profile photos, chat photos, booking-completion photos are stored privately and served via time-limited signed links, not public URLs).</li>
-            <li><strong className="text-[#0D1F1E]">Resend</strong> — delivers transactional emails (verification, introduction notifications) on our behalf; your email address and the relevant email content are shared with them for this purpose only.</li>
-            <li><strong className="text-[#0D1F1E]">DeepL</strong> — receives review text to generate a translated version; it does not receive your name or account details alongside it.</li>
-            <li><strong className="text-[#0D1F1E]">Stripe</strong> — processes booking payments, refunds, and stores your payment method on our behalf; we never receive or store your full card number ourselves.</li>
+            <li><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Supabase</strong> — our database, authentication infrastructure, and file storage provider (profile photos, chat photos, booking-completion photos are stored privately and served via time-limited signed links, not public URLs).</li>
+            <li><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Resend</strong> — delivers transactional emails (verification, introduction notifications) on our behalf; your email address and the relevant email content are shared with them for this purpose only.</li>
+            <li><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">DeepL</strong> — receives review text to generate a translated version; it does not receive your name or account details alongside it.</li>
+            <li><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Stripe</strong> — processes booking payments, refunds, and stores your payment method on our behalf; we never receive or store your full card number ourselves.</li>
           </ul>
           <p>
             Other customers and cleaners see the profile information you make public (e.g. a cleaner&rsquo;s display name, bio,
@@ -109,10 +109,10 @@ export default function PrivacyPolicyPage() {
             ID (passport, national ID card, or driving licence) and a selfie of you holding it.
           </p>
           <ul className="list-disc pl-5 space-y-1.5">
-            <li><strong className="text-[#0D1F1E]">Why we collect it</strong> — to verify the identity of cleaning professionals listed on the platform, for the safety of customers booking a job in their home.</li>
-            <li><strong className="text-[#0D1F1E]">Legal basis</strong> — legitimate interests (platform safety), GDPR Article 6(1)(f).</li>
-            <li><strong className="text-[#0D1F1E]">How long we keep it</strong> — the document and selfie are permanently deleted the moment an admin reviews your submission, whether it&rsquo;s approved or rejected. We don&rsquo;t keep a copy afterward — only a record that verification occurred (and, if rejected, the reason, so you know what to fix if you resubmit).</li>
-            <li><strong className="text-[#0D1F1E]">Who sees it</strong> — only Cyprus Cleaners administrators, during the brief review window. The files are stored in a private, access-controlled bucket (not a public link) and are never shared with other customers, cleaners, or third parties.</li>
+            <li><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Why we collect it</strong> — to verify the identity of cleaning professionals listed on the platform, for the safety of customers booking a job in their home.</li>
+            <li><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Legal basis</strong> — legitimate interests (platform safety), GDPR Article 6(1)(f).</li>
+            <li><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">How long we keep it</strong> — the document and selfie are permanently deleted the moment an admin reviews your submission, whether it&rsquo;s approved or rejected. We don&rsquo;t keep a copy afterward — only a record that verification occurred (and, if rejected, the reason, so you know what to fix if you resubmit).</li>
+            <li><strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">Who sees it</strong> — only Cyprus Cleaners administrators, during the brief review window. The files are stored in a private, access-controlled bucket (not a public link) and are never shared with other customers, cleaners, or third parties.</li>
           </ul>
           <p>You can request deletion of your account and all associated data at any time — see &ldquo;Your rights&rdquo; below.</p>
         </Section>

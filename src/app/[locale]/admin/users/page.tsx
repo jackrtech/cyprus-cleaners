@@ -88,7 +88,7 @@ export default function AdminUsersPage() {
   }, [users, search])
 
   if (sessionStatus === 'loading' || !session || session.user.role !== 'ADMIN') {
-    return <div className="min-h-screen bg-[#F7FAF9]" />
+    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
   }
 
   const dateFormatter = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
@@ -96,7 +96,7 @@ export default function AdminUsersPage() {
     role === 'CUSTOMER' ? tNav('roleCustomer') : role === 'CLEANER' ? tNav('roleCleaner') : tNav('admin')
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] pb-24">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] pb-24">
       <div className="max-w-3xl mx-auto px-4 pt-8 sm:pt-12">
         <div className="flex items-start justify-between gap-4 mb-8">
           <div>

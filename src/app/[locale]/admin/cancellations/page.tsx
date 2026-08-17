@@ -95,13 +95,13 @@ export default function AdminCancellationsPage() {
   }, [session, sessionStatus, t])
 
   if (sessionStatus === 'loading' || !session || session.user.role !== 'ADMIN') {
-    return <div className="min-h-screen bg-[#F7FAF9]" />
+    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
   }
 
   const dateFormatter = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] pb-24">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] pb-24">
       <div className="max-w-3xl mx-auto px-4 pt-8 sm:pt-12">
         <div className="flex items-start justify-between gap-4 mb-8">
           <div>
@@ -168,7 +168,7 @@ export default function AdminCancellationsPage() {
                       {t('cancelledBy', { name: c.cancelled_by_user?.full_name ?? t('unknownUser') })}
                     </span>
                   </div>
-                  <p className="text-body text-teal-900 mt-2 bg-[#F7FAF9] rounded-lg p-3">
+                  <p className="text-body text-teal-900 mt-2 bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3">
                     {c.cancellation_reason}
                   </p>
                   {isRefundFailed && (

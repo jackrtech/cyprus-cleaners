@@ -38,7 +38,7 @@ export default function VerifyEmailPage() {
 
   return (
     <>
-    <div className="min-h-screen bg-[#F7FAF9] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] flex items-center justify-center px-4">
       <div className="card max-w-[480px] w-full p-10 flex flex-col items-center text-center gap-5">
 
         {status === 'loading' && (
@@ -47,20 +47,20 @@ export default function VerifyEmailPage() {
               <circle cx="24" cy="24" r="20" stroke="#E0EDEC" strokeWidth="4" />
               <path d="M44 24a20 20 0 0 0-20-20" stroke="#19706A" strokeWidth="4" strokeLinecap="round" />
             </svg>
-            <p className="text-[14px] text-[#5B7472]">Verifying your email address...</p>
+            <p className="text-[14px] text-[#5B7472] dark:text-[#9BB0AE]">Verifying your email address...</p>
           </>
         )}
 
         {status === 'success' && (
           <>
-            <div className="w-16 h-16 rounded-full bg-[#E8F4F3] flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-[#E8F4F3] dark:bg-[#17302D] flex items-center justify-center">
               <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#19706A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M23 8L11.5 20 5 13.5" />
               </svg>
             </div>
             <div>
-              <h1 className="text-[20px] font-medium text-[#0D1F1E] mb-1">Email verified!</h1>
-              <p className="text-[13px] text-[#5B7472]">Your account is now fully active.</p>
+              <h1 className="text-[20px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1">Email verified!</h1>
+              <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">Your account is now fully active.</p>
             </div>
             <Link href={dashboardHref} className="btn-primary">
               Go to dashboard
@@ -77,8 +77,8 @@ export default function VerifyEmailPage() {
               </svg>
             </div>
             <div>
-              <h1 className="text-[20px] font-medium text-[#0D1F1E] mb-1">This link has expired</h1>
-              <p className="text-[13px] text-[#5B7472]">Request a new verification email from your dashboard.</p>
+              <h1 className="text-[20px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1">This link has expired</h1>
+              <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">Request a new verification email from your dashboard.</p>
             </div>
             <Link href="/dashboard" className="btn-secondary">
               Go to dashboard

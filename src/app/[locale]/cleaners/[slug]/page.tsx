@@ -129,7 +129,7 @@ function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
   return (
     <span style={{ fontSize: size }} className="leading-none" role="img" aria-label={t('starRating', { rating })}>
       {Array.from({ length: 5 }, (_, i) => (
-        <span key={i} aria-hidden="true" className={i < full ? 'text-[#7A5F00]' : 'text-[#D9D9D9]'}>
+        <span key={i} aria-hidden="true" className={i < full ? 'text-[#7A5F00]' : 'text-[#D9D9D9] dark:text-[#3A4644]'}>
           {i < full ? '★' : '☆'}
         </span>
       ))}
@@ -211,21 +211,21 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
 
   if (cleanerLoading) {
     return (
-      <div className="min-h-screen bg-[#F7FAF9]">
-        <div className="bg-white border-b border-[#E0EDEC] px-4 sm:px-10 py-6">
-          <div className="h-4 w-40 bg-[#E0EDEC] rounded animate-pulse mb-5" />
+      <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]">
+        <div className="bg-white border-b border-[#E0EDEC] dark:border-[#253634] px-4 sm:px-10 py-6">
+          <div className="h-4 w-40 bg-[#E0EDEC] dark:bg-[#253634] rounded animate-pulse mb-5" />
           <div className="flex items-start gap-6">
-            <div className="w-[88px] h-[88px] rounded-full bg-[#E0EDEC] animate-pulse shrink-0" />
+            <div className="w-[88px] h-[88px] rounded-full bg-[#E0EDEC] dark:bg-[#253634] animate-pulse shrink-0" />
             <div className="flex-1 space-y-3">
-              <div className="h-6 w-1/3 bg-[#E0EDEC] rounded animate-pulse" />
-              <div className="h-4 w-1/2 bg-[#E0EDEC] rounded animate-pulse" />
-              <div className="h-4 w-1/4 bg-[#E0EDEC] rounded animate-pulse" />
+              <div className="h-6 w-1/3 bg-[#E0EDEC] dark:bg-[#253634] rounded animate-pulse" />
+              <div className="h-4 w-1/2 bg-[#E0EDEC] dark:bg-[#253634] rounded animate-pulse" />
+              <div className="h-4 w-1/4 bg-[#E0EDEC] dark:bg-[#253634] rounded animate-pulse" />
             </div>
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 px-4 sm:px-10 py-7">
-          <div className="bg-white border border-[#E0EDEC] rounded-[16px] p-6 h-[200px] animate-pulse" />
-          <div className="bg-white border border-[#E0EDEC] rounded-[16px] p-6 h-[300px] animate-pulse" />
+          <div className="bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6 h-[200px] animate-pulse" />
+          <div className="bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6 h-[300px] animate-pulse" />
         </div>
       </div>
     )
@@ -233,7 +233,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
 
   if (cleanerError || !cleaner) {
     return (
-      <div className="min-h-screen bg-[#F7FAF9] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] flex items-center justify-center px-4">
         <p className="text-[13px] text-red-600 bg-red-50 border border-red-200 rounded-[10px] px-4 py-3">
           Failed to load cleaner profile. Please refresh.
         </p>
@@ -323,26 +323,26 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
     .join(', ')
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] pb-tabbar md:pb-0">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] pb-tabbar md:pb-0">
       {/* Cover photo — only shown once the cleaner has set one */}
       {cleaner.cover_photo_url && (
         <LoadingImage src={cleaner.cover_photo_url} wrapperClassName="h-32 sm:h-44 w-full" className="object-cover" />
       )}
 
       {/* Page header */}
-      <div className="bg-white border-b border-[#E0EDEC] px-4 sm:px-10 py-6">
+      <div className="bg-white border-b border-[#E0EDEC] dark:border-[#253634] px-4 sm:px-10 py-6">
         {/* Breadcrumb — replaced with a preview banner + one-tap exit when a
             cleaner is looking at their own public profile, so it reads as
             "previewing" rather than "I've wandered into the live site" */}
         {isOwnProfile ? (
-          <div className="flex items-center justify-between gap-3 flex-wrap bg-[#E8F4F3] border border-[#19706A]/20 rounded-[10px] px-4 py-2.5 mb-5">
+          <div className="flex items-center justify-between gap-3 flex-wrap bg-[#E8F4F3] dark:bg-[#17302D] border border-[#19706A]/20 rounded-[10px] px-4 py-2.5 mb-5">
             <span className="text-[13px] text-[#19706A] font-medium">{t('previewingOwnProfile')}</span>
             <Link href="/dashboard/cleaner" className="text-[13px] font-medium text-[#19706A] hover:underline whitespace-nowrap shrink-0">
               {t('backToDashboard')}
             </Link>
           </div>
         ) : (
-          <nav className="flex items-center gap-1.5 text-[12px] text-[#5B7472] mb-5">
+          <nav className="flex items-center gap-1.5 text-[12px] text-[#5B7472] dark:text-[#9BB0AE] mb-5">
             <Link href="/" className="text-[#19706A] hover:underline">{t('breadcrumbHome')}</Link>
             <span>›</span>
             <Link href="/cleaners" className="text-[#19706A] hover:underline">{t('breadcrumbFind')}</Link>
@@ -387,12 +387,12 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           {/* Name + meta */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
-              <h1 className="text-[26px] font-medium text-[#0D1F1E]">{cleaner.display_name}</h1>
+              <h1 className="text-[26px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">{cleaner.display_name}</h1>
               {cleaner.cities.map(city => (
-                <span key={city} className="bg-[#E6F1FF] text-[#2D8CFF] rounded-[6px] px-2.5 py-0.5 text-[12px] font-medium">{getCityName(city)}</span>
+                <span key={city} className="bg-[#E6F1FF] dark:bg-[#122A42] text-[#2D8CFF] rounded-[6px] px-2.5 py-0.5 text-[12px] font-medium">{getCityName(city)}</span>
               ))}
             </div>
-            <div className="flex flex-col gap-1.5 sm:flex-row sm:gap-4 sm:items-center sm:flex-wrap text-[13px] text-[#5B7472] mb-3">
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:gap-4 sm:items-center sm:flex-wrap text-[13px] text-[#5B7472] dark:text-[#9BB0AE] mb-3">
               <button
                 onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
                 className="flex items-center gap-1.5 hover:opacity-70 transition-opacity cursor-pointer group"
@@ -408,10 +408,10 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
               <span>{t('uniqueCustomers', { count: uniqueCustomers })}</span>
             </div>
             <div className="flex gap-1.5 flex-wrap">
-              <span className="bg-[#E8F4F3] text-[#19706A] rounded-[6px] px-2 py-0.5 text-[11px] font-medium">
+              <span className="bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A] rounded-[6px] px-2 py-0.5 text-[11px] font-medium">
                 {cleaner.languages.join(' · ')}
               </span>
-              <span className="bg-[#E8F4F3] text-[#19706A] rounded-[6px] px-2 py-0.5 text-[11px] font-medium">
+              <span className="bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A] rounded-[6px] px-2 py-0.5 text-[11px] font-medium">
                 {cleanerTypeLabel}
               </span>
             </div>
@@ -421,9 +421,9 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
               original right-aligned stack from sm: up */}
           <div className="flex flex-row items-center justify-between sm:flex-col sm:items-end gap-2 shrink-0 w-full sm:w-auto">
             <div className="sm:text-right">
-              <p className="text-[12px] text-[#5B7472]">{t('hourlyRate')}</p>
-              <p className="text-[20px] sm:text-[26px] font-medium text-[#0D1F1E] leading-none">
-                €{cleaner.hourly_rate_eur}<span className="text-[14px] text-[#5B7472] font-normal">{tCommon('perHour')}</span>
+              <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">{t('hourlyRate')}</p>
+              <p className="text-[20px] sm:text-[26px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] leading-none">
+                €{cleaner.hourly_rate_eur}<span className="text-[14px] text-[#5B7472] dark:text-[#9BB0AE] font-normal">{tCommon('perHour')}</span>
               </p>
             </div>
             {isOwnProfile ? (
@@ -462,14 +462,14 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
         {/* Left column */}
         <div>
           {/* About */}
-          <div className="bg-white border border-[#E0EDEC] rounded-[16px] p-6 mb-4">
-            <h2 className="text-[15px] font-medium text-[#0D1F1E] mb-3">{t('about', { name: firstName })}</h2>
-            <p className="text-[14px] text-[#5B7472] leading-relaxed">{cleaner.bio}</p>
+          <div className="bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6 mb-4">
+            <h2 className="text-[15px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-3">{t('about', { name: firstName })}</h2>
+            <p className="text-[14px] text-[#5B7472] dark:text-[#9BB0AE] leading-relaxed">{cleaner.bio}</p>
           </div>
 
           {/* Reviews */}
-          <div id="reviews" className="bg-white border border-[#E0EDEC] rounded-[16px] p-6">
-            <h2 className="text-[15px] font-medium text-[#0D1F1E] mb-1">
+          <div id="reviews" className="bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6">
+            <h2 className="text-[15px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1">
               {t('reviews')} ({cleaner.review_count})
             </h2>
             <div>
@@ -477,9 +477,9 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
                 <div className="space-y-4 py-4">
                   {[1, 2].map(i => (
                     <div key={i} className="space-y-1.5">
-                      <div className="h-3 bg-[#F0F5F4] rounded animate-pulse w-1/4" />
-                      <div className="h-3 bg-[#F0F5F4] rounded animate-pulse w-full" />
-                      <div className="h-3 bg-[#F0F5F4] rounded animate-pulse w-3/5" />
+                      <div className="h-3 bg-[#F0F5F4] dark:bg-[#142220] rounded animate-pulse w-1/4" />
+                      <div className="h-3 bg-[#F0F5F4] dark:bg-[#142220] rounded animate-pulse w-full" />
+                      <div className="h-3 bg-[#F0F5F4] dark:bg-[#142220] rounded animate-pulse w-3/5" />
                     </div>
                   ))}
                 </div>
@@ -494,20 +494,20 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
 
         {/* Right column — sticky booking card */}
         <div>
-          <div className="sticky top-6 bg-white border border-[#E0EDEC] rounded-[16px] p-6">
+          <div className="sticky top-6 bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6">
             <div className="mb-1">
-              <span className="text-[28px] font-medium text-[#0D1F1E]">€{cleaner.hourly_rate_eur}</span>
-              <span className="text-[14px] text-[#5B7472]">{tCommon('perHour')}</span>
+              <span className="text-[28px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">€{cleaner.hourly_rate_eur}</span>
+              <span className="text-[14px] text-[#5B7472] dark:text-[#9BB0AE]">{tCommon('perHour')}</span>
             </div>
             <button
               onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
-              className="flex items-center gap-1.5 text-[13px] text-[#5B7472] mb-5 hover:opacity-70 transition-opacity cursor-pointer group"
+              className="flex items-center gap-1.5 text-[13px] text-[#5B7472] dark:text-[#9BB0AE] mb-5 hover:opacity-70 transition-opacity cursor-pointer group"
             >
               <StarRow rating={cleaner.avg_rating} />
               <span className="group-hover:text-[#19706A] transition-colors">{cleaner.avg_rating} · {cleaner.review_count} reviews</span>
             </button>
 
-            <div className="border-t border-[#E0EDEC] my-4" />
+            <div className="border-t border-[#E0EDEC] dark:border-[#253634] my-4" />
 
             <div className="space-y-2.5 mb-4">
               {[
@@ -518,13 +518,13 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
                 ...(cleaner.has_transport ? [{ label: t('transport'), value: t('hasOwnTransport') }] : []),
               ].map(row => (
                 <div key={row.label} className="flex justify-between text-[13px]">
-                  <span className="text-[#5B7472]">{row.label}</span>
-                  <span className="text-[#0D1F1E] font-medium text-right ml-4">{row.value}</span>
+                  <span className="text-[#5B7472] dark:text-[#9BB0AE]">{row.label}</span>
+                  <span className="text-[#0D1F1E] dark:text-[#ECF3F2] font-medium text-right ml-4">{row.value}</span>
                 </div>
               ))}
             </div>
 
-            <div className="border-t border-[#E0EDEC] my-4" />
+            <div className="border-t border-[#E0EDEC] dark:border-[#253634] my-4" />
 
             {isOwnProfile ? (
               <button
@@ -557,12 +557,12 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
         </div>
       </div>
       {cleanerToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] bg-[#0D1F1E] text-white text-[13px] px-5 py-3 rounded-full shadow-lg whitespace-nowrap">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] bg-[#0D1F1E] dark:bg-[#ECF3F2] text-white text-[13px] px-5 py-3 rounded-full shadow-lg whitespace-nowrap">
           {t('cleanerCannotIntro')}
         </div>
       )}
       {chatError && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] bg-[#0D1F1E] text-white text-[13px] px-5 py-3 rounded-full shadow-lg whitespace-nowrap">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] bg-[#0D1F1E] dark:bg-[#ECF3F2] text-white text-[13px] px-5 py-3 rounded-full shadow-lg whitespace-nowrap">
           {t('startChatError')}
         </div>
       )}

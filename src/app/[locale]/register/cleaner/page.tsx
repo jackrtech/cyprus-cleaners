@@ -87,10 +87,10 @@ export default function RegisterCleanerPage() {
 
   return (
     <>
-    <div className="min-h-screen bg-[#F7FAF9] py-10 px-4">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] py-10 px-4">
       <div className="w-full max-w-[480px] mx-auto">
         <div className="card p-8">
-          <h1 className="text-[22px] font-medium text-[#0D1F1E] mb-6">{t('registerAsCleaner')}</h1>
+          <h1 className="text-[22px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-6">{t('registerAsCleaner')}</h1>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
@@ -101,7 +101,7 @@ export default function RegisterCleanerPage() {
 
             {/* Display name */}
             <div>
-              <label htmlFor="cleaner-register-display-name" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-register-display-name" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('displayName')}
               </label>
               <input
@@ -118,7 +118,7 @@ export default function RegisterCleanerPage() {
 
             {/* Cities */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
+              <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('serveCities')}
               </label>
               <div className="flex flex-wrap gap-2">
@@ -132,7 +132,7 @@ export default function RegisterCleanerPage() {
                       className={`px-3 py-1.5 rounded-full text-[13px] border transition-colors ${
                         selected
                           ? 'bg-[#19706A] border-[#19706A] text-white'
-                          : 'bg-white border-[#E0EDEC] text-[#0D1F1E] hover:border-[#19706A]'
+                          : 'bg-white border-[#E0EDEC] dark:border-[#253634] text-[#0D1F1E] dark:text-[#ECF3F2] hover:border-[#19706A]'
                       }`}
                     >
                       {tCities(city.key as Parameters<typeof tCities>[0])}
@@ -144,10 +144,10 @@ export default function RegisterCleanerPage() {
 
             {/* Account type */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] mb-2">
+              <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('cleanerType')}
               </label>
-              <div className="flex rounded-[10px] border border-[#E0EDEC] overflow-hidden">
+              <div className="flex rounded-[10px] border border-[#E0EDEC] dark:border-[#253634] overflow-hidden">
                 {(['individual', 'company'] as const).map(type => (
                   <button
                     key={type}
@@ -156,7 +156,7 @@ export default function RegisterCleanerPage() {
                     className={`flex-1 py-2 text-[13px] transition-colors ${
                       cleanerType === type
                         ? 'bg-[#19706A] text-white'
-                        : 'bg-white text-[#5B7472] hover:text-[#0D1F1E]'
+                        : 'bg-white text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2]'
                     }`}
                   >
                     {t(type)}
@@ -167,11 +167,11 @@ export default function RegisterCleanerPage() {
 
             {/* Hourly rate */}
             <div>
-              <label htmlFor="cleaner-register-hourly-rate" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-register-hourly-rate" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('hourlyRate')}
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5B7472] text-[14px] pointer-events-none">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5B7472] dark:text-[#9BB0AE] text-[14px] pointer-events-none">
                   €
                 </span>
                 <input
@@ -191,7 +191,7 @@ export default function RegisterCleanerPage() {
 
             {/* Email */}
             <div>
-              <label htmlFor="cleaner-register-email" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-register-email" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('email')}
               </label>
               <input
@@ -207,7 +207,7 @@ export default function RegisterCleanerPage() {
 
             {/* Password */}
             <div>
-              <label htmlFor="cleaner-register-password" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-register-password" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('password')}
               </label>
               <div className="relative">
@@ -224,7 +224,7 @@ export default function RegisterCleanerPage() {
                   type="button"
                   onClick={() => setShowPass(v => !v)}
                   aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
                 >
                   {showPassword ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -244,7 +244,7 @@ export default function RegisterCleanerPage() {
 
             {/* Confirm password */}
             <div>
-              <label htmlFor="cleaner-register-confirm-password" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="cleaner-register-confirm-password" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('confirmPassword')}
               </label>
               <div className="relative">
@@ -260,7 +260,7 @@ export default function RegisterCleanerPage() {
                   type="button"
                   onClick={() => setShowConfirm(v => !v)}
                   aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
                 >
                   {showConfirm ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -284,9 +284,9 @@ export default function RegisterCleanerPage() {
                 type="checkbox"
                 checked={agreedToTerms}
                 onChange={e => setAgreedToTerms(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#C9D6D4] text-[#19706A] focus:ring-[#19706A]"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#C9D6D4] dark:border-[#2E3F3D] text-[#19706A] focus:ring-[#19706A]"
               />
-              <label htmlFor="cleaner-register-agree-terms" className="text-[13px] text-[#3F4E4C] leading-snug">
+              <label htmlFor="cleaner-register-agree-terms" className="text-[13px] text-[#3F4E4C] dark:text-[#B8C7C5] leading-snug">
                 {t.rich('agreeToTerms', {
                   terms: chunks => <Link href="/terms" className="text-[#19706A] hover:underline font-medium">{chunks}</Link>,
                   privacy: chunks => <Link href="/privacy" className="text-[#19706A] hover:underline font-medium">{chunks}</Link>,
@@ -305,7 +305,7 @@ export default function RegisterCleanerPage() {
           </form>
         </div>
 
-        <div className="mt-5 text-center text-[13px] text-[#5B7472]">
+        <div className="mt-5 text-center text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">
           <p>
             {t('alreadyHaveAccount')}{' '}
             <Link href="/login" className="text-[#19706A] hover:underline font-medium">

@@ -222,7 +222,10 @@
   },
   "common": {
     "perHour": "/hr",
-    "skipToContent": "Skip to main content"
+    "skipToContent": "Skip to main content",
+    "switchToDarkMode": "Switch to dark mode",
+    "switchToLightMode": "Switch to light mode",
+    "appearance": "Appearance"
   },
   "filters": {
     "city": "City",

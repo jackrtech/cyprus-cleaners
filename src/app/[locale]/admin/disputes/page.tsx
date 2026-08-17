@@ -130,14 +130,14 @@ export default function AdminDisputesPage() {
   }
 
   if (sessionStatus === 'loading' || !session || session.user.role !== 'ADMIN') {
-    return <div className="min-h-screen bg-[#F7FAF9]" />
+    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
   }
 
   const dateFormatter = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
   const viewing = disputes.find(d => d.id === viewingId) ?? null
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] pb-24">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] pb-24">
       <div className="max-w-3xl mx-auto px-4 pt-8 sm:pt-12">
         <div className="flex items-start justify-between gap-4 mb-8">
           <div>
@@ -226,15 +226,15 @@ export default function AdminDisputesPage() {
           const cleanerName  = viewing.cleaner_profiles?.display_name ?? t('unknownUser')
           return (
             <>
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-[#E0EDEC] shrink-0">
-                <p className="flex-1 min-w-0 text-[14px] font-medium text-[#0D1F1E] truncate">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-[#E0EDEC] dark:border-[#253634] shrink-0">
+                <p className="flex-1 min-w-0 text-[14px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] truncate">
                   {customerName} · {cleanerName}
                 </p>
                 <button
                   type="button"
                   onClick={() => setViewingId(null)}
                   aria-label="Close"
-                  className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] border border-[#E0EDEC] text-[#5B7472] hover:text-[#0D1F1E] hover:border-[#19706A] transition-colors text-[20px] leading-none shrink-0"
+                  className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F7FAF9] dark:bg-[#0F1817] border border-[#E0EDEC] dark:border-[#253634] text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] hover:border-[#19706A] transition-colors text-[20px] leading-none shrink-0"
                 >
                   ×
                 </button>
@@ -271,7 +271,7 @@ export default function AdminDisputesPage() {
                   <p className="text-label uppercase tracking-widest text-muted mb-1">
                     {t('customerClaim', { name: customerName })}
                   </p>
-                  <p className="text-body text-teal-900 bg-[#F7FAF9] rounded-lg p-3">{viewing.claim}</p>
+                  <p className="text-body text-teal-900 bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3">{viewing.claim}</p>
                 </div>
 
                 <div>
@@ -279,7 +279,7 @@ export default function AdminDisputesPage() {
                     {t('cleanerResponse', { name: cleanerName })}
                   </p>
                   {viewing.cleaner_response ? (
-                    <p className="text-body text-teal-900 bg-[#F7FAF9] rounded-lg p-3">{viewing.cleaner_response}</p>
+                    <p className="text-body text-teal-900 bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3">{viewing.cleaner_response}</p>
                   ) : (
                     <p className="text-body text-muted italic">{t('noCleanerResponse', { name: cleanerName })}</p>
                   )}
@@ -313,7 +313,7 @@ export default function AdminDisputesPage() {
                         : t('resolvedForCleanerNamed', { name: cleanerName })}
                     </p>
                     {viewing.admin_note && (
-                      <p className="text-body text-teal-900 bg-[#F7FAF9] rounded-lg p-3 mt-2">{viewing.admin_note}</p>
+                      <p className="text-body text-teal-900 bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3 mt-2">{viewing.admin_note}</p>
                     )}
                     {viewing.resolution === 'CUSTOMER' && b?.payment && (b.payment.status === 'PAID' || b.payment.status === 'REFUND_FAILED') && (
                       <button
@@ -349,7 +349,7 @@ export default function AdminDisputesPage() {
               </div>
 
               {viewing.status === 'OPEN' && (
-                <div className="px-4 py-3 border-t border-[#E0EDEC] shrink-0 space-y-2">
+                <div className="px-4 py-3 border-t border-[#E0EDEC] dark:border-[#253634] shrink-0 space-y-2">
                   <div className="flex items-center gap-2">
                     <label htmlFor="dispute-split-percentage" className="text-body text-muted shrink-0">{t('splitRefundLabel')}</label>
                     <input

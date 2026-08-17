@@ -96,16 +96,16 @@ export default function ReviewPrompt({ bookingId, cleanerName, subtitle, onSubmi
   if (submitted) {
     return (
       <div className="card p-5 text-center">
-        <p className="text-[14px] font-medium text-[#0D1F1E]">{t('thanks')}</p>
-        <p className="text-[13px] text-[#5B7472] mt-1">{t('thanksSub')}</p>
+        <p className="text-[14px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">{t('thanks')}</p>
+        <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] mt-1">{t('thanksSub')}</p>
       </div>
     )
   }
 
   return (
     <div className="card p-5">
-      <p className="text-[15px] font-medium text-[#0D1F1E]">{t('title', { name: cleanerName })}</p>
-      <p className="text-[12px] text-[#5B7472] mt-0.5 mb-3">{subtitle}</p>
+      <p className="text-[15px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">{t('title', { name: cleanerName })}</p>
+      <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] mt-0.5 mb-3">{subtitle}</p>
 
       <StarPicker rating={rating} hoverRating={hoverRating} onHover={setHoverRating} onPick={setRating} />
 

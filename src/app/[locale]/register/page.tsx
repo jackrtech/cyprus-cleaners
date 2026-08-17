@@ -62,10 +62,10 @@ export default function RegisterPage() {
 
   return (
     <>
-    <div className="min-h-screen bg-[#F7FAF9] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] flex items-center justify-center px-4">
       <div className="w-full max-w-[400px]">
         <div className="card p-8">
-          <h1 className="text-[22px] font-medium text-[#0D1F1E] mb-6">{t('register')}</h1>
+          <h1 className="text-[22px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-6">{t('register')}</h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -75,7 +75,7 @@ export default function RegisterPage() {
             )}
 
             <div>
-              <label htmlFor="register-full-name" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="register-full-name" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('fullName')}
               </label>
               <input
@@ -91,7 +91,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="register-email" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="register-email" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('email')}
               </label>
               <input
@@ -106,7 +106,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="register-password" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="register-password" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('password')}
               </label>
               <div className="relative">
@@ -123,7 +123,7 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowPass(v => !v)}
                   aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
                 >
                   {showPassword ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -142,7 +142,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="register-confirm-password" className="block text-[13px] font-medium text-[#0D1F1E] mb-1.5">
+              <label htmlFor="register-confirm-password" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('confirmPassword')}
               </label>
               <div className="relative">
@@ -158,7 +158,7 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowConfirm(v => !v)}
                   aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
                 >
                   {showConfirm ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -182,9 +182,9 @@ export default function RegisterPage() {
                 type="checkbox"
                 checked={agreedToTerms}
                 onChange={e => setAgreedToTerms(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#C9D6D4] text-[#19706A] focus:ring-[#19706A]"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#C9D6D4] dark:border-[#2E3F3D] text-[#19706A] focus:ring-[#19706A]"
               />
-              <label htmlFor="register-agree-terms" className="text-[13px] text-[#3F4E4C] leading-snug">
+              <label htmlFor="register-agree-terms" className="text-[13px] text-[#3F4E4C] dark:text-[#B8C7C5] leading-snug">
                 {t.rich('agreeToTerms', {
                   terms: chunks => <Link href="/terms" className="text-[#19706A] hover:underline font-medium">{chunks}</Link>,
                   privacy: chunks => <Link href="/privacy" className="text-[#19706A] hover:underline font-medium">{chunks}</Link>,
@@ -203,7 +203,7 @@ export default function RegisterPage() {
           </form>
         </div>
 
-        <div className="mt-5 space-y-2 text-center text-[13px] text-[#5B7472]">
+        <div className="mt-5 space-y-2 text-center text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">
           <p>
             {t('alreadyHaveAccount')}{' '}
             <Link href="/login" className="text-[#19706A] hover:underline font-medium">

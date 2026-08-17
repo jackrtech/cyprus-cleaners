@@ -107,9 +107,9 @@ function IntroCard({
         <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap mb-1">
-              <p className="text-[15px] font-medium text-[#0D1F1E]">{customerName}</p>
+              <p className="text-[15px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">{customerName}</p>
             </div>
-            <p className="text-[12px] text-[#5B7472]">
+            <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">
               {tReceivedOn} {dateFormatter.format(new Date(intro.created_at))}
             </p>
           </div>
@@ -128,7 +128,7 @@ function IntroCard({
         </div>
 
         {!isChatOpen && (
-          <p className="text-[13px] text-[#5B7472] leading-relaxed line-clamp-2">{previewText}</p>
+          <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] leading-relaxed line-clamp-2">{previewText}</p>
         )}
       </div>
 
@@ -372,7 +372,7 @@ export default function CleanerDashboardPage() {
   }, [session, sessionStatus])
 
   if (sessionStatus === 'loading' || !session || session.user.role === 'CUSTOMER') {
-    return <div className="min-h-screen bg-[#F7FAF9]" />
+    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
   }
 
   const profileIncomplete =
@@ -406,7 +406,7 @@ export default function CleanerDashboardPage() {
       >
         <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-[14px] font-medium text-[#0D1F1E]">
+            <p className="text-[14px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">
               {tBooking('with', { name: booking.users?.full_name ?? '—' })}
             </p>
             <span className={`inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full ${BOOKING_STATUS_BADGE[booking.status]}`}>
@@ -418,7 +418,7 @@ export default function CleanerDashboardPage() {
               )}
             </span>
             {booking.status === 'REQUESTED' && (
-              <span className="text-[11px] text-[#5B7472]">
+              <span className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE]">
                 {hoursLeftToRespond(booking.created_at) > 0
                   ? tBooking('timeLeftToRespond', { hours: hoursLeftToRespond(booking.created_at) })
                   : tBooking('lessThanHourLeft')}
@@ -457,13 +457,13 @@ export default function CleanerDashboardPage() {
                 {tBooking('markComplete')}
               </button>
             ) : !dateReached ? (
-              <span className="text-[12px] text-[#5B7472] shrink-0">
+              <span className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] shrink-0">
                 {tBooking('notYetDue', {
                   date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${booking.date}T00:00:00`)),
                 })}
               </span>
             ) : (
-              <span className="text-[12px] text-[#5B7472] shrink-0">
+              <span className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] shrink-0">
                 {tBooking('needMorePhotos', { count: MIN_COMPLETION_PHOTOS - booking.photo_urls.length })}
               </span>
             )
@@ -491,14 +491,14 @@ export default function CleanerDashboardPage() {
               <button
                 type="button"
                 onClick={() => { setDecliningId(null); setDeclineReasonText('') }}
-                className="text-[12px] font-medium text-[#5B7472] hover:text-[#0D1F1E] transition-colors"
+                className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
               >
                 {tBooking('neverMind')}
               </button>
             </div>
           </div>
         )}
-        <p className="text-[13px] text-[#5B7472]">
+        <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">
           {tBooking(booking.duration_hours == null ? 'summaryNoDuration' : 'summary', {
             cleaningType: tBooking(booking.cleaning_type === 'DEEP' ? 'deepClean' : 'standardClean'),
             bedrooms: booking.bedrooms ?? '—',
@@ -509,31 +509,31 @@ export default function CleanerDashboardPage() {
           })}
         </p>
         {booking.address && (
-          <p className="text-[12px] text-[#5B7472] line-clamp-1 mt-0.5">📍 {booking.address}</p>
+          <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] line-clamp-1 mt-0.5">📍 {booking.address}</p>
         )}
         {booking.notes && (
-          <p className="text-[12px] text-[#5B7472] mt-1">{booking.notes}</p>
+          <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] mt-1">{booking.notes}</p>
         )}
         {booking.status === 'CONFIRMED' && (
           <div className="mt-2">
-            <p className="text-[11px] text-[#B8860B] bg-[#FDF8E1] rounded-md px-2.5 py-1.5 mb-2">
+            <p className="text-[11px] text-[#B8860B] bg-[#FDF8E1] dark:bg-[#332B0F] rounded-md px-2.5 py-1.5 mb-2">
               {tBooking('photoReminder')}
             </p>
             <div className="flex items-center gap-2 flex-wrap">
               {booking.photo_urls.map((url, i) => (
-                <img key={i} src={url} alt="" className="w-12 h-12 rounded-md object-cover border border-[#E0EDEC]" />
+                <img key={i} src={url} alt="" className="w-12 h-12 rounded-md object-cover border border-[#E0EDEC] dark:border-[#253634]" />
               ))}
               <button
                 type="button"
                 onClick={e => { e.stopPropagation(); handlePhotoAddClick(booking.id) }}
                 disabled={isUploadingPhoto}
                 aria-label="Add photo"
-                className="w-12 h-12 rounded-md border border-dashed border-[#E0EDEC] flex items-center justify-center text-[#5B7472] hover:text-[#19706A] hover:border-[#19706A] transition-colors disabled:opacity-50 text-[18px] leading-none"
+                className="w-12 h-12 rounded-md border border-dashed border-[#E0EDEC] dark:border-[#253634] flex items-center justify-center text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#19706A] hover:border-[#19706A] transition-colors disabled:opacity-50 text-[18px] leading-none"
               >
                 {isUploadingPhoto ? '…' : '+'}
               </button>
             </div>
-            <p className="text-[11px] text-[#5B7472] mt-1">
+            <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mt-1">
               {tBooking('photoCount', { count: booking.photo_urls.length, min: MIN_COMPLETION_PHOTOS })}
             </p>
           </div>
@@ -543,18 +543,18 @@ export default function CleanerDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] px-4 sm:px-10 py-8 pb-tabbar md:pb-8">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] px-4 sm:px-10 py-8 pb-tabbar md:pb-8">
       <div className="max-w-[720px] mx-auto space-y-8">
 
         {/* Email verification banner */}
         {emailVerified === false && (
-          <div className="flex items-center gap-3 bg-[#FDF8E1] border-l-4 border-[#F2C94C] rounded-lg p-4 mb-4 flex-wrap">
+          <div className="flex items-center gap-3 bg-[#FDF8E1] dark:bg-[#332B0F] border-l-4 border-[#F2C94C] rounded-lg p-4 mb-4 flex-wrap">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#F2C94C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
               <path d="M9 1.5L1.5 15h15L9 1.5z" />
               <path d="M9 7.5v3" />
               <circle cx="9" cy="13" r="0.75" fill="#F2C94C" stroke="none" />
             </svg>
-            <p className="text-[13px] text-[#0D1F1E] flex-1">{tAuth('verifyEmailBanner')}</p>
+            <p className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] flex-1">{tAuth('verifyEmailBanner')}</p>
             {resendResult === 'sent' ? (
               <span className="text-[13px] text-[#19706A] shrink-0">{tAuth('emailSent')}</span>
             ) : resendResult === 'rate_limited' ? (
@@ -579,7 +579,7 @@ export default function CleanerDashboardPage() {
               <path d="M9 7.5v3" />
               <circle cx="9" cy="13" r="0.75" fill="#DC2626" stroke="none" />
             </svg>
-            <p className="text-[13px] text-[#0D1F1E] flex-1">{tDisputes('dashboardBanner', { count: openDisputeCount })}</p>
+            <p className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] flex-1">{tDisputes('dashboardBanner', { count: openDisputeCount })}</p>
             <Link href="/dashboard/cleaner/disputes" className="btn-primary shrink-0 text-[13px] px-4 py-2 rounded-full">
               {tDisputes('respondLink')}
             </Link>
@@ -588,13 +588,13 @@ export default function CleanerDashboardPage() {
 
         {/* SECTION 1 — Profile completion banner */}
         {!loading && profileIncomplete && (
-          <div className="flex items-center gap-3 bg-[#FDF8E1] border-l-4 border-[#F2C94C] rounded-lg px-5 py-4 flex-wrap">
+          <div className="flex items-center gap-3 bg-[#FDF8E1] dark:bg-[#332B0F] border-l-4 border-[#F2C94C] rounded-lg px-5 py-4 flex-wrap">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#F2C94C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
               <path d="M9 1.5L1.5 15h15L9 1.5z" />
               <path d="M9 7.5v3" />
               <circle cx="9" cy="13" r="0.75" fill="#F2C94C" stroke="none" />
             </svg>
-            <p className="text-[13px] text-[#0D1F1E] flex-1">{t('completeProfileBanner')}</p>
+            <p className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] flex-1">{t('completeProfileBanner')}</p>
             <Link href="/dashboard/cleaner/edit" className="btn-primary shrink-0 text-[13px] px-4 py-2 rounded-full">
               {t('editProfile')}
             </Link>
@@ -605,15 +605,15 @@ export default function CleanerDashboardPage() {
             shown once verified (the blue tick on the public profile speaks
             for itself). */}
         {!loading && profile?.verification_status === 'PENDING' && (
-          <div className="flex items-center gap-3 bg-[#FDF8E1] border-l-4 border-[#F2C94C] rounded-lg px-5 py-4 flex-wrap">
-            <p className="text-[13px] text-[#0D1F1E] flex-1">{t('verificationPendingBanner')}</p>
+          <div className="flex items-center gap-3 bg-[#FDF8E1] dark:bg-[#332B0F] border-l-4 border-[#F2C94C] rounded-lg px-5 py-4 flex-wrap">
+            <p className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] flex-1">{t('verificationPendingBanner')}</p>
           </div>
         )}
 
         {!loading && !profile?.verified && (profile?.verification_status === 'REJECTED' || !profile?.verification_status) && (
-          <div className={`rounded-lg px-5 py-4 border-l-4 ${profile?.verification_status === 'REJECTED' ? 'bg-red-50 border-red-400' : 'bg-[#F7FAF9] border-[#E0EDEC]'}`}>
+          <div className={`rounded-lg px-5 py-4 border-l-4 ${profile?.verification_status === 'REJECTED' ? 'bg-red-50 border-red-400' : 'bg-[#F7FAF9] dark:bg-[#0F1817] border-[#E0EDEC] dark:border-[#253634]'}`}>
             <div className="flex items-center gap-3 flex-wrap">
-              <p className="text-[13px] text-[#0D1F1E] flex-1">
+              <p className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] flex-1">
                 {profile?.verification_status === 'REJECTED'
                   ? t('verificationRejectedBanner', { reason: profile.verification_note || t('verificationNoReason') })
                   : t('verificationPromptBanner')}
@@ -676,7 +676,7 @@ export default function CleanerDashboardPage() {
             banners to h3 group headers with no h1/h2, breaking the heading
             hierarchy for screen-reader nav. */}
         {session?.user?.name && (
-          <h1 className="text-[24px] font-medium text-[#0D1F1E] mb-8">
+          <h1 className="text-[24px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-8">
             {t('welcomeBack', { name: session.user.name })}
           </h1>
         )}
@@ -718,14 +718,14 @@ export default function CleanerDashboardPage() {
             </div>
           ) : threads.length === 0 && !error ? (
             <div className="card p-10 flex flex-col items-center text-center gap-5">
-              <div className="w-16 h-16 rounded-full bg-[#E8F4F3] flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-[#E8F4F3] dark:bg-[#17302D] flex items-center justify-center">
                 <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#19706A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M24 3H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4l3 4 3-4h10a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1z" />
                 </svg>
               </div>
               <div>
-                <p className="text-[16px] font-medium text-[#0D1F1E] mb-1">{t('noIntroRequestsYet')}</p>
-                <p className="text-[13px] text-[#5B7472]">{t('noIntroRequestsBody')}</p>
+                <p className="text-[16px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1">{t('noIntroRequestsYet')}</p>
+                <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">{t('noIntroRequestsBody')}</p>
               </div>
             </div>
           ) : (
@@ -765,8 +765,8 @@ export default function CleanerDashboardPage() {
             </div>
           ) : bookings.length === 0 ? (
             <div className="card p-8 flex flex-col items-center text-center gap-2">
-              <p className="text-[14px] font-medium text-[#0D1F1E]">{tBooking('noBookingsYet')}</p>
-              <p className="text-[13px] text-[#5B7472]">{tBooking('noBookingsBodyCleaner')}</p>
+              <p className="text-[14px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">{tBooking('noBookingsYet')}</p>
+              <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">{tBooking('noBookingsBodyCleaner')}</p>
             </div>
           ) : (
             <div className="space-y-8">
@@ -777,7 +777,7 @@ export default function CleanerDashboardPage() {
               )}
               {bookingGroups.requested.length > 0 && (
                 <div>
-                  <h2 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
+                  <h2 className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] uppercase tracking-wide mb-3">
                     {tBooking('needsResponse')}
                   </h2>
                   <div className="space-y-3">{bookingGroups.requested.map(renderBookingCard)}</div>
@@ -785,7 +785,7 @@ export default function CleanerDashboardPage() {
               )}
               {bookingGroups.confirmed.length > 0 && (
                 <div>
-                  <h2 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
+                  <h2 className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] uppercase tracking-wide mb-3">
                     {tBooking('upcoming')}
                   </h2>
                   <div className="space-y-3">{bookingGroups.confirmed.map(renderBookingCard)}</div>
@@ -793,7 +793,7 @@ export default function CleanerDashboardPage() {
               )}
               {bookingGroups.history.length > 0 && (
                 <div>
-                  <h2 className="text-[12px] font-medium text-[#5B7472] uppercase tracking-wide mb-3">
+                  <h2 className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] uppercase tracking-wide mb-3">
                     {tBooking('bookingHistory')}
                   </h2>
                   <div className="space-y-3">{bookingGroups.history.map(renderBookingCard)}</div>

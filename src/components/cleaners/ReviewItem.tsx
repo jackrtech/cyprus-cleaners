@@ -22,7 +22,7 @@ function StarRow({ rating }: { rating: number }) {
   return (
     <span className="text-[12px] leading-none" role="img" aria-label={t('starRating', { rating })}>
       {Array.from({ length: 5 }, (_, i) => (
-        <span key={i} aria-hidden="true" className={i < full ? 'text-[#7A5F00]' : 'text-[#D9D9D9]'}>
+        <span key={i} aria-hidden="true" className={i < full ? 'text-[#7A5F00]' : 'text-[#D9D9D9] dark:text-[#3A4644]'}>
           {i < full ? '★' : '☆'}
         </span>
       ))}
@@ -79,10 +79,10 @@ export default function ReviewItem({ review, locale }: Props) {
   const displayText = showOriginal || !translated ? review.body : translated
 
   return (
-    <div className="py-4 border-b border-[#F0F5F4] last:border-none">
+    <div className="py-4 border-b border-[#F0F5F4] dark:border-[#142220] last:border-none">
       <div className="flex justify-between items-start mb-1.5">
-        <span className="text-[13px] font-medium text-[#0D1F1E]">{review.reviewer_name}</span>
-        <span className="text-[11px] text-[#5B7472]">{formattedDate}</span>
+        <span className="text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">{review.reviewer_name}</span>
+        <span className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE]">{formattedDate}</span>
       </div>
 
       <div className="mb-2">
@@ -91,12 +91,12 @@ export default function ReviewItem({ review, locale }: Props) {
 
       {loading ? (
         <div className="space-y-1.5">
-          <div className="h-3 bg-[#F0F5F4] rounded animate-pulse w-full" />
-          <div className="h-3 bg-[#F0F5F4] rounded animate-pulse w-4/5" />
-          <div className="h-3 bg-[#F0F5F4] rounded animate-pulse w-3/5" />
+          <div className="h-3 bg-[#F0F5F4] dark:bg-[#142220] rounded animate-pulse w-full" />
+          <div className="h-3 bg-[#F0F5F4] dark:bg-[#142220] rounded animate-pulse w-4/5" />
+          <div className="h-3 bg-[#F0F5F4] dark:bg-[#142220] rounded animate-pulse w-3/5" />
         </div>
       ) : (
-        <p className="text-[13px] text-[#5B7472] leading-relaxed">{displayText}</p>
+        <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] leading-relaxed">{displayText}</p>
       )}
 
       {translated && !loading && (

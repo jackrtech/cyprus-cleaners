@@ -97,7 +97,7 @@ function LocateControl({ onLocate }: { onLocate: (lat: number, lng: number) => v
       type="button"
       onClick={handleClick}
       disabled={locating}
-      className="absolute top-2 right-2 z-[1000] bg-white border border-[#E0EDEC] rounded-full px-3 py-1.5 text-[12px] font-medium text-[#19706A] shadow-sm hover:border-[#19706A] transition-colors disabled:opacity-50"
+      className="absolute top-2 right-2 z-[1000] bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-full px-3 py-1.5 text-[12px] font-medium text-[#19706A] shadow-sm hover:border-[#19706A] transition-colors disabled:opacity-50"
     >
       {locating ? '…' : `📍 ${t('useMyLocation')}`}
     </button>
