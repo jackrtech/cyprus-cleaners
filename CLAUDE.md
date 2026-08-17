@@ -74,3 +74,42 @@ Full detail in `DESIGN.md` (palette, type scale, spacing, layout/anti-pattern ru
 - Always pull before starting work and push before finishing (`git add . && git commit -m "..." && git push origin main`) — this repo works directly on `main`, not feature branches.
 - Never commit `.env.local`.
 - Fix TypeScript errors before pushing (the pre-push hook enforces this).
+
+# Project process rules — Cyprus Cleaners
+
+These rules apply to every task, in addition to whatever the task description says.
+
+## Definition of done
+
+A task is not complete until ALL of the following are true, not just "the code works":
+
+1. **Code is committed** with a clear message describing what changed.
+2. **FLOWS.md is updated in the same commit** if the task did any of:
+   - added, removed, or changed a user-facing screen or step
+   - changed a state machine (booking status, payment status, dispute status, verification status)
+   - added or changed an email/notification trigger
+   - changed a "known gap" that FLOWS.md currently lists — remove it from the gaps section if it's now fixed
+   - If none of these apply, say so explicitly in the commit message or task comment ("no FLOWS.md change needed — internal/non-flow change") rather than silently skipping it.
+3. **The Todoist task is marked complete**, with a comment noting:
+   - the commit hash(es) that shipped it
+   - anything that was descoped, deferred, or done differently than the original task description
+   - any new bug or gap this surfaced (file it as a new task, don't just mention it and move on)
+4. **If the task fixes a bug that was previously marked "done" and broke** (like the dispute-button visibility issue), say so explicitly in the Todoist comment — don't just close it silently. This is a pattern worth tracking, not hiding.
+
+## Before starting a build session
+
+- Pull the FULL Todoist task list — **open AND completed** — not just open tasks. A plain open-task query misses real context (this has caused confusion before: 92 completed tasks were invisible to a default search).
+- Check FLOWS.md's last-modified date against the most recent relevant commits. If FLOWS.md is older than code that should have updated it, flag this before proceeding — don't build on top of a doc you already know is stale.
+
+## Weekly sync check (do this every Monday, tied to the recurring "Weekly review" task)
+
+Compare three things against each other and flag any mismatch:
+- FLOWS.md
+- `git log` from the past 7 days
+- Todoist completed tasks from the past 7 days
+
+If something shipped in git but isn't in FLOWS.md or isn't closed in Todoist, fix that before doing anything else that week.
+
+## Never assume "done" without verification
+
+Don't mark a task done because you wrote the code. Verify it against the actual running app/DB where possible (this project has been burned by "done" tasks that didn't work — ID upload failure, dispute button invisible, admin panel empty-state bug — all marked complete before actually working).
