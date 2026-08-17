@@ -51,10 +51,9 @@ export async function POST() {
     return NextResponse.json({ clientSecret: setupIntent.client_secret })
   } catch (err) {
     console.error('SetupIntent creation failed:', err)
-    // TEMPORARY diagnostic: exposing the raw message to pin down a live
-    // deployment issue. Revert to the generic StripeError-gated message
-    // before this ships for real — don't leak internal error detail to users.
-    const message = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: message, diagnostic: true }, { status: 502 })
+    const message = err instanceof Stripe.errors.StripeError
+      ? err.message
+      : 'Could not set up payment — please try again'
+    return NextResponse.json({ error: message }, { status: 502 })
   }
 }
