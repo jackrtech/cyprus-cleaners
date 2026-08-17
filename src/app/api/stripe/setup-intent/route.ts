@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
+import Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe'
 
 // Creates (or reuses) a Stripe Customer for the signed-in customer, then a
@@ -16,7 +17,6 @@ export async function POST() {
   }
 
   const supabase = createAdminClient()
-  const stripe = getStripe()
 
   const { data: user, error: userError } = await supabase
     .from('users')
@@ -28,23 +28,32 @@ export async function POST() {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
-  let stripeCustomerId = user.stripe_customer_id
+  try {
+    const stripe = getStripe()
+    let stripeCustomerId = user.stripe_customer_id
 
-  if (!stripeCustomerId) {
-    const customer = await stripe.customers.create({
-      email: user.email,
-      name:  user.full_name,
-      metadata: { user_id: user.id },
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name:  user.full_name,
+        metadata: { user_id: user.id },
+      })
+      stripeCustomerId = customer.id
+      await supabase.from('users').update({ stripe_customer_id: stripeCustomerId }).eq('id', user.id)
+    }
+
+    const setupIntent = await stripe.setupIntents.create({
+      customer: stripeCustomerId,
+      usage: 'off_session',
+      payment_method_types: ['card'],
     })
-    stripeCustomerId = customer.id
-    await supabase.from('users').update({ stripe_customer_id: stripeCustomerId }).eq('id', user.id)
+
+    return NextResponse.json({ clientSecret: setupIntent.client_secret })
+  } catch (err) {
+    console.error('SetupIntent creation failed:', err)
+    const message = err instanceof Stripe.errors.StripeError
+      ? err.message
+      : 'Could not set up payment — please try again'
+    return NextResponse.json({ error: message }, { status: 502 })
   }
-
-  const setupIntent = await stripe.setupIntents.create({
-    customer: stripeCustomerId,
-    usage: 'off_session',
-    payment_method_types: ['card'],
-  })
-
-  return NextResponse.json({ clientSecret: setupIntent.client_secret })
 }

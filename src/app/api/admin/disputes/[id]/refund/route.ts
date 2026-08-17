@@ -25,7 +25,6 @@ export async function POST(
   }
 
   const supabase = createAdminClient()
-  const stripe = getStripe()
 
   const { data: dispute, error: fetchError } = await supabase
     .from('disputes')
@@ -64,6 +63,7 @@ export async function POST(
   }
 
   try {
+    const stripe = getStripe()
     // Same idempotency key as the cancellation-flow refund and its retry —
     // this is the same logical operation (refund this booking's payment)
     // triggered from a different admin surface, not a second refund.

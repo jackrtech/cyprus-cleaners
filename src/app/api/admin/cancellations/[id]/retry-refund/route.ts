@@ -24,7 +24,6 @@ export async function POST(
   }
 
   const supabase = createAdminClient()
-  const stripe = getStripe()
 
   const { data: booking } = await supabase
     .from('bookings')
@@ -47,6 +46,7 @@ export async function POST(
   }
 
   try {
+    const stripe = getStripe()
     // Same idempotency key as the original attempt — if that attempt actually
     // succeeded at Stripe but our own DB update failed, this returns the
     // existing refund instead of creating a second one.

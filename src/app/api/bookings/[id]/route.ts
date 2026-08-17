@@ -35,7 +35,6 @@ export async function PATCH(
   }
 
   const supabase = createAdminClient()
-  const stripe = getStripe()
 
   const { data: booking, error: fetchError } = await supabase
     .from('bookings')
@@ -104,6 +103,7 @@ export async function PATCH(
       }
 
       try {
+        const stripe = getStripe()
         // Idempotency key scoped to this booking — if two concurrent Confirm
         // requests both reach Stripe, only the first actually charges; the
         // second gets back the same PaymentIntent instead of a new charge.
@@ -224,6 +224,7 @@ export async function PATCH(
 
       if (isEligible) {
         try {
+          const stripe = getStripe()
           await stripe.refunds.create({
             payment_intent: payment.provider_payment_intent_id,
           }, {
