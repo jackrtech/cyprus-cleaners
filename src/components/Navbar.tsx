@@ -93,7 +93,10 @@ export default function Navbar() {
           <LanguageToggle />
           <Link href={ghostBtn.href} className="btn-ghost">{ghostBtn.label}</Link>
           {isLoggedIn ? (
-            <button onClick={handleSignOut} className="text-[13px] text-[#5B7472] hover:text-[#0D1F1E] transition-colors">{t('signOut')}</button>
+            <>
+              <Link href="/dashboard/profile" className={linkClass('/dashboard/profile')}>{t('profileTab')}</Link>
+              <button onClick={handleSignOut} className="text-[13px] text-[#5B7472] hover:text-[#0D1F1E] transition-colors">{t('signOut')}</button>
+            </>
           ) : (
             <Link href="/get-started" className="btn-primary">{t('getStarted')}</Link>
           )}
