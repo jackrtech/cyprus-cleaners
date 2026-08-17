@@ -27,7 +27,7 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
   return (
     <Link
       href={`/cleaners/${cleaner.slug}`}
-      className="group block bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(25,112,106,0.14)]"
+      className="group block bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(25,112,106,0.14)]"
     >
       {/* Cover photo — falls back to a plain colour when the cleaner hasn't set one */}
       <div
@@ -43,7 +43,7 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
         )}
         {cleaner.verified && (
           <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-[#19706A] rounded-full px-2 py-0.5">
-            <span className="w-1 h-1 rounded-full bg-white shrink-0" />
+            <span className="w-1 h-1 rounded-full bg-white dark:bg-[#16211F] shrink-0" />
             <span className="text-[9px] font-medium text-white">{t('verified')}</span>
           </div>
         )}
@@ -64,7 +64,7 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
             />
           ) : (
             <div
-              className="w-20 h-20 sm:w-16 sm:h-16 rounded-full border-[3px] border-white shadow-sm flex items-center justify-center text-[26px] sm:text-[22px] font-medium bg-white"
+              className="w-20 h-20 sm:w-16 sm:h-16 rounded-full border-[3px] border-white shadow-sm flex items-center justify-center text-[26px] sm:text-[22px] font-medium bg-white dark:bg-[#16211F]"
               style={{ color: cleaner.avatarText }}
             >
               {cleaner.initials}

@@ -93,20 +93,20 @@ export default function CleanerDisputesPage() {
   return (
     <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] pb-24">
       <div className="max-w-3xl mx-auto px-4 pt-8 sm:pt-12">
-        <Link href="/dashboard/cleaner" className="text-body text-teal-500 hover:text-teal-600 mb-4 inline-block">
+        <Link href="/dashboard/cleaner" className="text-body text-teal-500 dark:text-teal-300 hover:text-teal-600 dark:hover:text-teal-300 mb-4 inline-block">
           {t('backToDashboard')}
         </Link>
-        <h1 className="text-h2 font-display text-teal-900">{t('title')}</h1>
-        <p className="text-muted mt-1 mb-8">{t('subtitle')}</p>
+        <h1 className="text-h2 font-display text-teal-900 dark:text-[#ECF3F2]">{t('title')}</h1>
+        <p className="text-muted dark:text-[#9BB0AE] mt-1 mb-8">{t('subtitle')}</p>
 
-        {loading && <p className="text-muted">{t('loading')}</p>}
+        {loading && <p className="text-muted dark:text-[#9BB0AE]">{t('loading')}</p>}
 
         {!loading && error && <p className="text-red-600">{error}</p>}
 
         {!loading && !error && disputes.length === 0 && (
           <div className="card p-8 text-center">
-            <p className="text-teal-900 font-medium">{t('empty')}</p>
-            <p className="text-muted mt-1">{t('emptyBody')}</p>
+            <p className="text-teal-900 dark:text-[#ECF3F2] font-medium">{t('empty')}</p>
+            <p className="text-muted dark:text-[#9BB0AE] mt-1">{t('emptyBody')}</p>
           </div>
         )}
 
@@ -115,10 +115,10 @@ export default function CleanerDisputesPage() {
             {disputes.map(d => {
               const statusBadge = d.status === 'OPEN'
                 ? d.cleaner_response
-                  ? { label: t('statusAwaitingAdmin'), className: 'bg-gold-50 text-gold-700' }
+                  ? { label: t('statusAwaitingAdmin'), className: 'bg-gold-50 dark:bg-[#332B0F] text-gold-700 dark:text-gold-300' }
                   : { label: t('statusNeedsResponse'), className: 'bg-red-50 text-red-600' }
                 : d.resolution === 'CLEANER'
-                ? { label: t('resolvedInYourFavor'), className: 'bg-teal-50 text-teal-600' }
+                ? { label: t('resolvedInYourFavor'), className: 'bg-teal-50 dark:bg-[#17302D] text-teal-600 dark:text-teal-300' }
                 : { label: t('resolvedAgainstYou'), className: 'bg-red-50 text-red-600' }
               return (
                 <li key={d.id}>
@@ -129,10 +129,10 @@ export default function CleanerDisputesPage() {
                   >
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div>
-                        <p className="font-medium text-teal-900">
+                        <p className="font-medium text-teal-900 dark:text-[#ECF3F2]">
                           {tBooking('with', { name: d.customer?.full_name ?? t('unknownUser') })}
                         </p>
-                        <p className="text-label uppercase tracking-widest text-muted mt-1">
+                        <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mt-1">
                           {t('filedOn', { date: dateFormatter.format(new Date(d.created_at)) })}
                         </p>
                       </div>
@@ -169,8 +169,8 @@ export default function CleanerDisputesPage() {
               <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
                 {b && (
                   <div>
-                    <p className="text-label uppercase tracking-widest text-muted mb-1">{t('bookingDetails')}</p>
-                    <p className="text-body text-teal-900">
+                    <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('bookingDetails')}</p>
+                    <p className="text-body text-teal-900 dark:text-[#ECF3F2]">
                       {tBooking(b.duration_hours == null ? 'summaryNoDuration' : 'summary', {
                         cleaningType: tBooking(b.cleaning_type === 'DEEP' ? 'deepClean' : 'standardClean'),
                         bedrooms: b.bedrooms ?? '—',
@@ -180,27 +180,27 @@ export default function CleanerDisputesPage() {
                         duration: b.duration_hours ?? undefined,
                       })}
                     </p>
-                    {b.address && <p className="text-body text-muted mt-0.5">📍 {b.address}</p>}
+                    {b.address && <p className="text-body text-muted dark:text-[#9BB0AE] mt-0.5">📍 {b.address}</p>}
                   </div>
                 )}
 
                 <div>
-                  <p className="text-label uppercase tracking-widest text-muted mb-1">
+                  <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
                     {t('customerClaim', { name: customerName })}
                   </p>
-                  <p className="text-body text-teal-900 bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3">{viewing.claim}</p>
+                  <p className="text-body text-teal-900 dark:text-[#ECF3F2] bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3">{viewing.claim}</p>
                 </div>
 
                 {b && b.photo_urls.length > 0 && (
                   <div>
-                    <p className="text-label uppercase tracking-widest text-muted mb-2">{t('completionPhotos')}</p>
+                    <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-2">{t('completionPhotos')}</p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {b.photo_urls.map((url, i) => (
                         <a key={i} href={url} target="_blank" rel="noopener noreferrer">
                           <img
                             src={url}
                             alt=""
-                            className="w-full aspect-square object-cover rounded-lg border border-border"
+                            className="w-full aspect-square object-cover rounded-lg border border-border dark:border-[#253634]"
                           />
                         </a>
                       ))}
@@ -209,9 +209,9 @@ export default function CleanerDisputesPage() {
                 )}
 
                 <div>
-                  <p className="text-label uppercase tracking-widest text-muted mb-1">{t('yourResponse')}</p>
+                  <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('yourResponse')}</p>
                   {viewing.cleaner_response ? (
-                    <p className="text-body text-teal-900 bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3">{viewing.cleaner_response}</p>
+                    <p className="text-body text-teal-900 dark:text-[#ECF3F2] bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3">{viewing.cleaner_response}</p>
                   ) : viewing.status === 'OPEN' ? (
                     <>
                       <textarea
@@ -224,18 +224,18 @@ export default function CleanerDisputesPage() {
                       {submitError && <p className="text-red-600 text-sm mt-1">{submitError}</p>}
                     </>
                   ) : (
-                    <p className="text-body text-muted italic">{t('noResponseGiven')}</p>
+                    <p className="text-body text-muted dark:text-[#9BB0AE] italic">{t('noResponseGiven')}</p>
                   )}
                 </div>
 
                 {viewing.status === 'RESOLVED' && (
                   <div>
-                    <p className="text-label uppercase tracking-widest text-muted mb-1">{t('adminDecision')}</p>
-                    <p className="text-body text-teal-900">
+                    <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('adminDecision')}</p>
+                    <p className="text-body text-teal-900 dark:text-[#ECF3F2]">
                       {viewing.resolution === 'CLEANER' ? t('resolvedInYourFavor') : t('resolvedAgainstYou')}
                     </p>
                     {viewing.admin_note && (
-                      <p className="text-body text-teal-900 bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3 mt-2">{viewing.admin_note}</p>
+                      <p className="text-body text-teal-900 dark:text-[#ECF3F2] bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3 mt-2">{viewing.admin_note}</p>
                     )}
                   </div>
                 )}

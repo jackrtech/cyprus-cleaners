@@ -105,8 +105,8 @@ export default function AdminCancellationsPage() {
       <div className="max-w-3xl mx-auto px-4 pt-8 sm:pt-12">
         <div className="flex items-start justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-h2 font-display text-teal-900">{t('cancellationsTitle')}</h1>
-            <p className="text-muted mt-1">{t('cancellationsSubtitle')}</p>
+            <h1 className="text-h2 font-display text-teal-900 dark:text-[#ECF3F2]">{t('cancellationsTitle')}</h1>
+            <p className="text-muted dark:text-[#9BB0AE] mt-1">{t('cancellationsSubtitle')}</p>
           </div>
           <button className="btn-ghost shrink-0" onClick={() => signOut({ callbackUrl: '/login' })}>
             {t('signOut')}
@@ -115,7 +115,7 @@ export default function AdminCancellationsPage() {
 
         <AdminNav />
 
-        {loading && <p className="text-muted">{t('loading')}</p>}
+        {loading && <p className="text-muted dark:text-[#9BB0AE]">{t('loading')}</p>}
 
         {!loading && error && <p className="text-red-600">{error}</p>}
 
@@ -123,8 +123,8 @@ export default function AdminCancellationsPage() {
 
         {!loading && !error && cancellations.length === 0 && (
           <div className="card p-8 text-center">
-            <p className="text-teal-900 font-medium">{t('cancellationsEmpty')}</p>
-            <p className="text-muted mt-1">{t('cancellationsEmptyBody')}</p>
+            <p className="text-teal-900 dark:text-[#ECF3F2] font-medium">{t('cancellationsEmpty')}</p>
+            <p className="text-muted dark:text-[#9BB0AE] mt-1">{t('cancellationsEmptyBody')}</p>
           </div>
         )}
 
@@ -134,9 +134,9 @@ export default function AdminCancellationsPage() {
               const payment = paymentOf(c)
               const isRefundFailed = payment?.status === 'REFUND_FAILED'
               const refundBadge = !payment || payment.status === 'PENDING'
-                ? { label: t('notCharged'), className: 'bg-teal-50 text-teal-600' }
+                ? { label: t('notCharged'), className: 'bg-teal-50 dark:bg-[#17302D] text-teal-600 dark:text-teal-300' }
                 : payment.status === 'REFUNDED'
-                ? { label: t('refundedBadge', { amount: payment.amount_eur.toFixed(2) }), className: 'bg-teal-50 text-teal-600' }
+                ? { label: t('refundedBadge', { amount: payment.amount_eur.toFixed(2) }), className: 'bg-teal-50 dark:bg-[#17302D] text-teal-600 dark:text-teal-300' }
                 : payment.status === 'REFUND_FAILED'
                 ? { label: t('refundFailed'), className: 'bg-red-100 text-red-700' }
                 : payment.status === 'PAID'
@@ -151,24 +151,24 @@ export default function AdminCancellationsPage() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="badge badge-teal">{t('customerLabel')}</span>
-                        <p className="font-medium text-teal-900">{c.customer?.full_name ?? t('unknownUser')}</p>
+                        <p className="font-medium text-teal-900 dark:text-[#ECF3F2]">{c.customer?.full_name ?? t('unknownUser')}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="badge badge-gold">{t('cleanerLabel')}</span>
-                        <p className="font-medium text-teal-900">{c.cleaner_profiles?.display_name ?? t('unknownUser')}</p>
+                        <p className="font-medium text-teal-900 dark:text-[#ECF3F2]">{c.cleaner_profiles?.display_name ?? t('unknownUser')}</p>
                       </div>
                     </div>
-                    <span className="text-label uppercase tracking-widest text-muted shrink-0">
+                    <span className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] shrink-0">
                       {dateFormatter.format(new Date(`${c.date}T00:00:00`))} {c.start_time.slice(0, 5)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap mt-3">
                     <span className={`badge ${refundBadge.className}`}>{refundBadge.label}</span>
-                    <span className="text-label uppercase tracking-widest text-muted">
+                    <span className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE]">
                       {t('cancelledBy', { name: c.cancelled_by_user?.full_name ?? t('unknownUser') })}
                     </span>
                   </div>
-                  <p className="text-body text-teal-900 mt-2 bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3">
+                  <p className="text-body text-teal-900 dark:text-[#ECF3F2] mt-2 bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3">
                     {c.cancellation_reason}
                   </p>
                   {isRefundFailed && (

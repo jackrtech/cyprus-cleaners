@@ -160,7 +160,7 @@ export default function Hero() {
 
           {/* Floating trust card */}
           <div
-            className="float-card absolute z-10 bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] select-none"
+            className="float-card absolute z-10 bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] select-none"
             style={{
               bottom: '80px',
               left: '-20px',

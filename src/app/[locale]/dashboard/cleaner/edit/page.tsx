@@ -353,7 +353,7 @@ export default function EditProfilePage() {
                       className={`px-3 py-1.5 rounded-full text-[13px] border transition-colors ${
                         selected
                           ? 'bg-[#19706A] border-[#19706A] text-white'
-                          : 'bg-white border-[#E0EDEC] dark:border-[#253634] text-[#0D1F1E] dark:text-[#ECF3F2] hover:border-[#19706A]'
+                          : 'bg-white dark:bg-[#16211F] border-[#E0EDEC] dark:border-[#253634] text-[#0D1F1E] dark:text-[#ECF3F2] hover:border-[#19706A]'
                       }`}
                     >
                       {tCities(city.key as Parameters<typeof tCities>[0])}
@@ -397,7 +397,7 @@ export default function EditProfilePage() {
                     className={`flex-1 py-2 text-[13px] transition-colors ${
                       cleanerType === type
                         ? 'bg-[#19706A] text-white'
-                        : 'bg-white text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2]'
+                        : 'bg-white dark:bg-[#16211F] text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2]'
                     }`}
                   >
                     {t(type)}
@@ -425,7 +425,7 @@ export default function EditProfilePage() {
                       className={`px-4 py-1.5 rounded-full text-[13px] border transition-colors ${
                         gender === opt.value
                           ? 'bg-[#19706A] border-[#19706A] text-white'
-                          : 'bg-white border-[#E0EDEC] dark:border-[#253634] text-[#0D1F1E] dark:text-[#ECF3F2] hover:border-[#19706A]'
+                          : 'bg-white dark:bg-[#16211F] border-[#E0EDEC] dark:border-[#253634] text-[#0D1F1E] dark:text-[#ECF3F2] hover:border-[#19706A]'
                       }`}
                     >
                       {opt.label}

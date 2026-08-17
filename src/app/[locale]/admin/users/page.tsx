@@ -26,8 +26,8 @@ interface AdminUser {
 }
 
 const CLEANER_STATUS_BADGE: Record<CleanerStatus, string> = {
-  ACTIVE:    'bg-teal-50 text-teal-600',
-  PAUSED:    'bg-gold-50 text-gold-700',
+  ACTIVE:    'bg-teal-50 dark:bg-[#17302D] text-teal-600 dark:text-teal-300',
+  PAUSED:    'bg-gold-50 dark:bg-[#332B0F] text-gold-700 dark:text-gold-300',
   SUSPENDED: 'bg-red-50 text-red-600',
 }
 
@@ -100,8 +100,8 @@ export default function AdminUsersPage() {
       <div className="max-w-3xl mx-auto px-4 pt-8 sm:pt-12">
         <div className="flex items-start justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-h2 font-display text-teal-900">{t('usersTitle')}</h1>
-            <p className="text-muted mt-1">{t('usersSubtitle')}</p>
+            <h1 className="text-h2 font-display text-teal-900 dark:text-[#ECF3F2]">{t('usersTitle')}</h1>
+            <p className="text-muted dark:text-[#9BB0AE] mt-1">{t('usersSubtitle')}</p>
           </div>
           <button className="btn-ghost shrink-0" onClick={() => signOut({ callbackUrl: '/login' })}>
             {t('signOut')}
@@ -122,13 +122,13 @@ export default function AdminUsersPage() {
           className="input mb-6"
         />
 
-        {loading && <p className="text-muted">{t('loading')}</p>}
+        {loading && <p className="text-muted dark:text-[#9BB0AE]">{t('loading')}</p>}
 
         {!loading && error && <p className="text-red-600">{error}</p>}
 
         {!loading && !error && filtered.length === 0 && (
           <div className="card p-8 text-center">
-            <p className="text-teal-900 font-medium">{t('usersEmpty')}</p>
+            <p className="text-teal-900 dark:text-[#ECF3F2] font-medium">{t('usersEmpty')}</p>
           </div>
         )}
 
@@ -138,19 +138,19 @@ export default function AdminUsersPage() {
               <li key={u.id} className="card p-5">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
-                    <p className="font-medium text-teal-900">{u.full_name}</p>
-                    <p className="text-body text-muted">{u.email}</p>
+                    <p className="font-medium text-teal-900 dark:text-[#ECF3F2]">{u.full_name}</p>
+                    <p className="text-body text-muted dark:text-[#9BB0AE]">{u.email}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
                     <span className="badge badge-teal">{roleLabel(u.role)}</span>
-                    <span className="text-label uppercase tracking-widest text-muted">
+                    <span className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE]">
                       {t('joined', { date: dateFormatter.format(new Date(u.created_at)) })}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap mt-3">
-                  <span className={`badge ${u.email_verified ? 'bg-teal-50 text-teal-600' : 'bg-gold-50 text-gold-700'}`}>
+                  <span className={`badge ${u.email_verified ? 'bg-teal-50 dark:bg-[#17302D] text-teal-600 dark:text-teal-300' : 'bg-gold-50 dark:bg-[#332B0F] text-gold-700 dark:text-gold-300'}`}>
                     {u.email_verified ? t('emailVerifiedBadge') : t('emailUnverifiedBadge')}
                   </span>
                   {u.cleaner_profile && (

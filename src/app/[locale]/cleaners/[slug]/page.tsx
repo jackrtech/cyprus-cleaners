@@ -212,7 +212,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
   if (cleanerLoading) {
     return (
       <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]">
-        <div className="bg-white border-b border-[#E0EDEC] dark:border-[#253634] px-4 sm:px-10 py-6">
+        <div className="bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] px-4 sm:px-10 py-6">
           <div className="h-4 w-40 bg-[#E0EDEC] dark:bg-[#253634] rounded animate-pulse mb-5" />
           <div className="flex items-start gap-6">
             <div className="w-[88px] h-[88px] rounded-full bg-[#E0EDEC] dark:bg-[#253634] animate-pulse shrink-0" />
@@ -224,8 +224,8 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 px-4 sm:px-10 py-7">
-          <div className="bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6 h-[200px] animate-pulse" />
-          <div className="bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6 h-[300px] animate-pulse" />
+          <div className="bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6 h-[200px] animate-pulse" />
+          <div className="bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6 h-[300px] animate-pulse" />
         </div>
       </div>
     )
@@ -330,7 +330,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
       )}
 
       {/* Page header */}
-      <div className="bg-white border-b border-[#E0EDEC] dark:border-[#253634] px-4 sm:px-10 py-6">
+      <div className="bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] px-4 sm:px-10 py-6">
         {/* Breadcrumb — replaced with a preview banner + one-tap exit when a
             cleaner is looking at their own public profile, so it reads as
             "previewing" rather than "I've wandered into the live site" */}
@@ -378,7 +378,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
             )}
             {cleaner.verified && (
               <div className="absolute -bottom-1 -right-1 flex items-center gap-1 bg-[#19706A] rounded-full px-2 py-0.5 border-[2px] border-white">
-                <span className="w-1 h-1 rounded-full bg-white shrink-0" />
+                <span className="w-1 h-1 rounded-full bg-white dark:bg-[#16211F] shrink-0" />
                 <span className="text-[9px] font-medium text-white">{verifiedLabel}</span>
               </div>
             )}
@@ -462,13 +462,13 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
         {/* Left column */}
         <div>
           {/* About */}
-          <div className="bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6 mb-4">
+          <div className="bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6 mb-4">
             <h2 className="text-[15px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-3">{t('about', { name: firstName })}</h2>
             <p className="text-[14px] text-[#5B7472] dark:text-[#9BB0AE] leading-relaxed">{cleaner.bio}</p>
           </div>
 
           {/* Reviews */}
-          <div id="reviews" className="bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6">
+          <div id="reviews" className="bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6">
             <h2 className="text-[15px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1">
               {t('reviews')} ({cleaner.review_count})
             </h2>
@@ -494,7 +494,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
 
         {/* Right column — sticky booking card */}
         <div>
-          <div className="sticky top-6 bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6">
+          <div className="sticky top-6 bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-6">
             <div className="mb-1">
               <span className="text-[28px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">€{cleaner.hourly_rate_eur}</span>
               <span className="text-[14px] text-[#5B7472] dark:text-[#9BB0AE]">{tCommon('perHour')}</span>

@@ -131,7 +131,7 @@ export default function CleanersPage() {
   return (
     <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] pb-tabbar md:pb-0">
       {/* Page header */}
-      <div className="bg-white border-b border-[#E0EDEC] dark:border-[#253634] px-4 sm:px-10 pt-7 pb-0">
+      <div className="bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] px-4 sm:px-10 pt-7 pb-0">
         <nav className="flex items-center gap-1.5 text-[12px] text-[#5B7472] dark:text-[#9BB0AE] mb-2">
           <Link href="/" className="text-[#19706A] hover:underline">{t('breadcrumbHome')}</Link>
           <span>›</span>
@@ -150,7 +150,7 @@ export default function CleanersPage() {
           <select
             value={sort}
             onChange={e => setSort(e.target.value as SortKey)}
-            className="border border-[#E0EDEC] dark:border-[#253634] rounded-[8px] px-3 py-1.5 text-[13px] bg-white outline-none cursor-pointer"
+            className="border border-[#E0EDEC] dark:border-[#253634] rounded-[8px] px-3 py-1.5 text-[13px] bg-white dark:bg-[#16211F] outline-none cursor-pointer"
           >
             <option value="top-rated">{t('sortTopRated')}</option>
             <option value="price-asc">{t('sortPriceLow')}</option>
@@ -167,7 +167,7 @@ export default function CleanersPage() {
         ) : loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] overflow-hidden animate-pulse">
+              <div key={i} className="bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] overflow-hidden animate-pulse">
                 <div className="h-[120px] bg-[#E0EDEC] dark:bg-[#253634]" />
                 <div className="p-3 pb-3.5 space-y-2">
                   <div className="h-3.5 bg-[#E0EDEC] dark:bg-[#253634] rounded w-3/4" />

@@ -602,7 +602,7 @@ export default function DashboardPage() {
                           // accidentally scrolled past — inline expansion (desktop
                           // behavior, kept via md:) made it easy to scroll the chat
                           // out of view entirely on small screens.
-                          <div className="max-md:fixed max-md:inset-0 max-md:z-[300] max-md:bg-white max-md:flex max-md:flex-col">
+                          <div className="max-md:fixed max-md:inset-0 max-md:z-[300] max-md:bg-white dark:max-md:bg-[#16211F] max-md:flex max-md:flex-col">
                             <ChatPanel
                               embedded
                               introductionId={intro.id}

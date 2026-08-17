@@ -93,8 +93,8 @@ export default function AdminPage() {
       <div className="max-w-3xl mx-auto px-4 pt-8 sm:pt-12">
         <div className="flex items-start justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-h2 font-display text-teal-900">{t('title')}</h1>
-            <p className="text-muted mt-1">{t('subtitle')}</p>
+            <h1 className="text-h2 font-display text-teal-900 dark:text-[#ECF3F2]">{t('title')}</h1>
+            <p className="text-muted dark:text-[#9BB0AE] mt-1">{t('subtitle')}</p>
           </div>
           <button className="btn-ghost shrink-0" onClick={() => signOut({ callbackUrl: '/login' })}>
             {t('signOut')}
@@ -108,7 +108,7 @@ export default function AdminPage() {
         )}
 
         {loading && (
-          <p className="text-muted">{t('loading')}</p>
+          <p className="text-muted dark:text-[#9BB0AE]">{t('loading')}</p>
         )}
 
         {!loading && error && (
@@ -117,8 +117,8 @@ export default function AdminPage() {
 
         {!loading && !error && queue.length === 0 && (
           <div className="card p-8 text-center">
-            <p className="text-teal-900 font-medium">{t('empty')}</p>
-            <p className="text-muted mt-1">{t('emptyBody')}</p>
+            <p className="text-teal-900 dark:text-[#ECF3F2] font-medium">{t('empty')}</p>
+            <p className="text-muted dark:text-[#9BB0AE] mt-1">{t('emptyBody')}</p>
           </div>
         )}
 
@@ -136,14 +136,14 @@ export default function AdminPage() {
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-medium text-teal-900">{cleaner.display_name}</p>
+                          <p className="font-medium text-teal-900 dark:text-[#ECF3F2]">{cleaner.display_name}</p>
                           {city && <span className="badge badge-teal">{city}</span>}
                         </div>
-                        <p className="text-label uppercase tracking-widest text-muted mt-1">
+                        <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mt-1">
                           {t('submitted', { date: dateFormatter.format(new Date(cleaner.id_submitted_at)) })}
                         </p>
                       </div>
-                      <span className="text-teal-500 text-body font-medium shrink-0">{t('review')} →</span>
+                      <span className="text-teal-500 dark:text-teal-300 text-body font-medium shrink-0">{t('review')} →</span>
                     </div>
                   </button>
                 </li>
@@ -173,8 +173,8 @@ export default function AdminPage() {
             <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
-                  {viewing.users?.email && <p className="text-muted text-sm">{viewing.users.email}</p>}
-                  {viewing.users?.phone && <p className="text-muted text-sm">{viewing.users.phone}</p>}
+                  {viewing.users?.email && <p className="text-muted dark:text-[#9BB0AE] text-sm">{viewing.users.email}</p>}
+                  {viewing.users?.phone && <p className="text-muted dark:text-[#9BB0AE] text-sm">{viewing.users.phone}</p>}
                 </div>
                 <Link
                   href={`/cleaners/${viewing.slug}`}
@@ -185,30 +185,30 @@ export default function AdminPage() {
                 </Link>
               </div>
 
-              {viewing.bio && <p className="text-body text-teal-900">{viewing.bio}</p>}
+              {viewing.bio && <p className="text-body text-teal-900 dark:text-[#ECF3F2]">{viewing.bio}</p>}
 
-              <p className="text-label uppercase tracking-widest text-muted">
+              <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE]">
                 {t('submitted', { date: dateFormatter.format(new Date(viewing.id_submitted_at)) })}
               </p>
 
               {viewing.id_photo_url && (
                 <div>
-                  <p className="text-label uppercase tracking-widest text-muted mb-1">{t('idDocument')}</p>
+                  <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('idDocument')}</p>
                   <img
                     src={viewing.id_photo_url}
                     alt=""
-                    className="w-full rounded-lg border border-border"
+                    className="w-full rounded-lg border border-border dark:border-[#253634]"
                   />
                 </div>
               )}
 
               {viewing.selfie_photo_url && (
                 <div>
-                  <p className="text-label uppercase tracking-widest text-muted mb-1">{t('selfiePhoto')}</p>
+                  <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('selfiePhoto')}</p>
                   <img
                     src={viewing.selfie_photo_url}
                     alt=""
-                    className="w-full rounded-lg border border-border"
+                    className="w-full rounded-lg border border-border dark:border-[#253634]"
                   />
                 </div>
               )}
@@ -223,7 +223,7 @@ export default function AdminPage() {
                   rows={3}
                   className="input"
                 />
-                <p className="text-muted text-sm mt-1">{t('adminNoteHint')}</p>
+                <p className="text-muted dark:text-[#9BB0AE] text-sm mt-1">{t('adminNoteHint')}</p>
               </div>
             </div>
 

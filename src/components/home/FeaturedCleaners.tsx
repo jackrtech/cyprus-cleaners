@@ -121,7 +121,7 @@ export default function FeaturedCleaners() {
     : featured.filter(c => c.cities.includes(activeCity))
 
   return (
-    <section className="bg-white py-10 md:py-[72px] px-6 md:px-12 w-full">
+    <section className="bg-white dark:bg-[#16211F] py-10 md:py-[72px] px-6 md:px-12 w-full">
       {/* Header */}
       <div className="flex justify-between items-end mb-5 md:mb-8">
         <div>
@@ -149,7 +149,7 @@ export default function FeaturedCleaners() {
             className={`rounded-full border-[1.5px] px-4 py-[7px] text-[13px] font-medium cursor-pointer transition-colors ${
               activeCity === tab.value
                 ? 'bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A] border-[#19706A]'
-                : 'bg-white text-[#5B7472] dark:text-[#9BB0AE] border-[#E0EDEC] dark:border-[#253634]'
+                : 'bg-white dark:bg-[#16211F] text-[#5B7472] dark:text-[#9BB0AE] border-[#E0EDEC] dark:border-[#253634]'
             }`}
           >
             {tab.label === 'allCities' ? t('allCities') : getCityName(tab.label)}
@@ -161,7 +161,7 @@ export default function FeaturedCleaners() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] overflow-hidden animate-pulse">
+            <div key={i} className="bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] overflow-hidden animate-pulse">
               <div className="h-[120px] bg-[#E0EDEC] dark:bg-[#253634]" />
               <div className="p-3 pb-3.5 space-y-2">
                 <div className="h-3.5 bg-[#E0EDEC] dark:bg-[#253634] rounded w-3/4" />

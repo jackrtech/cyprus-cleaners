@@ -63,14 +63,14 @@ export default function Footer() {
           </div>
 
           {/* Dark locale toggle */}
-          <div className="flex items-center bg-white/10 rounded-full p-0.5 gap-0.5">
+          <div className="flex items-center bg-white/10 dark:bg-[#16211F]/10 rounded-full p-0.5 gap-0.5">
             {(['en', 'el'] as const).map(lang => (
               <button
                 key={lang}
                 onClick={() => handleLocaleSwitch(lang)}
                 className={`text-xs font-medium tracking-wide px-3 py-1 rounded-full transition-all ${
                   locale === lang
-                    ? 'bg-white/20 text-white'
+                    ? 'bg-white/20 dark:bg-[#16211F]/20 text-white'
                     : 'text-[#5B7472] dark:text-[#9BB0AE] hover:text-white'
                 }`}
               >

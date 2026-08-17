@@ -71,7 +71,7 @@ export default function FullScreenModal({ isOpen, onClose, children }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[300] max-md:bg-white md:bg-[rgba(13,31,30,0.5)] md:flex md:items-center md:justify-center md:px-4"
+      className="fixed inset-0 z-[300] max-md:bg-white dark:max-md:bg-[#16211F] md:bg-[rgba(13,31,30,0.5)] md:flex md:items-center md:justify-center md:px-4"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
@@ -79,7 +79,7 @@ export default function FullScreenModal({ isOpen, onClose, children }: Props) {
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
-        className="w-full h-full md:h-auto md:max-w-[560px] md:max-h-[85vh] bg-white flex flex-col md:rounded-[16px] md:border md:border-[#E0EDEC] dark:md:border-[#253634] overflow-hidden outline-none"
+        className="w-full h-full md:h-auto md:max-w-[560px] md:max-h-[85vh] bg-white dark:bg-[#16211F] flex flex-col md:rounded-[16px] md:border md:border-[#E0EDEC] dark:md:border-[#253634] overflow-hidden outline-none"
       >
         {children}
       </div>

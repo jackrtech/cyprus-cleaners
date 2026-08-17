@@ -66,13 +66,13 @@ function CheckIcon() {
 }
 
 const pillBase = "flex items-center gap-1.5 px-3.5 py-[7px] rounded-full border-[1.5px] text-[13px] cursor-pointer whitespace-nowrap transition-all select-none"
-const pillOff = "border-[#E0EDEC] dark:border-[#253634] text-[#0D1F1E] dark:text-[#ECF3F2] bg-white hover:border-[#AACBC8] dark:hover:border-[#3D5652]"
+const pillOff = "border-[#E0EDEC] dark:border-[#253634] text-[#0D1F1E] dark:text-[#ECF3F2] bg-white dark:bg-[#16211F] hover:border-[#AACBC8] dark:hover:border-[#3D5652]"
 const pillOn  = "bg-[#E8F4F3] dark:bg-[#17302D] border-[#19706A] text-[#19706A] font-medium"
 
 function Panel({ children, onMouseDown }: { children: React.ReactNode; onMouseDown?: (e: React.MouseEvent) => void }) {
   return (
     <div
-      className="absolute top-full left-0 mt-1.5 bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-[12px] p-4 min-w-[210px]"
+      className="absolute top-full left-0 mt-1.5 bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[12px] p-4 min-w-[210px]"
       style={{ boxShadow: '0 8px 24px rgba(25,112,106,0.10)', zIndex: 200 }}
       onMouseDown={onMouseDown ?? (e => e.stopPropagation())}
     >
@@ -97,7 +97,7 @@ function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: ()
       aria-checked={checked}
       aria-label={label}
       tabIndex={0}
-      className={`w-4 h-4 rounded border-[1.5px] flex items-center justify-center shrink-0 cursor-pointer transition-colors ${checked ? 'bg-[#19706A] border-[#19706A]' : 'bg-white border-[#D0DCD9] dark:border-[#2A3A38]'}`}
+      className={`w-4 h-4 rounded border-[1.5px] flex items-center justify-center shrink-0 cursor-pointer transition-colors ${checked ? 'bg-[#19706A] border-[#19706A]' : 'bg-white dark:bg-[#16211F] border-[#D0DCD9] dark:border-[#2A3A38]'}`}
       onMouseDown={e => { e.preventDefault(); onChange() }}
       onKeyDown={toggleKeyHandler(onChange)}
     >
@@ -182,7 +182,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
         z-[60]: above navbar z-50, so dropdowns (z-200 within this context) also render above navbar
         NO overflow property — overflow on this element would clip the dropdown panels
       */}
-      <div className="sticky top-16 z-[60] bg-white border-b border-[#E0EDEC] dark:border-[#253634]">
+      <div className="sticky top-16 z-[60] bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634]">
         {/* Mobile: a single "Filters" button opening a full sheet, instead of
             9 dropdown pills fighting for space on a narrow screen */}
         <div className="lg:hidden flex items-center justify-between gap-3 px-4 py-3">
@@ -445,7 +445,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
           count badge + "Clear all" already cover this; a second removable-chip
           row on top of that was too much for a narrow screen. */}
       {activePills.length > 0 && (
-        <div className="hidden lg:flex bg-white border-b border-[#E0EDEC] dark:border-[#253634] px-10 py-2.5 items-center gap-2 overflow-x-auto whitespace-nowrap">
+        <div className="hidden lg:flex bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] px-10 py-2.5 items-center gap-2 overflow-x-auto whitespace-nowrap">
           {activePills.map(pill => (
             <span key={pill.key} className="flex-shrink-0 flex items-center gap-1.5 bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A] rounded-full px-3 py-1 text-[12px] font-medium">
               {pill.label}
@@ -464,7 +464,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
       {mobileSheetOpen && (
         <div className="fixed inset-0 z-[300] lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileSheetOpen(false)} />
-          <div className="absolute inset-x-0 bottom-0 top-16 bg-white rounded-t-[20px] flex flex-col">
+          <div className="absolute inset-x-0 bottom-0 top-16 bg-white dark:bg-[#16211F] rounded-t-[20px] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#E0EDEC] dark:border-[#253634] shrink-0">
               <h2 className="text-[16px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">{t('filtersButton')}</h2>

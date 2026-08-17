@@ -114,7 +114,7 @@ function BottomTabBarInner() {
   return (
     <nav
       aria-label={t('primaryNavigation')}
-      className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t border-[#E0EDEC] dark:border-[#253634] flex"
+      className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white dark:bg-[#16211F] border-t border-[#E0EDEC] dark:border-[#253634] flex"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {tabs.map(({ key, label, href, active, Icon }) => (

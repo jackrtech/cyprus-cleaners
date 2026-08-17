@@ -45,7 +45,7 @@ export default function DashboardTabs({ tabs, activeKey, onChange, idPrefix, ari
       role="tablist"
       aria-label={ariaLabel}
       onKeyDown={handleKeyDown}
-      className="flex bg-white border border-[#E0EDEC] dark:border-[#253634] rounded-full p-1 mb-6"
+      className="flex bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-full p-1 mb-6"
     >
       {tabs.map(tab => {
         const isActive = tab.key === activeKey
@@ -68,7 +68,7 @@ export default function DashboardTabs({ tabs, activeKey, onChange, idPrefix, ari
             {!!tab.count && (
               <span
                 className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A]'
+                  isActive ? 'bg-white/20 dark:bg-[#16211F]/20 text-white' : 'bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A]'
                 }`}
               >
                 {tab.count}
