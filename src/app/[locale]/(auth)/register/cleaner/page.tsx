@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import Spinner from '@/components/ui/Spinner'
 import { CITIES } from '@/lib/cities'
@@ -10,6 +10,7 @@ import { CITIES } from '@/lib/cities'
 export default function RegisterCleanerPage() {
   const t       = useTranslations('auth')
   const tCities = useTranslations('cities')
+  const locale  = useLocale()
   const router  = useRouter()
 
   const [displayName,      setDisplayName]      = useState('')
@@ -63,6 +64,7 @@ export default function RegisterCleanerPage() {
           cities:          selectedCities,
           hourly_rate_eur: Number(hourlyRate),
           cleaner_type:    cleanerType,
+          locale,
         }),
       })
       const data = await res.json()

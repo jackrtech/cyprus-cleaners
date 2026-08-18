@@ -129,26 +129,38 @@ export async function PATCH(
 
   // Notify both parties of the outcome — non-blocking, errors are swallowed
   try {
-    const [{ data: customerUser }, { data: cleanerProfile }] = await Promise.all([
-      supabase.from('users').select('email, locale').eq('id', dispute.customer_id).single(),
+    const [{ data: customerUser }, { data: cleanerProfile }, { data: bookingRow }, { data: paymentRow }] = await Promise.all([
+      supabase.from('users').select('email, locale, full_name').eq('id', dispute.customer_id).single(),
       supabase.from('cleaner_profiles').select('user_id').eq('id', dispute.cleaner_profile_id).single(),
+      supabase.from('bookings').select('date').eq('id', dispute.booking_id).single(),
+      supabase.from('payments').select('amount_eur').eq('booking_id', dispute.booking_id).single(),
     ])
+    const bookingDate = bookingRow?.date ?? new Date().toISOString().slice(0, 10)
+    // Only meaningful for the customer's own WON copy — a refund really was
+    // issued for a CUSTOMER-favor ruling (refundPercentage is always 100 in
+    // that case) or an UNRESOLVABLE split.
+    const customerRefundAmountEur = paymentRow && (resolution === 'CUSTOMER' || resolution === 'UNRESOLVABLE')
+      ? Math.round(paymentRow.amount_eur * (refundPercentage / 100) * 100) / 100
+      : undefined
 
     if (customerUser?.email) {
       await sendDisputeResolvedEmail({
         to: customerUser.email,
         locale: customerUser.locale,
+        name: customerUser.full_name,
+        bookingDate,
         outcome: resolution === 'CUSTOMER' ? 'WON' : resolution === 'UNRESOLVABLE' ? 'UNRESOLVABLE' : 'LOST',
         note,
         dashboardUrl: `${BASE_URL}/dashboard`,
         refundPercentage: resolution === 'UNRESOLVABLE' ? refundPercentage : undefined,
+        refundAmountEur: resolution === 'CUSTOMER' ? customerRefundAmountEur : undefined,
       })
     }
 
     if (cleanerProfile?.user_id) {
       const { data: cleanerUser } = await supabase
         .from('users')
-        .select('email, locale')
+        .select('email, locale, full_name')
         .eq('id', cleanerProfile.user_id)
         .single()
 
@@ -156,6 +168,8 @@ export async function PATCH(
         await sendDisputeResolvedEmail({
           to: cleanerUser.email,
           locale: cleanerUser.locale,
+          name: cleanerUser.full_name,
+          bookingDate,
           outcome: resolution === 'CLEANER' ? 'WON' : resolution === 'UNRESOLVABLE' ? 'UNRESOLVABLE' : 'LOST',
           note,
           dashboardUrl: `${BASE_URL}/dashboard/cleaner`,

@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import Spinner from '@/components/ui/Spinner'
 
 export default function ContactForm() {
   const t = useTranslations('contact')
+  const locale = useLocale()
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -22,7 +23,7 @@ export default function ContactForm() {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify({ name, email, message, locale }),
       })
       const data = await res.json()
       if (!res.ok) {

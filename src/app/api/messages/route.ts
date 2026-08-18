@@ -217,6 +217,7 @@ export async function POST(req: NextRequest) {
         const recipientIsCleaner = session.user.id === intro.customer_id
         let recipientEmail: string | null = null
         let recipientLocale: string | null = null
+        let recipientName: string | null = null
         let dashboardUrl = ''
 
         if (recipientIsCleaner) {
@@ -228,21 +229,23 @@ export async function POST(req: NextRequest) {
           if (cleanerProfile) {
             const { data: cleanerUser } = await supabase
               .from('users')
-              .select('email, locale')
+              .select('email, locale, full_name')
               .eq('id', cleanerProfile.user_id)
               .single()
             recipientEmail = cleanerUser?.email ?? null
             recipientLocale = cleanerUser?.locale ?? null
+            recipientName = cleanerUser?.full_name ?? null
           }
           dashboardUrl = `${BASE_URL}/dashboard/cleaner`
         } else {
           const { data: customerUser } = await supabase
             .from('users')
-            .select('email, locale')
+            .select('email, locale, full_name')
             .eq('id', intro.customer_id)
             .single()
           recipientEmail = customerUser?.email ?? null
           recipientLocale = customerUser?.locale ?? null
+          recipientName = customerUser?.full_name ?? null
           dashboardUrl = `${BASE_URL}/dashboard`
         }
 
@@ -250,6 +253,7 @@ export async function POST(req: NextRequest) {
           await sendNewMessageEmail({
             recipientEmail,
             recipientLocale,
+            recipientName: recipientName ?? '',
             senderName:      session.user.name ?? session.user.email,
             message:         messageBody.length > 0 ? messageBody : '📷 Photo',
             dashboardUrl,

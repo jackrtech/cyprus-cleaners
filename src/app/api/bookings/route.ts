@@ -237,7 +237,7 @@ export async function POST(req: NextRequest) {
     if (cleanerProfile?.user_id) {
       const { data: cleanerUser } = await supabase
         .from('users')
-        .select('email, locale')
+        .select('email, locale, full_name')
         .eq('id', cleanerProfile.user_id)
         .single()
 
@@ -245,6 +245,7 @@ export async function POST(req: NextRequest) {
         await sendNewBookingRequestEmail({
           cleanerEmail:  cleanerUser.email,
           cleanerLocale: cleanerUser.locale,
+          cleanerName:   cleanerUser.full_name,
           customerName:  session.user.name ?? session.user.email,
           date,
           startTime:     start_time,

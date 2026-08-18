@@ -18,7 +18,7 @@ function layout(body: string): string {
       ${body}
     </div>
     <div style="padding:16px 32px;border-top:1px solid #E0EDEC;text-align:center;">
-      <p style="margin:0;color:#5B7472;font-size:12px;">© 2025 Cyprus Cleaners</p>
+      <p style="margin:0;color:#5B7472;font-size:12px;">© ${new Date().getFullYear()} Cyprus Cleaners</p>
     </div>
   </div>
 </body>
@@ -56,13 +56,15 @@ export async function sendEmail({ to, subject, html }: { to: string; subject: st
 // ─── 0. Email verification ───────────────────────────────────────────────────
 
 export async function sendVerificationEmail({
-  to, token, locale,
+  to, token, locale, name,
 }: {
   to:     string
   token:  string
   locale: string
+  name:   string
 }) {
   const isEl = locale === 'el'
+  const safeName = escapeHtml(name)
 
   const subject = isEl
     ? 'Επαληθεύστε τον λογαριασμό σας'
@@ -70,12 +72,15 @@ export async function sendVerificationEmail({
 
   const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`
 
-  const html = layout(
-    `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Welcome to Cyprus Cleaners!</h2>
-     <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Please verify your email address to get started.</p>
-     ${cta('Verify email', verifyUrl)}
-     <p style="color:#5B7472;font-size:12px;line-height:1.5;margin:16px 0 0;">This link expires in 24 hours.</p>`
-  )
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Καλώς ήρθες στην Cyprus Cleaners!</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Γεια σου ${safeName}, επαλήθευσε τη διεύθυνση email σου για να ξεκινήσεις.</p>
+       ${cta('Επαλήθευση email', verifyUrl)}
+       <p style="color:#5B7472;font-size:12px;line-height:1.5;margin:16px 0 0;">Αυτός ο σύνδεσμος λήγει σε 24 ώρες.</p>`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Welcome to Cyprus Cleaners!</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Hi ${safeName}, please verify your email address to get started.</p>
+       ${cta('Verify email', verifyUrl)}
+       <p style="color:#5B7472;font-size:12px;line-height:1.5;margin:16px 0 0;">This link expires in 24 hours.</p>`)
 
   return sendEmail({ to, subject, html })
 }
@@ -83,13 +88,15 @@ export async function sendVerificationEmail({
 // ─── 0b. Password reset ───────────────────────────────────────────────────────
 
 export async function sendPasswordResetEmail({
-  to, token, locale,
+  to, token, locale, name,
 }: {
   to:     string
   token:  string
   locale: string
+  name:   string
 }) {
   const isEl = locale === 'el'
+  const safeName = escapeHtml(name)
 
   const subject = isEl
     ? 'Επαναφορά κωδικού Cyprus Cleaners'
@@ -97,13 +104,17 @@ export async function sendPasswordResetEmail({
 
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`
 
-  const html = layout(
-    `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Reset your password</h2>
-     <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">We received a request to reset your password.</p>
-     ${cta('Reset password', resetUrl)}
-     <p style="color:#5B7472;font-size:12px;line-height:1.5;margin:16px 0 0;">This link expires in 1 hour.</p>
-     <p style="color:#5B7472;font-size:12px;line-height:1.5;margin:8px 0 0;">If you didn't request this, you can safely ignore this email.</p>`
-  )
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Επαναφορά κωδικού</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Γεια σου ${safeName}, λάβαμε αίτημα επαναφοράς του κωδικού σου.</p>
+       ${cta('Επαναφορά κωδικού', resetUrl)}
+       <p style="color:#5B7472;font-size:12px;line-height:1.5;margin:16px 0 0;">Αυτός ο σύνδεσμος λήγει σε 1 ώρα.</p>
+       <p style="color:#5B7472;font-size:12px;line-height:1.5;margin:8px 0 0;">Αν δεν το ζήτησες εσύ, μπορείς να αγνοήσεις αυτό το email με ασφάλεια.</p>`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Reset your password</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Hi ${safeName}, we received a request to reset your password.</p>
+       ${cta('Reset password', resetUrl)}
+       <p style="color:#5B7472;font-size:12px;line-height:1.5;margin:16px 0 0;">This link expires in 1 hour.</p>
+       <p style="color:#5B7472;font-size:12px;line-height:1.5;margin:8px 0 0;">If you didn't request this, you can safely ignore this email.</p>`)
 
   return sendEmail({ to, subject, html })
 }
@@ -111,10 +122,11 @@ export async function sendPasswordResetEmail({
 // ─── 1. New message → the other party's first notification for a thread ─────
 
 export async function sendNewMessageEmail({
-  recipientEmail, recipientLocale, senderName, message, dashboardUrl,
+  recipientEmail, recipientLocale, recipientName, senderName, message, dashboardUrl,
 }: {
   recipientEmail:  string
   recipientLocale: string | null
+  recipientName:   string
   senderName:      string
   message:         string
   dashboardUrl:    string
@@ -125,17 +137,18 @@ export async function sendNewMessageEmail({
     ? 'Έχετε νέο μήνυμα'
     : 'You have a new message'
 
-  const safeSenderName = escapeHtml(senderName)
-  const safeMessage    = escapeHtml(message)
+  const safeRecipientName = escapeHtml(recipientName)
+  const safeSenderName    = escapeHtml(senderName)
+  const safeMessage       = escapeHtml(message)
 
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Νέο μήνυμα</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${safeSenderName}</strong> σας έστειλε μήνυμα:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Γεια σου ${safeRecipientName}, ο/η <strong>${safeSenderName}</strong> σου έστειλε μήνυμα:</p>
        <blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;font-style:italic;line-height:1.6;">${safeMessage}</blockquote>
        <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:0;">Συνδεθείτε στον πίνακα ελέγχου για να απαντήσετε.</p>
        ${cta('Προβολή μηνύματος', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">You have a new message</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${safeSenderName}</strong> sent you a message:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Hi ${safeRecipientName}, <strong>${safeSenderName}</strong> sent you a message:</p>
        <blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;font-style:italic;line-height:1.6;">${safeMessage}</blockquote>
        <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:0;">Log in to your dashboard to reply.</p>
        ${cta('View message', dashboardUrl)}`)
@@ -146,10 +159,11 @@ export async function sendNewMessageEmail({
 // ─── 4. New booking request → cleaner ────────────────────────────────────────
 
 export async function sendNewBookingRequestEmail({
-  cleanerEmail, cleanerLocale, customerName, date, startTime, durationHours, address, dashboardUrl,
+  cleanerEmail, cleanerLocale, cleanerName, customerName, date, startTime, durationHours, address, dashboardUrl,
 }: {
   cleanerEmail:  string
   cleanerLocale: string | null
+  cleanerName:   string
   customerName:  string
   date:          string // ISO date
   startTime:     string // HH:MM
@@ -165,18 +179,19 @@ export async function sendNewBookingRequestEmail({
 
   const subject = isEl ? 'Νέο αίτημα κράτησης' : 'New booking request'
 
+  const safeCleanerName  = escapeHtml(cleanerName)
   const safeCustomerName = escapeHtml(customerName)
   const safeAddress      = escapeHtml(address)
 
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Νέο αίτημα κράτησης</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${safeCustomerName}</strong> ζήτησε κράτηση:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Γεια σου ${safeCleanerName}, ο/η <strong>${safeCustomerName}</strong> ζήτησε κράτηση:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime} · ${durationHours} ώρες</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:8px 0 0;">📍 ${safeAddress}</p>
        <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:16px 0 0;">Έχετε 24 ώρες για να απαντήσετε.</p>
        ${cta('Προβολή αιτήματος', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">New booking request</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${safeCustomerName}</strong> requested a booking:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Hi ${safeCleanerName}, <strong>${safeCustomerName}</strong> requested a booking:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime} · ${durationHours}h</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:8px 0 0;">📍 ${safeAddress}</p>
        <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:16px 0 0;">You have 24 hours to respond.</p>
@@ -188,14 +203,16 @@ export async function sendNewBookingRequestEmail({
 // ─── 5. Booking confirmed → customer ─────────────────────────────────────────
 
 export async function sendBookingConfirmedEmail({
-  customerEmail, customerLocale, cleanerName, date, startTime, durationHours, dashboardUrl,
+  customerEmail, customerLocale, customerName, cleanerName, date, startTime, durationHours, amountEur, dashboardUrl,
 }: {
   customerEmail: string
   customerLocale: string | null
+  customerName:  string
   cleanerName:   string
   date:          string // ISO date
   startTime:     string // HH:MM
   durationHours: number
+  amountEur:     number
   dashboardUrl:  string
 }) {
   const isEl = customerLocale === 'el'
@@ -208,16 +225,20 @@ export async function sendBookingConfirmedEmail({
     ? `Η κράτησή σας με ${cleanerName} επιβεβαιώθηκε`
     : `Your booking with ${cleanerName} is confirmed`
 
-  const safeCleanerName = escapeHtml(cleanerName)
+  const safeCustomerName = escapeHtml(customerName)
+  const safeCleanerName  = escapeHtml(cleanerName)
+  const amountStr = `€${amountEur.toFixed(2)}`
 
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η κράτηση επιβεβαιώθηκε</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${safeCleanerName}</strong> επιβεβαίωσε την κράτησή σας:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Γεια σου ${safeCustomerName}, ο/η <strong>${safeCleanerName}</strong> επιβεβαίωσε την κράτησή σου:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime} · ${durationHours} ώρες</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Χρεώθηκε ${amountStr} στην κάρτα σου.</p>
        ${cta('Προβολή στον πίνακα ελέγχου', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Booking confirmed</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${safeCleanerName}</strong> confirmed your booking:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Hi ${safeCustomerName}, <strong>${safeCleanerName}</strong> confirmed your booking:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime} · ${durationHours}h</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">${amountStr} was charged to your card.</p>
        ${cta('View in dashboard', dashboardUrl)}`)
 
   return sendEmail({ to: customerEmail, subject, html })
@@ -226,22 +247,24 @@ export async function sendBookingConfirmedEmail({
 // ─── 5b. ID verification approved → cleaner ──────────────────────────────────
 
 export async function sendVerificationApprovedEmail({
-  to, locale, dashboardUrl,
+  to, locale, name, dashboardUrl,
 }: {
   to:           string
   locale:       string | null
+  name:         string
   dashboardUrl: string
 }) {
   const isEl = locale === 'el'
+  const safeName = escapeHtml(name)
 
   const subject = isEl ? 'Η ταυτότητά σας επαληθεύτηκε' : 'Your ID has been verified'
 
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Επαλήθευση εγκρίθηκε</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Η ταυτότητά σας ελέγχθηκε και εγκρίθηκε — το προφίλ σας φέρει πλέον το σήμα επαλήθευσης.</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Γεια σου ${safeName}, η ταυτότητά σου ελέγχθηκε και εγκρίθηκε — το προφίλ σου φέρει πλέον το σήμα επαλήθευσης.</p>
        ${cta('Προβολή προφίλ', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Verification approved</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Your ID has been reviewed and approved — your profile now shows the verified badge.</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Hi ${safeName}, your ID has been reviewed and approved — your profile now shows the verified badge.</p>
        ${cta('View profile', dashboardUrl)}`)
 
   return sendEmail({ to, subject, html })
@@ -250,14 +273,16 @@ export async function sendVerificationApprovedEmail({
 // ─── 5c. ID verification rejected → cleaner ──────────────────────────────────
 
 export async function sendVerificationRejectedEmail({
-  to, locale, note, dashboardUrl,
+  to, locale, name, note, dashboardUrl,
 }: {
   to:           string
   locale:       string | null
+  name:         string
   note:         string | null
   dashboardUrl: string
 }) {
   const isEl = locale === 'el'
+  const safeName = escapeHtml(name)
 
   const subject = isEl ? 'Δεν ήταν δυνατή η επαλήθευση της ταυτότητάς σας' : 'We couldn\'t verify your ID'
 
@@ -265,11 +290,11 @@ export async function sendVerificationRejectedEmail({
 
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η επαλήθευση δεν εγκρίθηκε</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Δεν μπορέσαμε να επαληθεύσουμε την ταυτότητά σας με τα έγγραφα που υποβάλατε. Μπορείτε να υποβάλετε νέα έγγραφα όποτε θέλετε.</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Γεια σου ${safeName}, δεν μπορέσαμε να επαληθεύσουμε την ταυτότητά σου με τα έγγραφα που υποβλήθηκαν. Μπορείς να υποβάλεις νέα έγγραφα όποτε θέλεις.</p>
        ${safeNote ? `<blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
        ${cta('Μετάβαση στον πίνακα ελέγχου', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Verification not approved</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">We weren't able to verify your ID from the documents submitted. You're welcome to submit new documents at any time.</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Hi ${safeName}, we weren't able to verify your ID from the documents submitted. You're welcome to submit new documents at any time.</p>
        ${safeNote ? `<blockquote style="border-left:3px solid #19706A;margin:16px 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
        ${cta('Go to dashboard', dashboardUrl)}`)
 
@@ -282,10 +307,12 @@ export async function sendVerificationRejectedEmail({
 // favor, 'LOST' otherwise. Same admin note goes to both sides.
 
 export async function sendDisputeResolvedEmail({
-  to, locale, outcome, note, dashboardUrl, refundPercentage,
+  to, locale, name, bookingDate, outcome, note, dashboardUrl, refundPercentage, refundAmountEur,
 }: {
   to:           string
   locale:       string | null
+  name:         string
+  bookingDate:  string // ISO date — which booking this dispute was about
   outcome:      'WON' | 'LOST' | 'UNRESOLVABLE'
   note:         string | null
   dashboardUrl: string
@@ -293,15 +320,24 @@ export async function sendDisputeResolvedEmail({
   // customer (the one who might be getting money back) — omitted for the
   // cleaner's copy of the same outcome.
   refundPercentage?: number
+  // Only meaningful when outcome is 'WON' and the recipient is the customer —
+  // states the actual refund amount rather than leaving it unsaid.
+  refundAmountEur?: number
 }) {
   const isEl = locale === 'el'
+  const safeName = escapeHtml(name)
+  const formattedDate = new Intl.DateTimeFormat(isEl ? 'el-GR' : 'en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  }).format(new Date(`${bookingDate}T00:00:00`))
 
   const subject = isEl ? 'Ενημέρωση για τη διαφορά σας' : 'Update on your dispute'
 
   const safeNote = note ? escapeHtml(note) : null
+  const refundLineEl = refundAmountEur != null ? `<p style="color:#5B7472;font-size:13px;line-height:1.5;margin:8px 0 0;">Έγινε επιστροφή €${refundAmountEur.toFixed(2)} στον αρχικό τρόπο πληρωμής σου.</p>` : ''
+  const refundLineEn = refundAmountEur != null ? `<p style="color:#5B7472;font-size:13px;line-height:1.5;margin:8px 0 0;">A refund of €${refundAmountEur.toFixed(2)} has been issued to your original payment method.</p>` : ''
 
   const outcomeLineEl = outcome === 'WON'
-    ? 'Μετά από έλεγχο, η διαφορά επιλύθηκε υπέρ σας.'
+    ? 'Μετά από έλεγχο, η διαφορά επιλύθηκε υπέρ σου.'
     : outcome === 'LOST'
     ? 'Μετά από έλεγχο, η διαφορά επιλύθηκε υπέρ του άλλου μέρους.'
     : refundPercentage != null
@@ -321,12 +357,14 @@ export async function sendDisputeResolvedEmail({
 
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">${heading}</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${outcomeLineEl}</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Γεια σου ${safeName}, σχετικά με την κράτηση στις ${formattedDate}: ${outcomeLineEl}</p>
+       ${refundLineEl}
        ${safeNote ? `<p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Σημείωση από τη διαχείριση:</p>
        <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
        ${cta('Μετάβαση στον πίνακα ελέγχου', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">${heading}</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${outcomeLineEn}</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Hi ${safeName}, regarding the booking on ${formattedDate}: ${outcomeLineEn}</p>
+       ${refundLineEn}
        ${safeNote ? `<p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Note from admin:</p>
        <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
        ${cta('Go to dashboard', dashboardUrl)}`)
@@ -335,22 +373,28 @@ export async function sendDisputeResolvedEmail({
 }
 
 export async function sendDisputeFiledConfirmationEmail({
-  to, locale, dashboardUrl,
+  to, locale, name, bookingDate, dashboardUrl,
 }: {
   to:           string
   locale:       string | null
+  name:         string
+  bookingDate:  string // ISO date — which booking this dispute is about
   dashboardUrl: string
 }) {
   const isEl = locale === 'el'
+  const safeName = escapeHtml(name)
+  const formattedDate = new Intl.DateTimeFormat(isEl ? 'el-GR' : 'en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  }).format(new Date(`${bookingDate}T00:00:00`))
 
   const subject = isEl ? 'Λάβαμε την αναφορά σας' : 'We received your report'
 
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Λάβαμε την αναφορά σας</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Η ομάδα μας θα την εξετάσει και θα απαντήσει εντός 24 ωρών. Αν δεν προλάβουμε να την εξετάσουμε εγκαίρως, εκδίδεται αυτόματα πλήρης επιστροφή χρημάτων προς εσάς. Θα σας ενημερώσουμε με email μόλις ληφθεί απόφαση.</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Γεια σου ${safeName}, λάβαμε την αναφορά σου για την κράτηση στις ${formattedDate}. Η ομάδα μας θα την εξετάσει και θα απαντήσει εντός 24 ωρών. Αν δεν προλάβουμε να την εξετάσουμε εγκαίρως, εκδίδεται αυτόματα πλήρης επιστροφή χρημάτων προς εσένα. Θα σε ενημερώσουμε με email μόλις ληφθεί απόφαση.</p>
        ${cta('Μετάβαση στον πίνακα ελέγχου', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">We received your report</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Our team will review this and respond within 24 hours. If we don't get to it in time, a full refund is issued to you automatically. You'll get an email as soon as a decision has been made.</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Hi ${safeName}, we received your report about the booking on ${formattedDate}. Our team will review this and respond within 24 hours. If we don't get to it in time, a full refund is issued to you automatically. You'll get an email as soon as a decision has been made.</p>
        ${cta('Go to dashboard', dashboardUrl)}`)
 
   return sendEmail({ to, subject, html })
@@ -359,10 +403,11 @@ export async function sendDisputeFiledConfirmationEmail({
 // ─── 6. Booking completed → customer ─────────────────────────────────────────
 
 export async function sendBookingCompletedEmail({
-  customerEmail, customerLocale, cleanerName, dashboardUrl,
+  customerEmail, customerLocale, customerName, cleanerName, dashboardUrl,
 }: {
   customerEmail:  string
   customerLocale: string | null
+  customerName:   string
   cleanerName:    string
   dashboardUrl:   string
 }) {
@@ -372,16 +417,17 @@ export async function sendBookingCompletedEmail({
     ? `Η κράτησή σας με ${cleanerName} ολοκληρώθηκε`
     : `Your booking with ${cleanerName} is complete`
 
-  const safeCleanerName = escapeHtml(cleanerName)
+  const safeCustomerName = escapeHtml(customerName)
+  const safeCleanerName  = escapeHtml(cleanerName)
 
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η εργασία ολοκληρώθηκε</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Ο/Η <strong>${safeCleanerName}</strong> σήμανε την κράτησή σας ως ολοκληρωμένη. Ρίξτε μια ματιά στις φωτογραφίες και αφήστε μια κριτική.</p>
-       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Αν έχετε κάποιο πρόβλημα με την εργασία, έχετε 7 ημέρες για να το αναφέρετε μέσω του πίνακα ελέγχου σας.</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Γεια σου ${safeCustomerName}, ο/η <strong>${safeCleanerName}</strong> σήμανε την κράτησή σου ως ολοκληρωμένη. Ρίξε μια ματιά στις φωτογραφίες και άφησε μια κριτική.</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Αν έχεις κάποιο πρόβλημα με την εργασία, έχεις 24 ώρες για να το αναφέρεις μέσω του πίνακα ελέγχου σου.</p>
        ${cta('Προβολή στον πίνακα ελέγχου', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Job complete</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;"><strong>${safeCleanerName}</strong> marked your booking complete. Take a look at the photos and leave a review.</p>
-       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">If you have any concerns about the service, you have 7 days to raise them through your dashboard.</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Hi ${safeCustomerName}, <strong>${safeCleanerName}</strong> marked your booking complete. Take a look at the photos and leave a review.</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">If you have any concerns about the service, you have 24 hours to raise them through your dashboard.</p>
        ${cta('View in dashboard', dashboardUrl)}`)
 
   return sendEmail({ to: customerEmail, subject, html })
@@ -390,10 +436,11 @@ export async function sendBookingCompletedEmail({
 // ─── 6b. Booking declined → customer ─────────────────────────────────────────
 
 export async function sendBookingDeclinedEmail({
-  customerEmail, customerLocale, cleanerName, date, startTime, dashboardUrl,
+  customerEmail, customerLocale, customerName, cleanerName, date, startTime, dashboardUrl,
 }: {
   customerEmail:  string
   customerLocale: string | null
+  customerName:   string
   cleanerName:    string
   date:           string // ISO date
   startTime:      string // HH:MM
@@ -407,16 +454,17 @@ export async function sendBookingDeclinedEmail({
 
   const subject = isEl ? 'Το αίτημα κράτησής σας απορρίφθηκε' : 'Your booking request was declined'
 
-  const safeCleanerName = escapeHtml(cleanerName)
+  const safeCustomerName = escapeHtml(customerName)
+  const safeCleanerName  = escapeHtml(cleanerName)
 
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Το αίτημα απορρίφθηκε</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Ο/Η <strong>${safeCleanerName}</strong> δεν μπόρεσε να αναλάβει την κράτησή σας:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Γεια σου ${safeCustomerName}, ο/η <strong>${safeCleanerName}</strong> δεν μπόρεσε να αναλάβει την κράτησή σου:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime}</p>
-       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:16px 0 0;">Δεν χρεωθήκατε. Μπορείτε να βρείτε άλλον καθαριστή όποτε θέλετε.</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:16px 0 0;">Δεν χρεώθηκες. Μπορείς να βρεις άλλον καθαριστή όποτε θέλεις.</p>
        ${cta('Βρείτε άλλον καθαριστή', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Request declined</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>${safeCleanerName}</strong> wasn't able to take your booking:</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Hi ${safeCustomerName}, <strong>${safeCleanerName}</strong> wasn't able to take your booking:</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime}</p>
        <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:16px 0 0;">You haven't been charged. Feel free to find another cleaner whenever you're ready.</p>
        ${cta('Find another cleaner', dashboardUrl)}`)
@@ -429,10 +477,11 @@ export async function sendBookingDeclinedEmail({
 // cleaner cancelling notifies the customer — cancelledByRole is whoever acted.
 
 export async function sendBookingCancelledEmail({
-  to, locale, cancelledByRole, date, startTime, reason, dashboardUrl,
+  to, locale, name, cancelledByRole, date, startTime, reason, dashboardUrl,
 }: {
   to:              string
   locale:          string | null
+  name:            string
   cancelledByRole: 'CUSTOMER' | 'CLEANER'
   date:            string // ISO date
   startTime:       string // HH:MM
@@ -440,6 +489,7 @@ export async function sendBookingCancelledEmail({
   dashboardUrl:    string
 }) {
   const isEl = locale === 'el'
+  const safeName = escapeHtml(name)
 
   const formattedDate = new Intl.DateTimeFormat(isEl ? 'el-GR' : 'en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
@@ -453,13 +503,13 @@ export async function sendBookingCancelledEmail({
 
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Η κράτηση ακυρώθηκε</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">${whoLineEl}</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Γεια σου ${safeName}. ${whoLineEl}</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} στις ${startTime}</p>
        ${safeReason ? `<p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Λόγος:</p>
        <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeReason}</blockquote>` : ''}
        ${cta('Προβολή στον πίνακα ελέγχου', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Booking cancelled</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">${whoLineEn}</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 8px;">Hi ${safeName}. ${whoLineEn}</p>
        <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">${formattedDate} at ${startTime}</p>
        ${safeReason ? `<p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Reason given:</p>
        <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeReason}</blockquote>` : ''}
@@ -603,12 +653,24 @@ export async function sendContactSubmissionAlertEmail({
   })
 }
 
-export async function sendContactSubmissionConfirmationEmail({ to }: { to: string }) {
-  const html = layout(
-    `<h2 style="color:#0D1F1E;font-size:20px;font-weight:600;margin:0 0 16px;">We got your message</h2>
-     <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Thanks for reaching out to Cyprus Cleaners — we'll get back to you by email as soon as we can.</p>`
-  )
-  return sendEmail({ to, subject: 'We got your message — Cyprus Cleaners', html })
+export async function sendContactSubmissionConfirmationEmail({
+  to, locale, name,
+}: {
+  to:     string
+  locale: string | null
+  name:   string
+}) {
+  const isEl = locale === 'el'
+  const safeName = escapeHtml(name)
+
+  const subject = isEl ? 'Λάβαμε το μήνυμά σας — Cyprus Cleaners' : 'We got your message — Cyprus Cleaners'
+
+  const html = layout(isEl
+    ? `<h2 style="color:#0D1F1E;font-size:20px;font-weight:600;margin:0 0 16px;">Λάβαμε το μήνυμά σου</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Γεια σου ${safeName}, ευχαριστούμε που επικοινώνησες με την Cyprus Cleaners — θα σου απαντήσουμε με email το συντομότερο δυνατό.</p>`
+    : `<h2 style="color:#0D1F1E;font-size:20px;font-weight:600;margin:0 0 16px;">We got your message</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Hi ${safeName}, thanks for reaching out to Cyprus Cleaners — we'll get back to you by email as soon as we can.</p>`)
+  return sendEmail({ to, subject, html })
 }
 
 // ─── Support chat ────────────────────────────────────────────────────────────
@@ -634,11 +696,24 @@ export async function sendSupportMessageAlertEmail({
 
 // ─── Account deletion ───────────────────────────────────────────────────────────
 
-export async function sendAccountDeletedEmail({ to }: { to: string }) {
-  const html = layout(
-    `<h2 style="color:#0D1F1E;font-size:20px;font-weight:600;margin:0 0 16px;">Your account has been deleted</h2>
-     <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 12px;">This confirms your Cyprus Cleaners account and personal details have been removed. Your booking history is kept in anonymized form only where we're required to retain it for tax and record-keeping purposes.</p>
-     <p style="color:#5B7472;font-size:13px;line-height:1.6;margin:0;">If this wasn't you, or you have any questions, just reply to this email.</p>`
-  )
-  return sendEmail({ to, subject: 'Your account has been deleted — Cyprus Cleaners', html })
+export async function sendAccountDeletedEmail({
+  to, locale, name,
+}: {
+  to:     string
+  locale: string | null
+  name:   string
+}) {
+  const isEl = locale === 'el'
+  const safeName = escapeHtml(name)
+
+  const subject = isEl ? 'Ο λογαριασμός σου διαγράφηκε — Cyprus Cleaners' : 'Your account has been deleted — Cyprus Cleaners'
+
+  const html = layout(isEl
+    ? `<h2 style="color:#0D1F1E;font-size:20px;font-weight:600;margin:0 0 16px;">Ο λογαριασμός σου διαγράφηκε</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 12px;">Γεια σου ${safeName}, αυτό επιβεβαιώνει ότι ο λογαριασμός σου στην Cyprus Cleaners και τα προσωπικά σου στοιχεία έχουν αφαιρεθεί. Το ιστορικό κρατήσεων σου διατηρείται μόνο σε ανωνυμοποιημένη μορφή όπου απαιτείται για φορολογικούς και λογιστικούς σκοπούς.</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.6;margin:0;">Αν δεν ήσουν εσύ, ή έχεις οποιαδήποτε ερώτηση, απάντησε απλά σε αυτό το email.</p>`
+    : `<h2 style="color:#0D1F1E;font-size:20px;font-weight:600;margin:0 0 16px;">Your account has been deleted</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 12px;">Hi ${safeName}, this confirms your Cyprus Cleaners account and personal details have been removed. Your booking history is kept in anonymized form only where we're required to retain it for tax and record-keeping purposes.</p>
+       <p style="color:#5B7472;font-size:13px;line-height:1.6;margin:0;">If this wasn't you, or you have any questions, just reply to this email.</p>`)
+  return sendEmail({ to, subject, html })
 }

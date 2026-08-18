@@ -102,11 +102,11 @@ export async function POST(req: NextRequest) {
     console.error('Email send error (dispute filed):', emailErr)
   }
 
-  // Confirm to the customer, with the 5-day SLA — non-blocking
+  // Confirm to the customer, with the 24h SLA — non-blocking
   try {
     const { data: customerUser } = await supabase
       .from('users')
-      .select('email, locale')
+      .select('email, locale, full_name')
       .eq('id', session.user.id)
       .single()
 
@@ -114,6 +114,8 @@ export async function POST(req: NextRequest) {
       await sendDisputeFiledConfirmationEmail({
         to:           customerUser.email,
         locale:       customerUser.locale,
+        name:         customerUser.full_name,
+        bookingDate:  (booking.completed_at ?? new Date().toISOString()).slice(0, 10),
         dashboardUrl: `${BASE_URL}/dashboard`,
       })
     }

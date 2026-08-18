@@ -15,6 +15,7 @@ const RegisterSchema = z.object({
   cities:          z.array(z.string()).min(1).optional(),
   hourly_rate_eur: z.number().min(5).optional(),
   cleaner_type:    z.enum(['individual', 'company']).optional(),
+  locale:          z.enum(['en', 'el']).optional().default('en'),
 })
 
 export async function POST(req: NextRequest) {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { email, password, full_name, role, phone, cities, hourly_rate_eur, cleaner_type } = result.data
+    const { email, password, full_name, role, phone, cities, hourly_rate_eur, cleaner_type, locale } = result.data
     const supabase = createAdminClient()
 
     // Check if email already exists
@@ -58,6 +59,7 @@ export async function POST(req: NextRequest) {
         role:          role as UserRole,
         full_name:     full_name.trim(),
         phone:         phone?.trim() || null,
+        locale,
       })
       .select('id, email, role, full_name')
       .single()
@@ -100,7 +102,7 @@ export async function POST(req: NextRequest) {
         type:       'EMAIL_VERIFY',
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
       })
-      await sendVerificationEmail({ to: user.email, token, locale: 'en' })
+      await sendVerificationEmail({ to: user.email, token, locale, name: user.full_name })
     } catch (emailErr) {
       console.error('Verification email error:', emailErr)
       // Do not fail registration if email sending fails

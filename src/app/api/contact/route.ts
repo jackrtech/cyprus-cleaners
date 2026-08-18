@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
   const name: string = typeof body.name === 'string' ? body.name.trim() : ''
   const email: string = typeof body.email === 'string' ? body.email.trim() : ''
   const message: string = typeof body.message === 'string' ? body.message.trim() : ''
+  const locale: string = body.locale === 'el' ? 'el' : 'en'
 
   if (!name || name.length > NAME_MAX) {
     return NextResponse.json({ error: `Name is required and must be ${NAME_MAX} characters or fewer` }, { status: 400 })
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await sendContactSubmissionConfirmationEmail({ to: email })
+    await sendContactSubmissionConfirmationEmail({ to: email, locale, name })
   } catch (emailErr) {
     console.error('Email send error (contact confirmation):', emailErr)
   }

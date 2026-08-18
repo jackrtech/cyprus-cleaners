@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const { data: user } = await supabase
       .from('users')
-      .select('id, email')
+      .select('id, email, full_name, locale')
       .eq('email', email.toLowerCase().trim())
       .single()
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       expires_at: new Date(Date.now() + 60 * 60 * 1000),
     })
 
-    await sendPasswordResetEmail({ to: user.email, token, locale: 'en' })
+    await sendPasswordResetEmail({ to: user.email, token, locale: user.locale, name: user.full_name })
 
     return NextResponse.json({ success: true })
   } catch (err) {

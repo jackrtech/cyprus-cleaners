@@ -43,7 +43,7 @@ export async function DELETE() {
 
   const { data: user, error: userError } = await supabase
     .from('users')
-    .select('id, email, role')
+    .select('id, email, role, full_name, locale')
     .eq('id', userId)
     .single()
 
@@ -170,7 +170,7 @@ export async function DELETE() {
   }
 
   try {
-    await sendAccountDeletedEmail({ to: user.email })
+    await sendAccountDeletedEmail({ to: user.email, locale: user.locale, name: user.full_name })
   } catch (emailErr) {
     console.error('Account deletion — confirmation email error:', emailErr)
   }

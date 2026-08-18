@@ -14,7 +14,7 @@ export async function POST() {
 
   const { data: user, error: userError } = await supabase
     .from('users')
-    .select('email, email_verified')
+    .select('email, email_verified, full_name, locale')
     .eq('id', session.user.id)
     .single()
 
@@ -67,7 +67,7 @@ export async function POST() {
     return NextResponse.json({ error: 'Failed to create verification token' }, { status: 500 })
   }
 
-  await sendVerificationEmail({ to: user.email, token, locale: 'en' })
+  await sendVerificationEmail({ to: user.email, token, locale: user.locale, name: user.full_name })
 
   return NextResponse.json({ success: true })
 }

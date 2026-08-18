@@ -304,21 +304,23 @@ export async function PATCH(
 
       if (customerUser?.email) {
         if (newStatus === 'CONFIRMED') {
-          await sendBookingConfirmedEmail({
-            customerEmail:  customerUser.email,
-            customerLocale: customerUser.locale,
-            cleanerName:    cleanerProfile?.display_name ?? '',
-            date:           booking.date,
-            startTime:      booking.start_time,
-            durationHours:  data.duration_hours,
-            dashboardUrl:   `${BASE_URL}/dashboard`,
-          })
-
           const { data: paidPayment } = await supabase
             .from('payments')
             .select('amount_eur')
             .eq('booking_id', booking.id)
             .single()
+
+          await sendBookingConfirmedEmail({
+            customerEmail:  customerUser.email,
+            customerLocale: customerUser.locale,
+            customerName:   customerUser.full_name ?? customerUser.email,
+            cleanerName:    cleanerProfile?.display_name ?? '',
+            date:           booking.date,
+            startTime:      booking.start_time,
+            durationHours:  data.duration_hours,
+            amountEur:      paidPayment?.amount_eur ?? 0,
+            dashboardUrl:   `${BASE_URL}/dashboard`,
+          })
 
           await sendBookingConfirmedAdminAlertEmail({
             bookingId:    booking.id,
@@ -333,6 +335,7 @@ export async function PATCH(
           await sendBookingCompletedEmail({
             customerEmail:  customerUser.email,
             customerLocale: customerUser.locale,
+            customerName:   customerUser.full_name ?? customerUser.email,
             cleanerName:    cleanerProfile?.display_name ?? '',
             dashboardUrl:   `${BASE_URL}/dashboard`,
           })
@@ -348,7 +351,7 @@ export async function PATCH(
     try {
       const { data: customerUser } = await supabase
         .from('users')
-        .select('email, locale')
+        .select('email, locale, full_name')
         .eq('id', booking.customer_id)
         .single()
 
@@ -356,6 +359,7 @@ export async function PATCH(
         await sendBookingDeclinedEmail({
           customerEmail:  customerUser.email,
           customerLocale: customerUser.locale,
+          customerName:   customerUser.full_name ?? customerUser.email,
           cleanerName:    cleanerProfile?.display_name ?? '',
           date:           booking.date,
           startTime:      booking.start_time,
@@ -373,7 +377,7 @@ export async function PATCH(
       if (isCustomer && cleanerProfile?.user_id) {
         const { data: cleanerUser } = await supabase
           .from('users')
-          .select('email, locale')
+          .select('email, locale, full_name')
           .eq('id', cleanerProfile.user_id)
           .single()
 
@@ -381,6 +385,7 @@ export async function PATCH(
           await sendBookingCancelledEmail({
             to:              cleanerUser.email,
             locale:          cleanerUser.locale,
+            name:            cleanerUser.full_name ?? cleanerUser.email,
             cancelledByRole: 'CUSTOMER',
             date:            booking.date,
             startTime:       booking.start_time,
@@ -391,7 +396,7 @@ export async function PATCH(
       } else if (isCleaner) {
         const { data: customerUser } = await supabase
           .from('users')
-          .select('email, locale')
+          .select('email, locale, full_name')
           .eq('id', booking.customer_id)
           .single()
 
@@ -399,6 +404,7 @@ export async function PATCH(
           await sendBookingCancelledEmail({
             to:              customerUser.email,
             locale:          customerUser.locale,
+            name:            customerUser.full_name ?? customerUser.email,
             cancelledByRole: 'CLEANER',
             date:            booking.date,
             startTime:       booking.start_time,

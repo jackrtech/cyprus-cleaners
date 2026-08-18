@@ -91,7 +91,7 @@ export async function PATCH(
     if (profile.user_id) {
       const { data: cleanerUser } = await supabase
         .from('users')
-        .select('email, locale')
+        .select('email, locale, full_name')
         .eq('id', profile.user_id)
         .single()
 
@@ -100,12 +100,14 @@ export async function PATCH(
           await sendVerificationApprovedEmail({
             to: cleanerUser.email,
             locale: cleanerUser.locale,
+            name: cleanerUser.full_name,
             dashboardUrl: `${BASE_URL}/dashboard/cleaner`,
           })
         } else {
           await sendVerificationRejectedEmail({
             to: cleanerUser.email,
             locale: cleanerUser.locale,
+            name: cleanerUser.full_name,
             note,
             dashboardUrl: `${BASE_URL}/dashboard/cleaner`,
           })

@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import Spinner from '@/components/ui/Spinner'
 
 export default function RegisterPage() {
   const t = useTranslations('auth')
+  const locale = useLocale()
   const router = useRouter()
 
   const [fullName, setFullName]         = useState('')
@@ -38,7 +39,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_name: fullName, email, password, role: 'CUSTOMER' }),
+        body: JSON.stringify({ full_name: fullName, email, password, role: 'CUSTOMER', locale }),
       })
       const data = await res.json()
 
