@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl'
 import { Link, usePathname } from '@/navigation'
 
 const TABS = [
+  { href: '/admin/analytics', labelKey: 'navAnalytics' },
   { href: '/admin', labelKey: 'navVerifications' },
   { href: '/admin/messages', labelKey: 'navMessages' },
   { href: '/admin/disputes', labelKey: 'navDisputes' },

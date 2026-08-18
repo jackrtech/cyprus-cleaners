@@ -49,6 +49,7 @@ File paths below sit under one of three route groups — `(marketing)/`, `(auth)
 | `/dashboard/cleaner/disputes` | List + detail of disputes filed against this cleaner | `CLEANER` only | Submit a one-time response | — |
 | `/dashboard/cleaner/earnings` | Payout setup + held/blocked/paid balance, per-job payout status | `CLEANER` only | Start Stripe Connect onboarding | Stripe-hosted onboarding (external), back here on return |
 | `/dashboard/profile` | Shared account settings (any role) | Authenticated | Sign out; customers manage saved addresses; cleaners get a link to their public profile | — |
+| `/admin/analytics` | Business-level metrics — bookings/revenue/dispute trends | `ADMIN` only | Read-only | — |
 | `/admin` | Verification queue | `ADMIN` only | Approve/reject cleaner ID submissions | — |
 | `/admin/disputes` | Dispute resolution queue | `ADMIN` only | Rule for customer or cleaner | — |
 | `/admin/cancellations` | Cancellation ledger | `ADMIN` only | Read-only | — |
@@ -206,7 +207,15 @@ Ranked by how much is already built behind each gap.
 
 ## 7. Admin flows
 
-Five tabs under `/admin/**`, all gated to `token.role === 'ADMIN'` by middleware. Nav: `src/components/admin/AdminNav.tsx`.
+Six tabs under `/admin/**`, all gated to `token.role === 'ADMIN'` by middleware. Nav: `src/components/admin/AdminNav.tsx`.
+
+### Analytics (`/admin/analytics`)
+- Added 2026-08-18. Business-visibility, not moderation — deliberately separate from the operational tabs below (verifications/disputes/cancellations/users are all row-listing queues for individual cases; this is the only aggregate/trend view in the admin panel).
+- `GET /api/admin/analytics` — a single read-only response: lifetime totals (bookings by status, registered customers, active cleaners, platform revenue), two rate stats (repeat-customer rate, dispute rate + auto-resolve-on-timeout rate), and a 12-week Monday-anchored weekly series (bookings count, revenue) computed in application code from raw `bookings`/`payments` rows — no Postgres aggregation function, no date-range query helper existed anywhere in the codebase before this, so it was written from scratch.
+- **Revenue** here means the platform's own cut (`sum(payments.platform_fee_eur)` where `status = 'PAID'`), not gross booking value — recognized at charge time (`CONFIRM`), excluding anything since refunded.
+- **Dispute rate** is disputes ÷ completed bookings (a dispute can only be filed on a `COMPLETED` booking, so this is the right denominator, not total bookings).
+- Charts are a small hand-rolled CSS bar chart component in the page itself, not a charting library — no such dependency existed in the repo and the data shape (12 weekly buckets, two series) didn't justify adding one.
+- v1 scope deliberately excludes the customer/cleaner segmentation views mentioned when this was scoped — those are a larger follow-up, not built here; see the Todoist task for status.
 
 ### Verification queue (`/admin`)
 - List: `GET /api/admin/verifications` — cleaner profiles where `id_submitted_at is not null and verified = false`, oldest first.
