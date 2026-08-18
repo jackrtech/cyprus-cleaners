@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import type { MockCleaner } from '@/lib/mockCleaners'
@@ -33,6 +34,7 @@ interface DbCleanerRow {
   is_mock:               boolean
   is_company:            boolean
   created_at:            string
+  is_favorited:          boolean
 }
 
 const AVATAR_PALETTE = [
@@ -84,13 +86,17 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
     photo_url:              row.photo_url,
     cover_photo_url:        row.cover_photo_url,
     created_at:             row.created_at,
+    is_favorited:           row.is_favorited,
   }
 }
 
 export default function CleanersPage() {
   const t = useTranslations('directory')
+  const { data: session } = useSession()
+  const isCustomer = (session?.user as { role?: string } | undefined)?.role === 'CUSTOMER'
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
   const [sort, setSort] = useState<SortKey>('top-rated')
+  const [favoritesOnly, setFavoritesOnly] = useState(false)
 
   const [cleaners, setCleaners] = useState<MockCleaner[]>([])
   const [loading,  setLoading]  = useState(true)
@@ -115,6 +121,7 @@ export default function CleanersPage() {
     if (filters.availability.length) r = r.filter(c => filters.availability.every(a => (c.availability as string[]).includes(a)))
     if (filters.cleanerType !== 'any') r = r.filter(c => c.cleaner_type === filters.cleanerType)
     if (filters.verifiedOnly) r = r.filter(c => c.verified)
+    if (favoritesOnly) r = r.filter(c => c.is_favorited)
 
     switch (sort) {
       case 'top-rated':    r.sort((a, b) => b.avg_rating - a.avg_rating || b.review_count - a.review_count); break
@@ -124,7 +131,7 @@ export default function CleanersPage() {
       case 'most-jobs':   r.sort((a, b) => b.total_jobs_count - a.total_jobs_count); break
     }
     return r
-  }, [filters, sort, cleaners])
+  }, [filters, sort, cleaners, favoritesOnly])
 
   return (
     <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]">
@@ -143,8 +150,23 @@ export default function CleanersPage() {
       {/* Results — nested inside FilterBar so its sticky bar has room to stay
           pinned for the full scroll height of the list (see FilterBar.tsx) */}
       <div className="px-4 sm:px-10 py-6">
-        <div className="flex justify-between items-center mb-5">
-          <span className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">{t('found', { count: results.length })}</span>
+        <div className="flex justify-between items-center mb-5 gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">{t('found', { count: results.length })}</span>
+            {isCustomer && (
+              <button
+                type="button"
+                onClick={() => setFavoritesOnly(v => !v)}
+                className={`rounded-full border px-3 py-1 text-[12px] font-medium transition-colors ${
+                  favoritesOnly
+                    ? 'bg-[#FBEAEA] dark:bg-[#3A1F1F] border-[#D64545] text-[#D64545]'
+                    : 'bg-white dark:bg-[#16211F] border-[#E0EDEC] dark:border-[#253634] text-[#5B7472] dark:text-[#9BB0AE] hover:border-[#D64545] hover:text-[#D64545]'
+                }`}
+              >
+                {t('favoritesOnly')}
+              </button>
+            )}
+          </div>
           <select
             value={sort}
             onChange={e => setSort(e.target.value as SortKey)}

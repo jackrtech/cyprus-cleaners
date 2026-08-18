@@ -29,6 +29,7 @@ interface DbCleanerRow {
   availability:          WeeklyAvailability | null
   is_mock:               boolean
   is_company:            boolean
+  is_favorited:          boolean
 }
 
 const AVATAR_PALETTE = [
@@ -77,6 +78,7 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
     unique_customer_count:  row.unique_customer_count,
     bio:                    row.bio ?? '',
     photo_url:              row.photo_url,
+    is_favorited:           row.is_favorited,
   }
 }
 

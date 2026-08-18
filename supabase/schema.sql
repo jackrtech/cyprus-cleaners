@@ -133,6 +133,25 @@ create table introductions (
 create index idx_intros_customer on introductions (customer_id);
 create index idx_intros_cleaner  on introductions (cleaner_profile_id);
 
+-- ─── FAVORITES ───────────────────────────────────────────────
+-- A customer shortlisting a cleaner while browsing — deliberately decoupled
+-- from `introductions` (favoriting needs no prior chat/booking, per the
+-- 2026-08-18 decision: "no prior booking required"). "Repeat-book same
+-- cleaner" reuses this list plus the existing booking-creation flow rather
+-- than its own mechanism — see FLOWS.md.
+
+create table favorites (
+  id                  uuid primary key default gen_random_uuid(),
+  customer_id         uuid not null references users(id) on delete cascade,
+  cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
+  created_at          timestamptz not null default now(),
+  -- A cleaner can only be favorited once per customer
+  unique (customer_id, cleaner_profile_id)
+);
+
+create index idx_favorites_customer on favorites (customer_id);
+create index idx_favorites_cleaner  on favorites (cleaner_profile_id);
+
 -- ─── BOOKINGS ────────────────────────────────────────────────
 
 create table bookings (
@@ -456,6 +475,7 @@ create trigger on_booking_status_change
 alter table users               enable row level security;
 alter table cleaner_profiles    enable row level security;
 alter table introductions       enable row level security;
+alter table favorites           enable row level security;
 alter table bookings            enable row level security;
 alter table addresses           enable row level security;
 alter table messages            enable row level security;
@@ -486,6 +506,13 @@ create policy "cleaner_profiles_public_read" on cleaner_profiles
   for select using (status = 'ACTIVE');
 create policy "cleaner_profiles_select_own" on cleaner_profiles
   for select using (auth.uid()::text = user_id::text);
+
+-- Favorites: fully owner-only, same shape as addresses — no public read,
+-- no editing (unfavorite + refavorite instead), just select/insert/delete
+-- scoped to the owning customer
+create policy "favorites_select_own" on favorites for select using (auth.uid()::text = customer_id::text);
+create policy "favorites_insert_own" on favorites for insert with check (auth.uid()::text = customer_id::text);
+create policy "favorites_delete_own" on favorites for delete using (auth.uid()::text = customer_id::text);
 
 -- Introductions: visible to the two parties only
 create policy "intros_own_parties" on introductions

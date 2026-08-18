@@ -33,5 +33,16 @@ export async function GET(req: Request, { params }: { params: { slug: string } }
   const { user_id, ...publicData } = data
   const is_own_profile = session?.user?.id === user_id
 
-  return NextResponse.json({ ...publicData, is_own_profile, booking_fee_eur: BOOKING_FEE_EUR })
+  let is_favorited = false
+  if (session?.user?.role === 'CUSTOMER') {
+    const { data: favorite } = await supabase
+      .from('favorites')
+      .select('id')
+      .eq('customer_id', session.user.id)
+      .eq('cleaner_profile_id', data.id)
+      .maybeSingle()
+    is_favorited = !!favorite
+  }
+
+  return NextResponse.json({ ...publicData, is_own_profile, is_favorited, booking_fee_eur: BOOKING_FEE_EUR })
 }

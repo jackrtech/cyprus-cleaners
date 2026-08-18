@@ -277,6 +277,7 @@
     "sortPriceHigh": "Τιμή: υψηλή–χαμηλή",
     "sortMostReviews": "Περισσότερες κριτικές",
     "sortMostJobs": "Περισσότερες δουλειές",
+    "favoritesOnly": "Τα αγαπημένα μου",
     "viewProfile": "Προβολή προφίλ",
     "noResults": "Δεν βρέθηκαν καθαριστές",
     "noResultsSub": "Δοκίμασε να αλλάξεις τα φίλτρα",
@@ -329,7 +330,9 @@
     "memberForWeeks": "Μέλος εδώ και {count, plural, one {# εβδομάδα} other {# εβδομάδες}}",
     "memberForMonths": "Μέλος εδώ και {count, plural, one {# μήνα} other {# μήνες}}",
     "memberForYears": "Μέλος εδώ και {count, plural, one {# χρόνο} other {# χρόνια}}",
-    "newToThePlatform": "Νέος/α στην πλατφόρμα"
+    "newToThePlatform": "Νέος/α στην πλατφόρμα",
+    "favorite": "Προσθήκη στα αγαπημένα",
+    "unfavorite": "Αφαίρεση από τα αγαπημένα"
   },
   "admin": {
     "navAnalytics": "Στατιστικά",
@@ -465,7 +468,9 @@
     "memberForWeeks": "Μέλος εδώ και {count, plural, one {# εβδομάδα} other {# εβδομάδες}}",
     "memberForMonths": "Μέλος εδώ και {count, plural, one {# μήνα} other {# μήνες}}",
     "memberForYears": "Μέλος εδώ και {count, plural, one {# χρόνο} other {# χρόνια}}",
-    "newToThePlatform": "Νέος/α στην πλατφόρμα"
+    "newToThePlatform": "Νέος/α στην πλατφόρμα",
+    "favorite": "Προσθήκη στα αγαπημένα",
+    "unfavorite": "Αφαίρεση από τα αγαπημένα"
   },
   "disputes": {
     "title": "Διαφορές",

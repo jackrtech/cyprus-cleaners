@@ -277,6 +277,7 @@
     "sortPriceHigh": "Price: high–low",
     "sortMostReviews": "Most reviews",
     "sortMostJobs": "Most jobs",
+    "favoritesOnly": "My favorites",
     "viewProfile": "View profile",
     "noResults": "No cleaners found",
     "noResultsSub": "Try adjusting your filters",
@@ -319,7 +320,9 @@
     "memberForWeeks": "Member for {count, plural, one {# week} other {# weeks}}",
     "memberForMonths": "Member for {count, plural, one {# month} other {# months}}",
     "memberForYears": "Member for {count, plural, one {# year} other {# years}}",
-    "newToThePlatform": "New to the platform"
+    "newToThePlatform": "New to the platform",
+    "favorite": "Favorite this cleaner",
+    "unfavorite": "Remove from favorites"
   },
   "admin": {
     "navAnalytics": "Analytics",
@@ -455,7 +458,9 @@
     "memberForWeeks": "Member for {count, plural, one {# week} other {# weeks}}",
     "memberForMonths": "Member for {count, plural, one {# month} other {# months}}",
     "memberForYears": "Member for {count, plural, one {# year} other {# years}}",
-    "newToThePlatform": "New to the platform"
+    "newToThePlatform": "New to the platform",
+    "favorite": "Favorite this cleaner",
+    "unfavorite": "Remove from favorites"
   },
   "disputes": {
     "title": "Disputes",

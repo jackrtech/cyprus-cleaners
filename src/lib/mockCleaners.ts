@@ -23,6 +23,7 @@ export type MockCleaner = {
   has_transport?: boolean
   created_at?: string
   booking_fee_eur?: number
+  is_favorited?: boolean
 }
 
 export const MOCK_CLEANERS: MockCleaner[] = [

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -24,5 +26,22 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch cleaners' }, { status: 500 })
   }
 
-  return NextResponse.json(data)
+  const rows = (data ?? []) as (Record<string, unknown> & { id: string })[]
+
+  // Public route (no auth required to browse) — favorite state only makes
+  // sense once we know who's asking, so it's added on top rather than
+  // gating the route itself.
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== 'CUSTOMER' || !rows.length) {
+    return NextResponse.json(rows.map(row => ({ ...row, is_favorited: false })))
+  }
+
+  const { data: favoritesData } = await supabase
+    .from('favorites')
+    .select('cleaner_profile_id')
+    .eq('customer_id', session.user.id)
+  const favorites = (favoritesData ?? []) as { cleaner_profile_id: string }[]
+  const favoritedIds = new Set(favorites.map(f => f.cleaner_profile_id))
+
+  return NextResponse.json(rows.map(row => ({ ...row, is_favorited: favoritedIds.has(row.id) })))
 }

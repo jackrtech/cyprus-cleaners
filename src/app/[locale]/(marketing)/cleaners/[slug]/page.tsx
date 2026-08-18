@@ -39,6 +39,7 @@ interface DbCleanerRow {
   has_transport:         boolean
   created_at:            string
   booking_fee_eur:       number
+  is_favorited:          boolean
 }
 
 interface DbReviewRow {
@@ -111,6 +112,7 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
     has_transport:          row.has_transport,
     created_at:             row.created_at,
     booking_fee_eur:        row.booking_fee_eur,
+    is_favorited:           row.is_favorited,
   }
 }
 
@@ -163,6 +165,9 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
   const [reviews,        setReviews]        = useState<ProfileReview[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(true)
 
+  const [favorited,  setFavorited]  = useState(false)
+  const [favPending, setFavPending] = useState(false)
+
   useEffect(() => {
     fetch(`/api/cleaners/${params.slug}`)
       .then(r => {
@@ -174,6 +179,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
         if (row) {
           setCleaner(mapCleaner(row))
           setIsOwnProfile(row.is_own_profile)
+          setFavorited(row.is_favorited)
         }
       })
       .catch(() => setCleanerError(true))
@@ -286,6 +292,31 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
   const handleIntroClick = () => ensureThreadAndOpenChat(false)
   const handleBookClick  = () => ensureThreadAndOpenChat(true)
 
+  async function toggleFavorite() {
+    if (!cleaner || favPending) return
+    if (!session) {
+      router.push(`/login?return=/cleaners/${cleaner.slug}`)
+      return
+    }
+    const next = !favorited
+    setFavorited(next)
+    setFavPending(true)
+    try {
+      const res = next
+        ? await fetch('/api/favorites', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ cleaner_profile_id: cleaner.id }),
+          })
+        : await fetch(`/api/favorites/${cleaner.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error()
+    } catch {
+      setFavorited(!next)
+    } finally {
+      setFavPending(false)
+    }
+  }
+
   // Gendered / locale-aware labels
   const messageLabel = locale === 'el'
     ? cleaner.gender === 'female'
@@ -391,6 +422,19 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
               <h1 className="text-[26px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">{cleaner.display_name}</h1>
+              {!isOwnProfile && role !== 'CLEANER' && role !== 'ADMIN' && (
+                <button
+                  type="button"
+                  onClick={toggleFavorite}
+                  aria-label={favorited ? t('unfavorite') : t('favorite')}
+                  aria-pressed={favorited}
+                  className="w-8 h-8 rounded-full border border-[#E0EDEC] dark:border-[#253634] flex items-center justify-center hover:border-[#D64545] transition-colors shrink-0"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill={favorited ? '#D64545' : 'none'} stroke={favorited ? '#D64545' : '#5B7472'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
+                  </svg>
+                </button>
+              )}
               {cleaner.cities.map(city => (
                 <span key={city} className="bg-[#E6F1FF] dark:bg-[#122A42] text-[#2D8CFF] rounded-[6px] px-2.5 py-0.5 text-[12px] font-medium">{getCityName(city)}</span>
               ))}
