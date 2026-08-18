@@ -610,3 +610,14 @@ export async function sendContactSubmissionConfirmationEmail({ to }: { to: strin
   )
   return sendEmail({ to, subject: 'We got your message — Cyprus Cleaners', html })
 }
+
+// ─── Account deletion ───────────────────────────────────────────────────────────
+
+export async function sendAccountDeletedEmail({ to }: { to: string }) {
+  const html = layout(
+    `<h2 style="color:#0D1F1E;font-size:20px;font-weight:600;margin:0 0 16px;">Your account has been deleted</h2>
+     <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 12px;">This confirms your Cyprus Cleaners account and personal details have been removed. Your booking history is kept in anonymized form only where we're required to retain it for tax and record-keeping purposes.</p>
+     <p style="color:#5B7472;font-size:13px;line-height:1.6;margin:0;">If this wasn't you, or you have any questions, just reply to this email.</p>`
+  )
+  return sendEmail({ to, subject: 'Your account has been deleted — Cyprus Cleaners', html })
+}

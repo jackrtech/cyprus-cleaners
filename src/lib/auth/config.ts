@@ -53,11 +53,15 @@ export const authOptions: NextAuthOptions = {
 
           const { data: user, error } = await supabase
             .from('users')
-            .select('id, email, full_name, password_hash, role, avatar_url')
+            .select('id, email, full_name, password_hash, role, avatar_url, deleted_at')
             .eq('email', credentials.email.toLowerCase().trim())
             .single()
 
-          if (error || !user) return null
+          // Deleted accounts fall through to the same "no such user" outcome
+          // as a genuinely unknown email — no separate "this account was
+          // deleted" message, same anti-enumeration reasoning as everywhere
+          // else auth failures are deliberately generic.
+          if (error || !user || user.deleted_at) return null
 
           const passwordMatch = await bcrypt.compare(
             credentials.password,

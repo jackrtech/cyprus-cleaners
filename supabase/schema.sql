@@ -29,6 +29,7 @@ create table users (
   avatar_url        text,
   locale            locale_type not null default 'en',
   stripe_customer_id text,
+  deleted_at        timestamptz,  -- self-service account deletion (GDPR erasure): set instead of a hard delete so bookings/payments/reviews/disputes keep a valid FK — full_name/email/phone/avatar_url/stripe_customer_id are overwritten with anonymized placeholders at the same time, password_hash is scrambled so the account can never be signed into again. NULL means active. Applying to an existing database: `alter table users add column deleted_at timestamptz;`
   created_at        timestamptz not null default now()
 );
 

@@ -7,6 +7,7 @@ import { Link } from '@/navigation'
 import LanguageToggle from '@/components/layout/LanguageToggle'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import AddressFormModal, { type SavedAddress } from '@/components/addresses/AddressFormModal'
+import DeleteAccountModal from '@/components/account/DeleteAccountModal'
 import LoadingImage from '@/components/ui/LoadingImage'
 
 function getInitials(name: string): string {
@@ -25,6 +26,7 @@ export default function ProfilePage() {
 
   const [addresses, setAddresses] = useState<SavedAddress[]>([])
   const [showAddressModal, setShowAddressModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   useEffect(() => {
     if (session?.user.role !== 'CLEANER') return
@@ -136,12 +138,18 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <div className="text-center pt-2">
+        <div className="text-center pt-2 space-y-3">
           <button
             onClick={() => signOut({ callbackUrl: '/' })}
-            className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
+            className="block w-full text-[13px] text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
           >
             {t('signOut')}
+          </button>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="block w-full text-[13px] text-[#5B7472] dark:text-[#9BB0AE] hover:text-red-600 transition-colors"
+          >
+            {t('deleteAccount')}
           </button>
         </div>
       </div>
@@ -161,6 +169,8 @@ export default function ProfilePage() {
           onDeleted={id => setAddresses(prev => prev.filter(a => a.id !== id))}
         />
       )}
+
+      <DeleteAccountModal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} />
     </div>
   )
 }
