@@ -50,6 +50,23 @@ export function formatTime(timeStr: string): string {
   return `${h12}:${m} ${ampm}`
 }
 
+// Relative platform tenure for a cleaner ("member for 3 weeks") — below a
+// 7-day floor there's nothing meaningful to say yet (every cleaner at launch
+// would otherwise read "joined today"), so callers get `null` and should
+// render a neutral "new to the platform" state instead.
+export type Tenure =
+  | { unit: 'weeks';  count: number }
+  | { unit: 'months'; count: number }
+  | { unit: 'years';  count: number }
+
+export function getTenure(createdAt: string, now: Date = new Date()): Tenure | null {
+  const days = Math.floor((now.getTime() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24))
+  if (days < 7) return null
+  if (days < 30) return { unit: 'weeks', count: Math.floor(days / 7) }
+  if (days < 365) return { unit: 'months', count: Math.floor(days / 30) }
+  return { unit: 'years', count: Math.floor(days / 365) }
+}
+
 // Stars array helper
 export function getStars(rating: number): ('full' | 'empty')[] {
   return Array.from({ length: 5 }, (_, i) => (i < Math.round(rating) ? 'full' : 'empty'))

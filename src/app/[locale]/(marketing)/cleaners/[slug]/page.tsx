@@ -10,6 +10,7 @@ import ReviewItem from '@/components/cleaners/ReviewItem'
 import { useCity } from '@/hooks/useCity'
 import ChatModal from '@/components/chat/ChatModal'
 import LoadingImage from '@/components/ui/LoadingImage'
+import { getTenure } from '@/lib/utils'
 
 interface DbCleanerRow {
   id:                    string
@@ -35,6 +36,7 @@ interface DbCleanerRow {
   is_company:            boolean
   is_own_profile:        boolean
   has_transport:         boolean
+  created_at:            string
 }
 
 interface DbReviewRow {
@@ -109,6 +111,7 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
     photo_url:              row.photo_url,
     cover_photo_url:        row.cover_photo_url,
     has_transport:          row.has_transport,
+    created_at:             row.created_at,
   }
 }
 
@@ -317,6 +320,13 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
         : t('individualMale')
       : t('individual')
 
+  const tenure = cleaner.created_at ? getTenure(cleaner.created_at) : null
+  const tenureLabel = !cleaner.created_at
+    ? null
+    : tenure
+      ? t(tenure.unit === 'weeks' ? 'memberForWeeks' : tenure.unit === 'months' ? 'memberForMonths' : 'memberForYears', { count: tenure.count })
+      : t('newToThePlatform')
+
   const availabilityLabel = cleaner.availability
     .map(a => tFilters(a as 'weekdays' | 'weekends' | 'evenings'))
     .join(', ')
@@ -400,6 +410,12 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
               <span>{t('jobsDone', { count: cleaner.total_jobs_count })}</span>
               <span className="hidden sm:inline">·</span>
               <span>{t('uniqueCustomers', { count: uniqueCustomers })}</span>
+              {tenureLabel && (
+                <>
+                  <span className="hidden sm:inline">·</span>
+                  <span>{tenureLabel}</span>
+                </>
+              )}
             </div>
             <div className="flex gap-1.5 flex-wrap">
               <span className="bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A] rounded-[6px] px-2 py-0.5 text-[11px] font-medium">

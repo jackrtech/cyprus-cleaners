@@ -4,6 +4,16 @@ import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import type { MockCleaner } from '@/lib/mockCleaners'
 import { useCity } from '@/hooks/useCity'
+import { getTenure } from '@/lib/utils'
+
+function TenureLabel({ createdAt }: { createdAt?: string }) {
+  const t = useTranslations('cleaners')
+  if (!createdAt) return null
+  const tenure = getTenure(createdAt)
+  if (!tenure) return <span>{t('newToThePlatform')}</span>
+  const key = tenure.unit === 'weeks' ? 'memberForWeeks' : tenure.unit === 'months' ? 'memberForMonths' : 'memberForYears'
+  return <span>{t(key, { count: tenure.count })}</span>
+}
 
 function StarRow({ rating }: { rating: number }) {
   const t = useTranslations('cleaners')
@@ -65,6 +75,9 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
             <span className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] ml-0.5">
               {cleaner.avg_rating} ({cleaner.review_count})
             </span>
+          </div>
+          <div className="text-[10.5px] text-[#5B7472] dark:text-[#9BB0AE] mt-0.5">
+            <TenureLabel createdAt={cleaner.created_at} />
           </div>
         </div>
       </div>

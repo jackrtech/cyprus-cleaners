@@ -13,7 +13,7 @@ export async function GET() {
       hourly_rate_eur, services, languages, cleaner_type,
       gender, verified, avg_rating, review_count,
       unique_customer_count, total_jobs_count, availability,
-      is_mock, is_company
+      is_mock, is_company, created_at
     `)
     .eq('status', 'ACTIVE')
     .order('avg_rating', { ascending: false })

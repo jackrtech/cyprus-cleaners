@@ -315,7 +315,11 @@
     "openChat": "Open chat",
     "previewingOwnProfile": "You're previewing your public profile — this is what customers see",
     "backToDashboard": "← Back to dashboard",
-    "starRating": "{rating} out of 5 stars"
+    "starRating": "{rating} out of 5 stars",
+    "memberForWeeks": "Member for {count, plural, one {# week} other {# weeks}}",
+    "memberForMonths": "Member for {count, plural, one {# month} other {# months}}",
+    "memberForYears": "Member for {count, plural, one {# year} other {# years}}",
+    "newToThePlatform": "New to the platform"
   },
   "admin": {
     "navVerifications": "Verifications",
@@ -430,7 +434,11 @@
     "verified": "Verified",
     "perHour": "/hr",
     "viewProfile": "View profile",
-    "starRating": "{rating} out of 5 stars"
+    "starRating": "{rating} out of 5 stars",
+    "memberForWeeks": "Member for {count, plural, one {# week} other {# weeks}}",
+    "memberForMonths": "Member for {count, plural, one {# month} other {# months}}",
+    "memberForYears": "Member for {count, plural, one {# year} other {# years}}",
+    "newToThePlatform": "New to the platform"
   },
   "disputes": {
     "title": "Disputes",

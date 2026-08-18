@@ -21,6 +21,7 @@ export type MockCleaner = {
   photo_url?: string | null
   cover_photo_url?: string | null
   has_transport?: boolean
+  created_at?: string
 }
 
 export const MOCK_CLEANERS: MockCleaner[] = [

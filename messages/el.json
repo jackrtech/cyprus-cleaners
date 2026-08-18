@@ -325,7 +325,11 @@
     "openChat": "Ανοίξτε τη συνομιλία",
     "previewingOwnProfile": "Βλέπετε μια προεπισκόπηση του δημόσιου προφίλ σας — αυτό βλέπουν οι πελάτες",
     "backToDashboard": "← Πίσω στον πίνακα ελέγχου",
-    "starRating": "{rating} από 5 αστέρια"
+    "starRating": "{rating} από 5 αστέρια",
+    "memberForWeeks": "Μέλος εδώ και {count, plural, one {# εβδομάδα} other {# εβδομάδες}}",
+    "memberForMonths": "Μέλος εδώ και {count, plural, one {# μήνα} other {# μήνες}}",
+    "memberForYears": "Μέλος εδώ και {count, plural, one {# χρόνο} other {# χρόνια}}",
+    "newToThePlatform": "Νέος/α στην πλατφόρμα"
   },
   "admin": {
     "navVerifications": "Επαληθεύσεις",
@@ -440,7 +444,11 @@
     "verified": "Επαληθευμένος/η",
     "perHour": "/ώρα",
     "viewProfile": "Προβολή προφίλ",
-    "starRating": "{rating} από 5 αστέρια"
+    "starRating": "{rating} από 5 αστέρια",
+    "memberForWeeks": "Μέλος εδώ και {count, plural, one {# εβδομάδα} other {# εβδομάδες}}",
+    "memberForMonths": "Μέλος εδώ και {count, plural, one {# μήνα} other {# μήνες}}",
+    "memberForYears": "Μέλος εδώ και {count, plural, one {# χρόνο} other {# χρόνια}}",
+    "newToThePlatform": "Νέος/α στην πλατφόρμα"
   },
   "disputes": {
     "title": "Διαφορές",

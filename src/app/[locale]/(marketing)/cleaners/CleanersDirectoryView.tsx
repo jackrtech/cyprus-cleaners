@@ -31,6 +31,7 @@ interface DbCleanerRow {
   availability:          Record<string, boolean> | null
   is_mock:               boolean
   is_company:            boolean
+  created_at:            string
 }
 
 const AVATAR_PALETTE = [
@@ -85,6 +86,7 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
     bio:                    row.bio ?? '',
     photo_url:              row.photo_url,
     cover_photo_url:        row.cover_photo_url,
+    created_at:             row.created_at,
   }
 }
 
