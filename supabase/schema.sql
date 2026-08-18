@@ -207,25 +207,67 @@ create table addresses (
 
 create index idx_addresses_user on addresses (user_id);
 
--- ─── MESSAGES ────────────────────────────────────────────────
+-- ─── SUPPORT THREADS ─────────────────────────────────────────
+-- A customer/cleaner talking to admin directly — distinct from an
+-- `introductions` thread (a specific customer paired with a specific
+-- cleaner_profile). One user can have more than one row here over time
+-- (no unique constraint on user_id) but the API only ever finds-or-creates
+-- against the most recent OPEN one, closing a thread starts a fresh one on
+-- the next message rather than reopening old history.
 
-create table messages (
-  id                uuid primary key default gen_random_uuid(),
-  introduction_id   uuid not null references introductions(id) on delete cascade,
-  sender_id         uuid not null references users(id) on delete cascade,
-  body              text,
-  photo_path        text,  -- Private storage path in 'chat-photos' bucket; signed URL generated at read time
-  booking_id        uuid references bookings(id) on delete set null,  -- Set only on auto-generated booking-event messages
-  system_event      text check (system_event in ('REQUESTED','CONFIRMED','DECLINED','CANCELLED','COMPLETED')),
-  read_at           timestamptz,
-  created_at        timestamptz not null default now(),
-  constraint messages_content_present check (body is not null or photo_path is not null or system_event is not null)
+create type support_thread_status as enum ('OPEN', 'CLOSED');
+
+create table support_threads (
+  id               uuid primary key default gen_random_uuid(),
+  user_id          uuid not null references users(id) on delete cascade,
+  status           support_thread_status not null default 'OPEN',
+  last_emailed_at  timestamptz,  -- mirrors introductions.last_emailed_at — one-time "new message" alert to admin, not per-message
+  created_at       timestamptz not null default now()
 );
 
-create index idx_messages_intro   on messages (introduction_id, created_at);
-create index idx_messages_sender  on messages (sender_id);
-create index idx_messages_unread  on messages (read_at) where read_at is null;
-create index idx_messages_booking on messages (booking_id);
+create index idx_support_threads_user   on support_threads (user_id);
+create index idx_support_threads_status on support_threads (status);
+-- Applying to an existing database:
+-- `create type support_thread_status as enum ('OPEN', 'CLOSED');
+--  create table support_threads (id uuid primary key default gen_random_uuid(), user_id uuid not null references users(id) on delete cascade, status support_thread_status not null default 'OPEN', last_emailed_at timestamptz, created_at timestamptz not null default now());
+--  create index idx_support_threads_user on support_threads (user_id);
+--  create index idx_support_threads_status on support_threads (status);`
+
+-- ─── MESSAGES ────────────────────────────────────────────────
+-- Shared by both `introductions` (customer<->cleaner) and `support_threads`
+-- (customer/cleaner<->admin) — exactly one of introduction_id/
+-- support_thread_id is set per row, never both, never neither.
+
+create table messages (
+  id                 uuid primary key default gen_random_uuid(),
+  introduction_id    uuid references introductions(id) on delete cascade,
+  support_thread_id  uuid references support_threads(id) on delete cascade,
+  sender_id          uuid not null references users(id) on delete cascade,
+  body               text,
+  photo_path         text,  -- Private storage path in 'chat-photos' bucket; signed URL generated at read time
+  booking_id         uuid references bookings(id) on delete set null,  -- Set only on auto-generated booking-event messages
+  system_event       text check (system_event in ('REQUESTED','CONFIRMED','DECLINED','CANCELLED','COMPLETED')),
+  read_at            timestamptz,
+  created_at         timestamptz not null default now(),
+  constraint messages_content_present check (body is not null or photo_path is not null or system_event is not null),
+  constraint messages_exactly_one_thread check (
+    (introduction_id is not null and support_thread_id is null) or
+    (introduction_id is null and support_thread_id is not null)
+  )
+);
+-- Applying to an existing database:
+-- `alter table messages alter column introduction_id drop not null,
+--    add column support_thread_id uuid references support_threads(id) on delete cascade,
+--    add constraint messages_exactly_one_thread check (
+--      (introduction_id is not null and support_thread_id is null) or
+--      (introduction_id is null and support_thread_id is not null)
+--    );`
+
+create index idx_messages_intro    on messages (introduction_id, created_at);
+create index idx_messages_support  on messages (support_thread_id, created_at);
+create index idx_messages_sender   on messages (sender_id);
+create index idx_messages_unread   on messages (read_at) where read_at is null;
+create index idx_messages_booking  on messages (booking_id);
 
 -- ─── REVIEWS ─────────────────────────────────────────────────
 
@@ -381,6 +423,7 @@ alter table payments             enable row level security;
 alter table disputes             enable row level security;
 alter table verification_tokens  enable row level security;
 alter table contact_submissions  enable row level security;
+alter table support_threads      enable row level security;
 -- No policies beyond enabling it on payments/disputes/verification_tokens/
 -- contact_submissions — all four are only ever read/written via the
 -- service-role admin client (API routes), never the anon-key browser
@@ -412,20 +455,39 @@ create policy "intros_own_parties" on introductions
     )
   );
 
--- Messages: visible to the two parties of the thread
+-- Support threads: the owning user, or any admin
+create policy "support_threads_own_or_admin" on support_threads
+  for select using (
+    auth.uid()::text = user_id::text or
+    exists (select 1 from users u where u.id::text = auth.uid()::text and u.role = 'ADMIN')
+  );
+
+-- Messages: visible to the two parties of an introduction thread, or (for a
+-- support thread) its owning user and any admin
 create policy "messages_own_thread" on messages
   for select using (
-    exists (
-      select 1 from introductions i
-      where i.id = introduction_id
-        and (
-          auth.uid()::text = i.customer_id::text or
-          auth.uid()::text = (
-            select user_id::text from cleaner_profiles where id = i.cleaner_profile_id
+    (
+      introduction_id is not null and exists (
+        select 1 from introductions i
+        where i.id = introduction_id
+          and (
+            auth.uid()::text = i.customer_id::text or
+            auth.uid()::text = (
+              select user_id::text from cleaner_profiles where id = i.cleaner_profile_id
+            )
           )
-        )
+      )
+    ) or (
+      support_thread_id is not null and (
+        exists (select 1 from support_threads st where st.id = support_thread_id and st.user_id::text = auth.uid()::text)
+        or exists (select 1 from users u where u.id::text = auth.uid()::text and u.role = 'ADMIN')
+      )
     )
   );
+-- Applying to an existing database:
+-- `create policy "support_threads_own_or_admin" on support_threads for select using (auth.uid()::text = user_id::text or exists (select 1 from users u where u.id::text = auth.uid()::text and u.role = 'ADMIN'));
+--  drop policy "messages_own_thread" on messages;
+--  create policy "messages_own_thread" on messages for select using ((introduction_id is not null and exists (select 1 from introductions i where i.id = introduction_id and (auth.uid()::text = i.customer_id::text or auth.uid()::text = (select user_id::text from cleaner_profiles where id = i.cleaner_profile_id)))) or (support_thread_id is not null and (exists (select 1 from support_threads st where st.id = support_thread_id and st.user_id::text = auth.uid()::text) or exists (select 1 from users u where u.id::text = auth.uid()::text and u.role = 'ADMIN'))));`
 
 -- Reviews: public read
 create policy "reviews_public_read" on reviews for select using (true);

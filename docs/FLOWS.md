@@ -59,7 +59,7 @@ Treat `cleaner_profiles.cities`/`cleaner_type`/`gender` and the `verification_to
 - `addresses` (schema.sql:154-164) — customer's saved addresses; bookings store a free-text snapshot (`bookings.address`), not a FK, so editing/deleting a saved address never rewrites history.
 - `messages` (schema.sql:168-184) — thread messages; also carries system/booking-event pills (`system_event` + `booking_id` set, `sender_id` still required even for auto-generated events).
 - `reviews` (schema.sql:188-201) — 1:1 with a COMPLETED booking; `body_translations` is a DeepL cache keyed by locale.
-- `disputes` (schema.sql:212-227) — customer's quality claim on a completed booking, cleaner's response, admin resolution. **No creation path found in the current codebase — see [Known Gaps](#known-gaps--incomplete-flows).**
+- `disputes` (schema.sql:212-227) — customer's quality claim on a completed booking, cleaner's response, admin resolution. Created via `POST /api/disputes`, filed from `dashboard/page.tsx`'s booking cards (a "File dispute" action within the 7-day post-completion window).
 - `chat_notifications` (schema.sql:231-238) — table exists but no code reads/writes it (grep found zero references outside schema.sql). Unread state is instead computed live in `src/app/api/introductions/route.ts:16-47` (`attachLastMessages`). Treat this table as unused/vestigial.
 
 ### Triggers (schema.sql:242-302) — never replicate this logic in application code
@@ -188,6 +188,16 @@ Covered in detail under [Disputes & Cancellations](#disputes--cancellations) —
 
 Covered under [Disputes & Cancellations](#disputes--cancellations) — `src/app/[locale]/admin/cancellations/page.tsx`, `GET /api/admin/cancellations`. No write actions.
 
+## Admin: Messages (live support chat + contact form)
+
+`src/app/[locale]/(app)/admin/messages/page.tsx` — one inbox merging `support_threads` (customer/cleaner ↔ admin live chat) and `contact_submissions` (async, logged-out-friendly), fetched separately (`GET /api/support/threads` as ADMIN + `GET /api/admin/contact`) and merged/sorted client-side by most recent activity.
+
+Support chat reuses the introduction/messages machinery rather than a second parallel system: `messages.support_thread_id` is a nullable FK sibling to `messages.introduction_id` (a check constraint enforces exactly one is ever set), same Realtime-via-Postgres-changes pattern as booking chat, same `/api/messages` GET/POST endpoints branching on which id is present. `SupportChatPanel` (`src/components/support/SupportChatPanel.tsx`) is a trimmed sibling of `ChatPanel` with no booking-request UI. A user opens their own thread via "Contact support" on `/dashboard/profile` (`POST /api/support/threads`, find-or-create against their most recent `OPEN` thread). RLS (`support_threads_own_or_admin`, and `messages_own_thread` extended) scopes visibility to the thread's owner and any admin.
+
+Notifications: a user's first message in a thread triggers one alert email to `ADMIN_EMAIL` (`sendSupportMessageAlertEmail`, same one-time `last_emailed_at` gate as introductions) — not per-message, and admin replies don't email the user back (Realtime-only while the thread's open; deferred, not a v1 requirement). Admin toggles a thread `OPEN`/`CLOSED` (`PATCH /api/support/threads/[id]`); a contact submission resolved/unresolved (`PATCH /api/admin/contact/[id]`) — both reversible.
+
+Known limitation: the admin thread list itself isn't Realtime — a brand-new incoming thread needs a page reload to appear (the email alert is what prompts admin to go check).
+
 ---
 
 ## Email Notifications Reference
@@ -227,10 +237,10 @@ Already covered inline in [Discover & Message](#customer-discover--message-a-cle
 
 Flagged inline above; collected here for a quick scan:
 
-1. **Disputes have no creation path.** The whole cleaner-response + admin-resolution pipeline is built and functional, but no `POST /api/disputes` route or customer-facing "file a dispute" UI exists anywhere in the codebase. Confirmed by grepping for `.insert(...)` against the `disputes` table (only in the schema) and for any "claim"/"dispute" UI in `dashboard/page.tsx` and `BookingDetailModal.tsx` (none found).
-2. **Cleaner ID verification has no submission path.** `id_photo_url`, `selfie_photo_url`, `id_submitted_at` are fully wired into the admin queue and REJECT-resets-for-resubmission logic, but there's no upload UI or API route that lets a cleaner set them in the first place — they're absent from `PATCH /api/cleaner-profiles/me`'s allowlist.
-3. **No Stripe webhook.** All payment state transitions are synchronous, inline in `PATCH /api/bookings/[id]`. Nothing reconciles state if Stripe's async view of a charge/refund ever diverges from what the synchronous API call returned.
-4. **`chat_notifications` table is unused.** Defined in schema.sql, zero references in application code — unread-message state is instead computed live per-request.
-5. **`cleaner_status` values `PAUSED`/`SUSPENDED` are unused.** No UI/API sets a cleaner profile to anything but `ACTIVE`.
-6. **Schema drift** — see the top of [Data Model Reference](#data-model-reference): `verification_tokens` table and `cleaner_profiles.cities`/`cleaner_type`/`gender`/`is_mock` columns are used throughout the app but absent from `supabase/schema.sql`.
-7. **Review "skip" doesn't persist.** `skippedReviewIds` in `dashboard/page.tsx` is component state only — a skipped review prompt reappears on next page load.
+1. **Cleaner ID verification has no submission path.** `id_photo_url`, `selfie_photo_url`, `id_submitted_at` are fully wired into the admin queue and REJECT-resets-for-resubmission logic, but there's no upload UI or API route that lets a cleaner set them in the first place — they're absent from `PATCH /api/cleaner-profiles/me`'s allowlist.
+2. **No Stripe webhook.** All payment state transitions are synchronous, inline in `PATCH /api/bookings/[id]`. Nothing reconciles state if Stripe's async view of a charge/refund ever diverges from what the synchronous API call returned.
+3. **`chat_notifications` table is unused.** Defined in schema.sql, zero references in application code — unread-message state is instead computed live per-request.
+4. **Schema drift** — see the top of [Data Model Reference](#data-model-reference): `verification_tokens` table and `cleaner_profiles.cities`/`cleaner_type`/`gender`/`is_mock` columns are used throughout the app but absent from `supabase/schema.sql`.
+5. **Review "skip" doesn't persist.** `skippedReviewIds` in `dashboard/page.tsx` is component state only — a skipped review prompt reappears on next page load.
+
+Note (2026-08-18): this list previously also claimed "Disputes have no creation path" and "`cleaner_status` `PAUSED`/`SUSPENDED` are unused" — both confirmed stale (`POST /api/disputes` exists and is wired to UI in `dashboard/page.tsx`; `PATCH /api/admin/users/[id]` sets `cleaner_profiles.status` to either value) and removed rather than left inaccurate. See the "Regenerate FLOWS.md against current code" task for a fuller pass — this doc has drifted in more places than just these two.

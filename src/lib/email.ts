@@ -611,6 +611,27 @@ export async function sendContactSubmissionConfirmationEmail({ to }: { to: strin
   return sendEmail({ to, subject: 'We got your message — Cyprus Cleaners', html })
 }
 
+// ─── Support chat ────────────────────────────────────────────────────────────
+
+export async function sendSupportMessageAlertEmail({
+  senderName, message, adminUrl,
+}: {
+  senderName: string
+  message:    string
+  adminUrl:   string
+}) {
+  const bodyHtml =
+    `<p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 12px;">${escapeHtml(senderName)} started a new support conversation.</p>
+     <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${escapeHtml(message)}</blockquote>
+     ${cta('Open inbox', adminUrl)}`
+
+  return sendAdminAlertEmail({
+    subject: `New support message from ${senderName}`,
+    heading: 'New support conversation',
+    bodyHtml,
+  })
+}
+
 // ─── Account deletion ───────────────────────────────────────────────────────────
 
 export async function sendAccountDeletedEmail({ to }: { to: string }) {

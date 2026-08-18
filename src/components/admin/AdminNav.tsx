@@ -5,6 +5,7 @@ import { Link, usePathname } from '@/navigation'
 
 const TABS = [
   { href: '/admin', labelKey: 'navVerifications' },
+  { href: '/admin/messages', labelKey: 'navMessages' },
   { href: '/admin/disputes', labelKey: 'navDisputes' },
   { href: '/admin/cancellations', labelKey: 'navCancellations' },
   { href: '/admin/users', labelKey: 'navUsers' },

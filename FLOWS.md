@@ -81,7 +81,7 @@ File paths below sit under one of three route groups — `(marketing)/`, `(auth)
 
 **Reviewing** — appears inline under a completed booking once, per booking, if no review exists yet. "Skip" is session-local state only — it comes back on reload.
 
-**Disputing a completed job** — **no entry point exists.** See [§6](#6-known-gaps-and-half-built-flows).
+**Disputing a completed job** — `POST /api/disputes`, filed from a "File dispute" action on the completed booking's card in `dashboard/page.tsx`, within a 7-day window of `completed_at`. One dispute per booking (unique constraint on `booking_id`); confirms to the customer by email with the 5-day admin SLA, and alerts admin.
 
 ### Cleaner
 
@@ -169,26 +169,26 @@ All templates in `src/lib/email.ts`, sent via Resend. Every template accepts a `
 
 Ranked by how much is already built behind each gap.
 
-1. **Filing a dispute has no entry point.** The `disputes` table, the cleaner-response endpoint, and the full admin resolution UI are all built and functional. There is no `POST /api/disputes` route and no UI anywhere in `dashboard/page.tsx` or `BookingDetailModal.tsx` that lets a customer submit a claim. Today a dispute row can only be created by direct database access.
-2. **Cleaner ID-verification submission has no entry point.** `cleaner_profiles.id_photo_url`, `selfie_photo_url`, `id_submitted_at` are fully consumed by the admin queue — including the reject-clears-`id_submitted_at`-for-resubmission logic — but nothing in `PATCH /api/cleaner-profiles/me`'s field allowlist, and no dedicated upload route/UI, lets a cleaner set them. A cleaner cannot get themself into the verification queue through the app today.
-3. **No Stripe webhook** — see §4. Nothing reconciles Stripe's async state against what the synchronous API calls recorded.
-4. **`chat_notifications` table is unused.** Defined in `schema.sql`, zero reads or writes anywhere in application code. Unread state is instead computed live per-request in `attachLastMessages()`.
-5. **`cleaner_status` values `PAUSED` and `SUSPENDED` are unused.** Nothing in the UI or API ever sets a cleaner profile to anything but `ACTIVE` — see §10 for what that means for a booking already in flight.
-6. **`schema.sql` undersells the live schema.** A whole table (`verification_tokens`, backing email-verify and password-reset tokens) and several actively-used columns (`cleaner_profiles.cities`, `cleaner_type`, `gender`, `is_mock`) are used throughout the app's API routes but absent from the checked-in schema file. Treat them as real, in-production schema — just undocumented there.
-7. **A skipped review prompt doesn't persist.** `skippedReviewIds` is component state on the customer dashboard — reload the page and a skipped prompt reappears.
+1. **Cleaner ID-verification submission has no entry point.** `cleaner_profiles.id_photo_url`, `selfie_photo_url`, `id_submitted_at` are fully consumed by the admin queue — including the reject-clears-`id_submitted_at`-for-resubmission logic — but nothing in `PATCH /api/cleaner-profiles/me`'s field allowlist, and no dedicated upload route/UI, lets a cleaner set them. A cleaner cannot get themself into the verification queue through the app today.
+2. **No Stripe webhook** — see §4. Nothing reconciles Stripe's async state against what the synchronous API calls recorded.
+3. **`chat_notifications` table is unused.** Defined in `schema.sql`, zero reads or writes anywhere in application code. Unread state is instead computed live per-request in `attachLastMessages()`.
+4. **`schema.sql` undersells the live schema.** A whole table (`verification_tokens`, backing email-verify and password-reset tokens) and several actively-used columns (`cleaner_profiles.cities`, `cleaner_type`, `gender`, `is_mock`) are used throughout the app's API routes but absent from the checked-in schema file. Treat them as real, in-production schema — just undocumented there.
+5. **A skipped review prompt doesn't persist.** `skippedReviewIds` is component state on the customer dashboard — reload the page and a skipped prompt reappears.
+
+*(2026-08-18: "Filing a dispute has no entry point" and "`cleaner_status` `PAUSED`/`SUSPENDED` are unused" — both previously listed here — were confirmed stale and removed; `POST /api/disputes` and `PATCH /api/admin/users/[id]` both exist and are wired to UI. See the "Regenerate FLOWS.md against current code" Todoist task — this doc has drifted in more places than just these two.)*
 
 ---
 
 ## 7. Admin flows
 
-Three tabs under `/admin/**`, all gated to `token.role === 'ADMIN'` by middleware. Nav: `src/components/admin/AdminNav.tsx`.
+Five tabs under `/admin/**`, all gated to `token.role === 'ADMIN'` by middleware. Nav: `src/components/admin/AdminNav.tsx`.
 
 ### Verification queue (`/admin`)
 - List: `GET /api/admin/verifications` — cleaner profiles where `id_submitted_at is not null and verified = false`, oldest first.
 - Detail: a full-screen modal per row — bio, submitted ID photo, selfie, an admin-note textarea.
 - Decision: `PATCH /api/admin/verifications/[id]` with `{action: 'APPROVE'|'REJECT', note?}`.
   - **Approve** → `verified = true`, note stored as `verification_note`.
-  - **Reject** → `verified` stays `false`, and **clears `id_submitted_at` back to null** so the cleaner could resubmit — this is the only place that field is ever reset, which matters given gap #2 above means there's no resubmission UI either.
+  - **Reject** → `verified` stays `false`, and **clears `id_submitted_at` back to null** so the cleaner could resubmit — this is the only place that field is ever reset, which matters given gap #1 above means there's no resubmission UI either.
   - Either outcome emails the cleaner.
 
 ### Dispute resolution (`/admin/disputes`)
@@ -202,10 +202,20 @@ Three tabs under `/admin/**`, all gated to `token.role === 'ADMIN'` by middlewar
 - Purely a visibility tool — refund eligibility was already decided automatically at cancel-time (§3); there's no action to take here.
 - Badge states: not-charged / refunded / charged-not-refunded / charge-failed.
 
+### Users (`/admin/users`)
+- `GET /api/admin/users` — every registered account, searchable by name/email. Cleaners get Pause/Suspend/Reactivate actions (`PATCH /api/admin/users/[id]`, sets `cleaner_profiles.status`); customers have no actions here.
+- Doc note: this tab already existed before Messages was added below — "no user-management screen" was a stale claim, corrected here.
+
+### Messages (`/admin/messages`)
+- One inbox merging two different underlying things, sorted by most recent activity: `support_threads` (a customer/cleaner talking to admin directly, live chat) and `contact_submissions` (the logged-out-friendly contact form, async, no ongoing thread). `GET /api/support/threads` (as ADMIN, returns every thread) + `GET /api/admin/contact`, merged and sorted client-side — not one combined API.
+- Support chat reuses the `introductions`/`messages` machinery rather than a second parallel system: `messages.support_thread_id` is a nullable FK sibling to `messages.introduction_id` (exactly one of the two is ever set, enforced by a check constraint), same Realtime-via-Postgres-changes pattern, same `/api/messages` GET/POST endpoints branching on which id is provided. `SupportChatPanel` is a trimmed sibling of `ChatPanel` — no booking-request UI, since a support thread has no booking to nudge.
+- A user starts a thread via "Contact support" on `/dashboard/profile` (`POST /api/support/threads`, find-or-create against their own most recent `OPEN` thread — not admin-initiated). Admin replies from the inbox; either side's messages are visible to the thread's owner and to any admin (RLS: `support_threads_own_or_admin`, `messages_own_thread` extended to cover the support-thread branch).
+- Notifications: the thread owner's first message triggers a one-time email alert to `ADMIN_EMAIL` (`sendSupportMessageAlertEmail`, same `last_emailed_at`-gated pattern as introductions) — not per-message, and not the reverse: an admin's reply doesn't email the user back (relies on Realtime while they're in the app; not built as a v1 tradeoff, not because it's undesirable).
+- Admin can toggle a thread `OPEN ⇄ CLOSED` (`PATCH /api/support/threads/[id]`) and a contact submission resolved/unresolved (`PATCH /api/admin/contact/[id]`) — both toggle rather than one-way, so a mistaken close/resolve has a way back.
+- Not built: the admin thread *list* doesn't live-update on a brand-new incoming thread — only messages inside an already-open thread are Realtime. A new thread needs a page reload to appear (or the email alert prompts admin to go look).
+
 ### What the schema suggests but the admin panel doesn't have
-- No way to change a cleaner's `cleaner_status` to `PAUSED`/`SUSPENDED` (or back) — see gap #6.
 - No admin view onto `payments` directly (only surfaced indirectly through the cancellations ledger) — a `FAILED` or stuck `PENDING` payment outside a cancellation context has no admin-facing list.
-- No user-management screen at all — no way to view/search all `users`, reset a role, or disable an account from the admin panel.
 
 ---
 
@@ -223,9 +233,11 @@ Every point where one role's action visibly changes what another role sees or ca
 | Cleaner uploads completion photos | Not visible to the customer until `COMPLETE` is called (photos aren't streamed live into the thread) | — |
 | Cleaner marks complete | Customer gets `sendBookingCompletedEmail` and, on their dashboard, a review prompt | Leave a review |
 | Customer leaves a review | Cleaner's `avg_rating`/`review_count` update automatically (DB trigger); review appears publicly on the cleaner's profile | Nothing actionable — cleaners can't respond to reviews |
-| Admin approves/rejects verification | Cleaner gets an email either way; on approval, a verified badge appears on their public profile immediately | Nothing further, or resubmit (gap #2 — no way to actually do so) |
+| Admin approves/rejects verification | Cleaner gets an email either way; on approval, a verified badge appears on their public profile immediately | Nothing further, or resubmit (gap #1 — no way to actually do so) |
 | Admin resolves a dispute | Both customer and cleaner get separate emails, each framed as won/lost from their own side | Nothing further — no appeal flow |
 | Cleaner responds to a dispute | Nothing notifies the admin proactively — it just appears in the next `GET /api/admin/disputes` read | Admin can now see the response when they next open the queue |
+| Customer/cleaner sends the first message in a new support thread | Admin gets a one-time email alert (`ADMIN_EMAIL`); thread appears in `/admin/messages` on next load (not live) | Reply from the unified inbox, or mark resolved |
+| Admin replies in a support thread | User sees it live via Realtime if the chat is open, otherwise on next visit — no email sent | Reply, or the thread stays open until either side closes it |
 
 ---
 
@@ -242,7 +254,7 @@ Every point where one role's action visibly changes what another role sees or ca
   - Every protected page **also** runs its own client-side `useSession` + `router.replace('/login')` guard — this is only to avoid a flash of unauthorized content while the session resolves; the middleware is the actual boundary.
 - **Rate limiting** — in-memory, per-instance, best-effort (`middleware.ts:42-84`). Covers registration, forgot-password, resend-verification, reset-password, validate-reset-token, and the NextAuth credentials callback — 10 requests/60s per IP+path. Explicitly not reliable across a multi-instance/multi-region deployment.
 - **Session shape**: `session.user = {id, email, name, role, avatar_url}`. `role` drives nearly all client-side branching — which dashboard renders, which nav links show (`Navbar.tsx`, `BottomTabBar.tsx`).
-- **Post-login redirect**: `login/page.tsx` fetches the session after `signIn()` and routes by role — `CLEANER → /dashboard/cleaner`, `ADMIN → /admin`, everyone else → `/dashboard`. See gap #3 for the one place this loses context (a pending cleaner-profile visit).
+- **Post-login redirect**: `login/page.tsx` fetches the session after `signIn()` and routes by role — `CLEANER → /dashboard/cleaner`, `ADMIN → /admin`, else `safeReturnPath(searchParams.get('return')) ?? /dashboard` for a CUSTOMER, honoring a same-origin `?return=` set by e.g. `cleaners/[slug]/page.tsx` when it bounced an anonymous visitor to log in.
 - **RLS as a second line of defense**: almost every API route uses the service-role admin client and enforces authorization manually (session + row-ownership checks) inside the handler — RLS mainly matters for the few paths where the browser client talks to Supabase directly. Notable RLS specifics: `cleaner_profiles` are publicly selectable only where `status = 'ACTIVE'` (plus the owner can always see their own row); `introductions`/`messages` are visible only to the thread's two parties; `payments` and `disputes` have RLS enabled with **no policies at all**, by design — they're only ever touched via the admin client.
 - **Self-service account deletion** — entry point on `/dashboard/profile` (type-`DELETE`-to-confirm modal), `DELETE /api/user/me`. Anonymizes rather than hard-deletes: `users.deleted_at` is stamped and `full_name`/`email`/`phone`/`avatar_url`/`stripe_customer_id`/`password_hash` are overwritten (bookings/payments/reviews/disputes keep their FK, so the transaction trail survives under a "Deleted user" placeholder); saved `addresses` rows are deleted outright. For a `CLEANER`, `cleaner_profiles` gets the same anonymize treatment plus `status → 'SUSPENDED'` (drops out of the public `ACTIVE`-only listing/RLS), and `id_photo_url`/`selfie_photo_url`/profile photos are actually removed from storage, not just nulled. Blocked with a 409 (not deleted) while the account has: a `REQUESTED`/`CONFIRMED` booking, an `OPEN` dispute, or a booking with a `REFUND_FAILED` payment — resolve those first. `authorize()` in `config.ts` treats `deleted_at != null` the same as "no such user" (anti-enumeration, same as every other auth failure). No scheduled retention window before anonymization (e.g. a 30-day undo grace period) — runs immediately; deferred pending the actual legal retention requirement from the entity/tax advisor.
 
@@ -252,7 +264,7 @@ Every point where one role's action visibly changes what another role sees or ca
 
 - **Booking confirm/decline/cancel has a check-then-act race with no row-level guard.** `PATCH /api/bookings/[id]` (`bookings/[id]/route.ts:40-44, 180-185`) fetches the booking's current `status` in one `SELECT`, validates the requested transition against that in-memory value, then issues `.update({ status: newStatus }).eq('id', params.id)` — **without** also constraining on `.eq('status', booking.status)`. Two concurrent requests against the same `REQUESTED` booking (e.g. a double-tap on "Confirm," or a confirm and a decline landing at nearly the same moment) can both pass their individual status check before either write lands, and both proceed — for `CONFIRM` specifically, this opens a real double-charge path, since nothing stops two overlapping requests from both reaching the Stripe `paymentIntents.create` call. Not a theoretical concern — there's no idempotency key passed to that call either, so even Stripe-side dedup isn't in play.
 - **Booking expiry is lazy, not scheduled.** A `REQUESTED` booking past its 24h window doesn't flip to `CANCELLED` until *something* triggers a `GET /api/bookings` (either party loading their dashboard) or a `PATCH` attempt re-checks the window. If neither party opens the app, an expired-in-spirit booking can sit as `REQUESTED` indefinitely in the database, and its payment row stays `PENDING` (never charged, since `CONFIRM` independently re-validates the window and will refuse a stale confirm with a 409).
-- **A cleaner going `PAUSED`/`SUSPENDED` mid-booking would change nothing** — grepping the booking flow for any `cleaner_profiles.status` check turns up none. In practice this can't happen today (gap #6: nothing in the app ever sets those states), but if it were wired up, an in-flight `REQUESTED`/`CONFIRMED` booking would have no automatic cancellation or customer notification tied to the cleaner's profile going inactive.
+- **A cleaner going `PAUSED`/`SUSPENDED` mid-booking triggers no automatic cancellation or customer notification.** Admin can set either state today (`/admin/users`, `PATCH /api/admin/users/[id]`), but grepping the booking flow for any `cleaner_profiles.status` check turns up none — an in-flight `REQUESTED`/`CONFIRMED` booking with that cleaner just sits there unaffected.
 - **Introduction (thread) creation race is handled explicitly.** `POST /api/introductions` (`introductions/route.ts:91-115`) catches Postgres `23505` (unique-violation on `customer_id, cleaner_profile_id`) from two concurrent "start chat" clicks and re-fetches the winning row instead of erroring — one of the few places in the codebase with an explicit concurrency guard.
 - **Payment-row insert failing after the booking insert succeeds is handled by explicit rollback** (`bookings/route.ts:195-198`) — the booking row is deleted if the `payments` insert fails, so a booking can't exist without a corresponding payment row. The reverse isn't possible by construction (payment insert only runs after a successful booking insert).
 - **A failed refund on cancellation does not retry or alert anyone** — logged to the console only (`bookings/[id]/route.ts:217-221`), payment status stays `PAID`, and the only visibility is the admin cancellations ledger's "charged, not refunded" badge — no active notification.

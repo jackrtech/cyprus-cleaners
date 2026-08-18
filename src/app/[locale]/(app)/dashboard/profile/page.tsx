@@ -8,6 +8,7 @@ import LanguageToggle from '@/components/layout/LanguageToggle'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import AddressFormModal, { type SavedAddress } from '@/components/addresses/AddressFormModal'
 import DeleteAccountModal from '@/components/account/DeleteAccountModal'
+import SupportChatButton from '@/components/support/SupportChatButton'
 import LoadingImage from '@/components/ui/LoadingImage'
 
 function getInitials(name: string): string {
@@ -90,6 +91,12 @@ export default function ProfilePage() {
           <span className="text-[14px] text-[#0D1F1E] dark:text-[#ECF3F2]">{tCommon('appearance')}</span>
           <ThemeToggle />
         </div>
+
+        {role !== 'ADMIN' && (
+          <div className="card p-5">
+            <SupportChatButton currentUserId={session.user.id} />
+          </div>
+        )}
 
         {role === 'CLEANER' && (
           <div className="card divide-y divide-[#E0EDEC] dark:divide-[#253634]">
