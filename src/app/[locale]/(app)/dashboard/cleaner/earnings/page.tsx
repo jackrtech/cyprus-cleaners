@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
 import { Link } from '@/navigation'
 import { extractErrorMessage } from '@/lib/utils'
+import DashboardTabs from '@/components/dashboard/DashboardTabs'
 
 interface Job {
   booking_id:        string
@@ -41,8 +42,10 @@ const STATUS_BADGE: Record<Job['payout_status'], string> = {
 
 export default function CleanerEarningsPage() {
   const { data: session, status: sessionStatus } = useSession()
-  const t      = useTranslations('earnings')
-  const locale = useLocale()
+  const t        = useTranslations('earnings')
+  const tDash    = useTranslations('dashboard')
+  const tBooking = useTranslations('booking')
+  const locale   = useLocale()
   const searchParams = useSearchParams()
 
   const [earnings,      setEarnings]      = useState<Earnings | null>(null)
@@ -96,9 +99,25 @@ export default function CleanerEarningsPage() {
   return (
     <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] pb-24">
       <div className="max-w-3xl mx-auto px-4 pt-8 sm:pt-12">
-        <Link href="/dashboard/cleaner" className="text-body text-teal-500 dark:text-teal-300 hover:text-teal-600 dark:hover:text-teal-300 mb-4 inline-block">
+        <Link href="/dashboard/cleaner" className="text-body text-teal-500 dark:text-teal-300 hover:text-teal-600 dark:hover:text-teal-300 mb-4 inline-block md:hidden">
           {t('backToDashboard')}
         </Link>
+
+        {/* Same tab strip as the main cleaner dashboard — Bookings/Messages
+            link back there, Earnings is the (non-navigating) active tab */}
+        <div className="hidden md:block mb-6">
+          <DashboardTabs
+            idPrefix="cleaner-dashboard"
+            ariaLabel={tDash('sectionsLabel')}
+            activeKey="earnings"
+            onChange={() => {}}
+            tabs={[
+              { key: 'bookings', label: tBooking('bookingRequests'), href: '/dashboard/cleaner?tab=bookings' },
+              { key: 'messages', label: tDash('messagesTab'), href: '/dashboard/cleaner?tab=messages' },
+              { key: 'earnings', label: tDash('earningsTab') },
+            ]}
+          />
+        </div>
 
         <h1 className="text-h2 font-display text-teal-900 dark:text-[#ECF3F2] mb-1">{t('title')}</h1>
         <p className="text-muted dark:text-[#9BB0AE] mb-8">{t('subtitle')}</p>

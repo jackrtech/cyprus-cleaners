@@ -719,8 +719,9 @@ export default function CleanerDashboardPage() {
           </p>
         )}
 
-        {/* Tabs: Bookings / Messages — mobile switches via the bottom tab
-            bar instead, so this pill only shows at desktop widths */}
+        {/* Tabs: Bookings / Messages / Earnings — mobile switches Bookings/Messages
+            via the bottom tab bar instead, so this pill only shows at desktop
+            widths; Earnings is its own page (href tab), not an in-page panel */}
         <div className="hidden md:block">
           <DashboardTabs
             idPrefix="cleaner-dashboard"
@@ -730,6 +731,7 @@ export default function CleanerDashboardPage() {
             tabs={[
               { key: 'bookings', label: tBooking('bookingRequests'), count: bookingGroups.requested.length },
               { key: 'messages', label: t('messagesTab'), count: threads.filter(i => i.has_unread).length },
+              { key: 'earnings', label: t('earningsTab'), href: '/dashboard/cleaner/earnings' },
             ]}
           />
         </div>
