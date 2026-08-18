@@ -44,6 +44,13 @@ interface Props {
   onClose:           () => void
   introductionId:    string
   cleanerName:       string
+  // Optional — only meaningful for a CUSTOMER-opened form. When both are
+  // present, a live price breakdown renders above the payment section.
+  // This is a display-only estimate: the actual charge is always computed
+  // server-side at CONFIRM time from the cleaner's rate as it stands then,
+  // never from anything submitted by the client.
+  hourlyRateEur?:    number | null
+  bookingFeeEur?:    number | null
   onBookingCreated:  (booking: Booking) => void
 }
 
@@ -51,7 +58,7 @@ interface Props {
 // form has enough fields (room count, duration, date/time, address+map,
 // payment) that sharing space with the chat header made it feel cramped
 // and secondary. Opened from ChatPanel's "Book"/"Book again" CTA.
-export default function BookingFormModal({ isOpen, onClose, introductionId, cleanerName, onBookingCreated }: Props) {
+export default function BookingFormModal({ isOpen, onClose, introductionId, cleanerName, hourlyRateEur, bookingFeeEur, onBookingCreated }: Props) {
   const tBooking = useTranslations('booking')
   const tAddr    = useTranslations('address')
 
@@ -319,6 +326,28 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
             className="input !py-2 text-[13px] resize-none w-full"
           />
         </div>
+        {hourlyRateEur != null && bookingFeeEur != null && (() => {
+          const hours  = Number(durationHours) || 0
+          const rate   = Math.round(hourlyRateEur * hours * 100) / 100
+          const total  = Math.round((rate + bookingFeeEur) * 100) / 100
+          return (
+            <div className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3 space-y-1">
+              <div className="flex justify-between text-[#5B7472] dark:text-[#9BB0AE]">
+                <span>{tBooking('cleanerRateLine')}</span>
+                <span>€{rate.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-[#5B7472] dark:text-[#9BB0AE]">
+                <span>{tBooking('bookingFeeLine')}</span>
+                <span>€{bookingFeeEur.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-medium">
+                <span>{tBooking('totalLine')}</span>
+                <span>€{total.toFixed(2)}</span>
+              </div>
+            </div>
+          )
+        })()}
+
         <div>
           <label className="block text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mb-1">{tBooking('paymentMethod')}</label>
           {setupClientSecret ? (

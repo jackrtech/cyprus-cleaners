@@ -11,12 +11,14 @@ interface Props {
   currentUserRole:   'CUSTOMER' | 'CLEANER'
   otherPartyName:    string
   otherPartyAvatar:  string | null
+  hourlyRateEur?:    number | null
+  bookingFeeEur?:    number | null
   initialShowBookingForm?: boolean
 }
 
 export default function ChatModal({
   isOpen, onClose, introductionId, currentUserId, currentUserRole, otherPartyName, otherPartyAvatar,
-  initialShowBookingForm,
+  hourlyRateEur, bookingFeeEur, initialShowBookingForm,
 }: Props) {
   return (
     <FullScreenModal isOpen={isOpen} onClose={onClose}>
@@ -26,6 +28,8 @@ export default function ChatModal({
         currentUserRole={currentUserRole}
         otherPartyName={otherPartyName}
         otherPartyAvatar={otherPartyAvatar}
+        hourlyRateEur={hourlyRateEur}
+        bookingFeeEur={bookingFeeEur}
         onClose={onClose}
         initialShowBookingForm={initialShowBookingForm}
       />

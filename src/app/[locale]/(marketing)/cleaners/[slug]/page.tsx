@@ -37,6 +37,7 @@ interface DbCleanerRow {
   is_own_profile:        boolean
   has_transport:         boolean
   created_at:            string
+  booking_fee_eur:       number
 }
 
 interface DbReviewRow {
@@ -112,6 +113,7 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
     cover_photo_url:        row.cover_photo_url,
     has_transport:          row.has_transport,
     created_at:             row.created_at,
+    booking_fee_eur:        row.booking_fee_eur,
   }
 }
 
@@ -585,6 +587,8 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           currentUserRole="CUSTOMER"
           otherPartyName={cleaner.display_name}
           otherPartyAvatar={cleaner.photo_url ?? null}
+          hourlyRateEur={cleaner.hourly_rate_eur}
+          bookingFeeEur={cleaner.booking_fee_eur ?? null}
           initialShowBookingForm={wantsBookingForm}
         />
       )}

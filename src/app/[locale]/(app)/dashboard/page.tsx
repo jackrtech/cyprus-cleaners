@@ -13,13 +13,14 @@ import { groupBookingsByPriority, extractErrorMessage } from '@/lib/utils'
 import type { BookingStatus, CleaningType } from '@/types'
 
 interface CleanerProfile {
-  id?:           string
-  slug?:         string
-  display_name:  string
-  photo_url:     string | null
-  cities:        string[] | null
-  phone?:        string | null
-  email?:        string | null
+  id?:              string
+  slug?:            string
+  display_name:     string
+  photo_url:        string | null
+  cities:           string[] | null
+  phone?:           string | null
+  email?:           string | null
+  hourly_rate_eur?: number
 }
 
 interface LastMessage {
@@ -43,6 +44,7 @@ interface Introduction {
   cleaner_profiles: CleanerProfile | null
   last_message:     LastMessage | null
   has_unread:       boolean
+  booking_fee_eur:  number
 }
 
 interface Booking {
@@ -604,6 +606,8 @@ export default function DashboardPage() {
                               currentUserRole="CUSTOMER"
                               otherPartyName={cp?.display_name ?? 'Cleaner'}
                               otherPartyAvatar={cp?.photo_url ?? null}
+                              hourlyRateEur={cp?.hourly_rate_eur ?? null}
+                              bookingFeeEur={intro.booking_fee_eur}
                               onClose={() => setOpenChatId(null)}
                             />
                           </div>

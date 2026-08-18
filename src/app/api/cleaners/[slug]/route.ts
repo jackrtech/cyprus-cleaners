@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
+import { BOOKING_FEE_EUR } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,5 +33,5 @@ export async function GET(req: Request, { params }: { params: { slug: string } }
   const { user_id, ...publicData } = data
   const is_own_profile = session?.user?.id === user_id
 
-  return NextResponse.json({ ...publicData, is_own_profile })
+  return NextResponse.json({ ...publicData, is_own_profile, booking_fee_eur: BOOKING_FEE_EUR })
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
+import { BOOKING_FEE_EUR } from '@/lib/stripe'
 
 interface LastMessage {
   body:         string | null
@@ -131,7 +132,7 @@ export async function GET() {
       .from('introductions')
       .select(`
         id, created_at,
-        cleaner_profiles ( id, display_name, photo_url, cities )
+        cleaner_profiles ( id, display_name, photo_url, cities, hourly_rate_eur )
       `)
       .eq('customer_id', userId)
       .order('created_at', { ascending: false })
@@ -143,7 +144,11 @@ export async function GET() {
         { status: 500 }
       )
     }
-    return NextResponse.json(await attachLastMessages(supabase, data ?? [], userId))
+    // booking_fee_eur is a flat platform-wide constant, attached per-row so
+    // the customer-side booking form can render a live price breakdown
+    // without importing the server-only BOOKING_FEE_EUR constant itself.
+    const withMessages = await attachLastMessages(supabase, data ?? [], userId)
+    return NextResponse.json(withMessages.map(i => ({ ...i, booking_fee_eur: BOOKING_FEE_EUR })))
   }
 
   if (role === 'CLEANER') {

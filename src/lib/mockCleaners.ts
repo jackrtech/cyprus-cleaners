@@ -22,6 +22,7 @@ export type MockCleaner = {
   cover_photo_url?: string | null
   has_transport?: boolean
   created_at?: string
+  booking_fee_eur?: number
 }
 
 export const MOCK_CLEANERS: MockCleaner[] = [

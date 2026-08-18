@@ -71,6 +71,11 @@ interface ChatPanelProps {
   currentUserRole:   'CUSTOMER' | 'CLEANER'
   otherPartyName:    string
   otherPartyAvatar:  string | null
+  // The cleaner's current hourly rate and the flat platform booking fee —
+  // only meaningful (and only ever passed) when currentUserRole is
+  // CUSTOMER, to render a live price breakdown in BookingFormModal.
+  hourlyRateEur?:    number | null
+  bookingFeeEur?:    number | null
   onClose?:          () => void
   onMessageSent?:    (message: Message) => void
   // When true, renders without its own header/border/rounded box — for
@@ -88,6 +93,7 @@ function getInitials(name: string): string {
 
 export default function ChatPanel({
   introductionId, currentUserId, currentUserRole, otherPartyName, otherPartyAvatar,
+  hourlyRateEur, bookingFeeEur,
   onClose, onMessageSent, embedded = false, initialShowBookingForm = false,
 }: ChatPanelProps) {
   const t        = useTranslations('chat')
@@ -534,6 +540,8 @@ export default function ChatPanel({
         onClose={() => setShowBookingModal(false)}
         introductionId={introductionId}
         cleanerName={otherPartyName}
+        hourlyRateEur={hourlyRateEur}
+        bookingFeeEur={bookingFeeEur}
         onBookingCreated={newBooking => {
           setBookings(prev => [newBooking, ...(prev ?? [])])
         }}
