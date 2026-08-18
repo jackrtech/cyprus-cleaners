@@ -10,7 +10,6 @@
 //      logic changes in the API routes, this page needs the matching update.
 
 import type { Metadata } from 'next'
-import Footer from '@/components/Footer'
 import { pageMetadata } from '@/lib/seo'
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
@@ -34,7 +33,6 @@ function Placeholder({ children }: { children: React.ReactNode }) {
 
 export default function TermsOfServicePage() {
   return (
-    <>
     <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] px-4 sm:px-10 py-10 sm:py-14">
       <div className="max-w-[760px] mx-auto">
         <h1 className="text-[28px] sm:text-[32px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">Terms of Service</h1>
@@ -191,7 +189,5 @@ export default function TermsOfServicePage() {
         </Section>
       </div>
     </div>
-    <Footer />
-    </>
   )
 }

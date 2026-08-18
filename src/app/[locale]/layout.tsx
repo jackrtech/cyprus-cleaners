@@ -4,8 +4,6 @@ import { getMessages, getTranslations } from 'next-intl/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
 import Providers from '@/components/layout/Providers'
-import Navbar from '@/components/Navbar'
-import BottomTabBar from '@/components/layout/BottomTabBar'
 import '@/styles/globals.css'
 
 const dmSans = DM_Sans({
@@ -65,10 +63,12 @@ export default async function RootLayout({
         >
           {tCommon('skipToContent')}
         </a>
+        {/* Each route group ((marketing), (auth), (app)) owns its own chrome
+            (nav/footer/bottom tab bar) and its own #main-content landmark —
+            this root layout only provides the providers, skip link, and
+            no-flash theme script that every group shares. */}
         <Providers session={session} messages={messages} locale={locale}>
-          <Navbar />
-          <main id="main-content">{children}</main>
-          <BottomTabBar />
+          {children}
         </Providers>
       </body>
     </html>

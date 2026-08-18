@@ -9,7 +9,6 @@ import type { MockCleaner } from '@/lib/mockCleaners'
 import ReviewItem from '@/components/cleaners/ReviewItem'
 import { useCity } from '@/hooks/useCity'
 import ChatModal from '@/components/chat/ChatModal'
-import Footer from '@/components/Footer'
 import LoadingImage from '@/components/ui/LoadingImage'
 
 interface DbCleanerRow {
@@ -323,7 +322,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
     .join(', ')
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] pb-tabbar md:pb-0">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]">
       {/* Cover photo — only shown once the cleaner has set one */}
       {cleaner.cover_photo_url && (
         <LoadingImage src={cleaner.cover_photo_url} wrapperClassName="h-32 sm:h-44 w-full" className="object-cover" />
@@ -578,7 +577,6 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           initialShowBookingForm={wantsBookingForm}
         />
       )}
-      <Footer />
     </div>
   )
 }

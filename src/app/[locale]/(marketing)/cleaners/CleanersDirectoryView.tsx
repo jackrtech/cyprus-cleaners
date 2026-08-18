@@ -6,7 +6,6 @@ import { Link } from '@/navigation'
 import type { MockCleaner } from '@/lib/mockCleaners'
 import CleanerCard from '@/components/cleaners/CleanerCard'
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/cleaners/FilterBar'
-import Footer from '@/components/Footer'
 
 type SortKey = 'top-rated' | 'price-asc' | 'price-desc' | 'most-reviews' | 'most-jobs'
 
@@ -129,7 +128,7 @@ export default function CleanersPage() {
   }, [filters, sort, cleaners])
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] pb-tabbar md:pb-0">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]">
       {/* Page header */}
       <div className="bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] px-4 sm:px-10 pt-7 pb-0">
         <nav className="flex items-center gap-1.5 text-[12px] text-[#5B7472] dark:text-[#9BB0AE] mb-2">
@@ -201,7 +200,6 @@ export default function CleanersPage() {
         )}
       </div>
       </FilterBar>
-      <Footer />
     </div>
   )
 }
