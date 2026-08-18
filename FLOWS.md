@@ -161,22 +161,29 @@ The cleaner is never charged a commission — they keep their full rate; the pla
 
 ## 5. The email map
 
-All templates in `src/lib/email.ts`, sent via Resend. Every template accepts a `locale`, but **most callers pass `null`** because the sending user's locale isn't tracked on bookings or messages — only `users.locale` exists, and most call sites don't look it up. So most of these render in English regardless of the recipient's actual preference. `sendDisputeResolvedEmail` and the verification-decision emails are the exception; they do fetch and pass `users.locale`.
+All templates in `src/lib/email.ts`, sent via Resend. As of 2026-08-18 every customer/cleaner-facing template is both locale-aware (branches its full body on the recipient's actual `users.locale`, not just the subject) and personalized (greets the recipient by name) — this was a real, fixed gap: `sendVerificationEmail`/`sendPasswordResetEmail` used to pick a locale-correct *subject* but hardcode an English *body* regardless, and registration/resend-verification/forgot-password all hardcoded `locale: 'en'` on the call itself rather than reading the user's stored preference. Registration now accepts and stores the customer's/cleaner's current locale from whichever locale-prefixed page they registered on.
 
-| Trigger | Function | Recipient | Locale-aware? |
-|---|---|---|---|
-| Registration | `sendVerificationEmail` | new user | No |
-| "Resend" click | `sendVerificationEmail` | self | No |
-| Forgot password | `sendPasswordResetEmail` | requester | No |
-| First message in a thread (once, ever) | `sendNewMessageEmail` | other party | No |
-| Booking requested | `sendNewBookingRequestEmail` | cleaner | No |
-| Booking confirmed (charge succeeded) | `sendBookingConfirmedEmail` | customer | No — explicitly hardcoded `null` (`bookings/[id]/route.ts:255`) |
-| Booking completed | `sendBookingCompletedEmail` | customer | No — hardcoded `null` (`bookings/[id]/route.ts:265`) |
-| ID verification approved | `sendVerificationApprovedEmail` | cleaner | Yes |
-| ID verification rejected | `sendVerificationRejectedEmail` | cleaner | Yes |
-| Dispute resolved | `sendDisputeResolvedEmail` | both parties, separately | Yes — framed as WON/LOST from each recipient's own side |
+| Trigger | Function | Recipient |
+|---|---|---|
+| Registration | `sendVerificationEmail` | new user |
+| "Resend" click | `sendVerificationEmail` | self |
+| Forgot password | `sendPasswordResetEmail` | requester |
+| First message in a thread (once, ever) | `sendNewMessageEmail` | other party |
+| Booking requested | `sendNewBookingRequestEmail` | cleaner |
+| Booking confirmed (charge succeeded) | `sendBookingConfirmedEmail` | customer — states the amount charged |
+| Booking completed | `sendBookingCompletedEmail` | customer — states the 24h dispute-filing window |
+| Booking declined | `sendBookingDeclinedEmail` | customer |
+| Booking cancelled (either party) | `sendBookingCancelledEmail` | whichever party didn't act |
+| ID verification approved | `sendVerificationApprovedEmail` | cleaner |
+| ID verification rejected | `sendVerificationRejectedEmail` | cleaner |
+| Dispute filed (confirmation) | `sendDisputeFiledConfirmationEmail` | customer — names which booking, by date |
+| Dispute resolved | `sendDisputeResolvedEmail` | both parties, separately — framed as WON/LOST/UNRESOLVABLE from each side; names the booking and, for a customer win, the refund amount |
+| Account deleted | `sendAccountDeletedEmail` | the (former) account holder |
+| Contact form received | `sendContactSubmissionConfirmationEmail` | submitter — locale comes from the form's own current page locale, since a logged-out submitter has no stored preference |
 
-**Nothing emails on:** a booking decline, a booking cancellation (either party), or a cleaner responding to a dispute. A customer whose booking is cancelled by the cleaner, or whose cleaner declines outright, learns only from the in-app chat pill and dashboard — not their inbox.
+**Still nothing emails on:** a cleaner responding to a dispute (the admin only sees it on their next queue read, §7/§8) — the "no email on cancellation" and "no email on decline" claims previously here were themselves stale; both already existed.
+
+**Admin-only alerts** (`sendAdminAlertEmail` and everything built on it — refund-failed, payout-failed, new-dispute-filed, new-contact-submission, new-support-message, booking-confirmed-admin-copy) are internal-only and deliberately English-only, no locale branching — a different, intentional design choice, not a gap.
 
 **Every send is best-effort** — wrapped in try/catch at the call site so a Resend outage never fails the booking, verification decision, or any other action it's attached to. There's also a dev/staging escape hatch: if `RESEND_TEST_EMAIL` is set, every email is redirected there regardless of the real recipient, because Resend's sandbox sender silently drops mail to anyone but the account owner until a custom domain is verified.
 
