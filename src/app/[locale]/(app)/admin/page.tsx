@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
-import { Link, useRouter } from '@/navigation'
+import { Link } from '@/navigation'
 import { extractErrorMessage } from '@/lib/utils'
 import AdminNav from '@/components/admin/AdminNav'
 import FullScreenModal from '@/components/ui/FullScreenModal'
@@ -32,7 +32,6 @@ export default function AdminPage() {
   const { data: session, status: sessionStatus } = useSession()
   const t      = useTranslations('admin')
   const locale = useLocale()
-  const router = useRouter()
 
   const [queue,       setQueue]       = useState<VerificationCleaner[]>([])
   const [loading,      setLoading]     = useState(true)
@@ -41,15 +40,6 @@ export default function AdminPage() {
   const [actionError,  setActionError] = useState<string | null>(null)
   const [viewingId,    setViewingId]   = useState<string | null>(null)
   const [noteText,     setNoteText]    = useState('')
-
-  // Auth guard — middleware already gates /admin, this just handles the
-  // client-side flash while the session resolves and covers a direct visit
-  // by a non-admin whose token hasn't been re-checked yet.
-  useEffect(() => {
-    if (sessionStatus === 'loading') return
-    if (!session) { router.replace('/login'); return }
-    if (session.user.role !== 'ADMIN') router.replace('/dashboard')
-  }, [session, sessionStatus, router])
 
   useEffect(() => {
     if (sessionStatus !== 'authenticated' || session?.user.role !== 'ADMIN') return
@@ -81,9 +71,9 @@ export default function AdminPage() {
     }
   }
 
-  if (sessionStatus === 'loading' || !session || session.user.role !== 'ADMIN') {
-    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
-  }
+  // (app)/layout.tsx already gates loading/auth/role — this is pure TS
+  // narrowing for the session-shaped code below, never actually renders.
+  if (!session) return null
 
   const dateFormatter = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
   const viewing = queue.find(c => c.id === viewingId) ?? null

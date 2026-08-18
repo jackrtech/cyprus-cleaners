@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
-import { useRouter } from '@/navigation'
 import { extractErrorMessage } from '@/lib/utils'
 import AdminNav from '@/components/admin/AdminNav'
 import FullScreenModal from '@/components/ui/FullScreenModal'
@@ -57,7 +56,6 @@ export default function AdminDisputesPage() {
   const t        = useTranslations('admin')
   const tBooking = useTranslations('booking')
   const locale   = useLocale()
-  const router   = useRouter()
 
   const [disputes,    setDisputes]    = useState<Dispute[]>([])
   const [loading,      setLoading]     = useState(true)
@@ -68,11 +66,6 @@ export default function AdminDisputesPage() {
   const [actionError,  setActionError] = useState<string | null>(null)
   const [splitPercentage, setSplitPercentage] = useState(50)
 
-  useEffect(() => {
-    if (sessionStatus === 'loading') return
-    if (!session) { router.replace('/login'); return }
-    if (session.user.role !== 'ADMIN') router.replace('/dashboard')
-  }, [session, sessionStatus, router])
 
   useEffect(() => {
     if (sessionStatus !== 'authenticated' || session?.user.role !== 'ADMIN') return
@@ -129,9 +122,9 @@ export default function AdminDisputesPage() {
     }
   }
 
-  if (sessionStatus === 'loading' || !session || session.user.role !== 'ADMIN') {
-    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
-  }
+  // (app)/layout.tsx already gates loading/auth/role — this is pure TS
+  // narrowing for the session-shaped code below, never actually renders.
+  if (!session) return null
 
   const dateFormatter = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
   const viewing = disputes.find(d => d.id === viewingId) ?? null

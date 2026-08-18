@@ -196,13 +196,6 @@ export default function CleanerDashboardPage() {
   const activeTab = searchParams.get('tab') === 'messages' ? 'messages' : 'bookings'
   const [viewingBookingId, setViewingBookingId] = useState<string | null>(null)
 
-  // Auth guard
-  useEffect(() => {
-    if (sessionStatus === 'loading') return
-    if (!session) { router.replace('/login'); return }
-    if (session.user.role === 'CUSTOMER') router.replace('/dashboard')
-  }, [session, sessionStatus, router])
-
   // Fetch email verification status
   useEffect(() => {
     if (sessionStatus !== 'authenticated') return
@@ -371,9 +364,9 @@ export default function CleanerDashboardPage() {
       .finally(() => setBookingsLoading(false))
   }, [session, sessionStatus])
 
-  if (sessionStatus === 'loading' || !session || session.user.role === 'CUSTOMER') {
-    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
-  }
+  // (app)/layout.tsx already gates loading/auth/role — this is pure TS
+  // narrowing for the session-shaped code below, never actually renders.
+  if (!session) return null
 
   const profileIncomplete =
     !profile?.bio || !profile?.photo_url || !profile?.cities || profile.cities.length === 0

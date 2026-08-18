@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
-import { useRouter } from '@/navigation'
 import AdminNav from '@/components/admin/AdminNav'
 
 interface CancellationCustomer {
@@ -51,7 +50,6 @@ export default function AdminCancellationsPage() {
   const { data: session, status: sessionStatus } = useSession()
   const t      = useTranslations('admin')
   const locale = useLocale()
-  const router = useRouter()
 
   const [cancellations, setCancellations] = useState<Cancellation[]>([])
   const [loading,  setLoading]  = useState(true)
@@ -79,11 +77,6 @@ export default function AdminCancellationsPage() {
     }
   }
 
-  useEffect(() => {
-    if (sessionStatus === 'loading') return
-    if (!session) { router.replace('/login'); return }
-    if (session.user.role !== 'ADMIN') router.replace('/dashboard')
-  }, [session, sessionStatus, router])
 
   useEffect(() => {
     if (sessionStatus !== 'authenticated' || session?.user.role !== 'ADMIN') return
@@ -94,9 +87,9 @@ export default function AdminCancellationsPage() {
       .finally(() => setLoading(false))
   }, [session, sessionStatus, t])
 
-  if (sessionStatus === 'loading' || !session || session.user.role !== 'ADMIN') {
-    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
-  }
+  // (app)/layout.tsx already gates loading/auth/role — this is pure TS
+  // narrowing for the session-shaped code below, never actually renders.
+  if (!session) return null
 
   const dateFormatter = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
 

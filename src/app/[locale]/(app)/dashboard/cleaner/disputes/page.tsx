@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
-import { useRouter, Link } from '@/navigation'
+import { Link } from '@/navigation'
 import { extractErrorMessage } from '@/lib/utils'
 import FullScreenModal from '@/components/ui/FullScreenModal'
 
@@ -37,7 +37,6 @@ export default function CleanerDisputesPage() {
   const t        = useTranslations('disputes')
   const tBooking = useTranslations('booking')
   const locale   = useLocale()
-  const router   = useRouter()
 
   const [disputes,   setDisputes]   = useState<Dispute[]>([])
   const [loading,     setLoading]    = useState(true)
@@ -46,12 +45,6 @@ export default function CleanerDisputesPage() {
   const [responseText, setResponseText] = useState('')
   const [submitting,  setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (sessionStatus === 'loading') return
-    if (!session) { router.replace('/login'); return }
-    if (session.user.role !== 'CLEANER') router.replace('/dashboard')
-  }, [session, sessionStatus, router])
 
   useEffect(() => {
     if (sessionStatus !== 'authenticated' || session?.user.role !== 'CLEANER') return
@@ -83,9 +76,9 @@ export default function CleanerDisputesPage() {
     }
   }
 
-  if (sessionStatus === 'loading' || !session || session.user.role !== 'CLEANER') {
-    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
-  }
+  // (app)/layout.tsx already gates loading/auth/role — this is pure TS
+  // narrowing for the session-shaped code below, never actually renders.
+  if (!session) return null
 
   const dateFormatter = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
   const viewing = disputes.find(d => d.id === viewingId) ?? null

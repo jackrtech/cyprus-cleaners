@@ -114,13 +114,6 @@ export default function DashboardPage() {
   const [disputingId, setDisputingId] = useState<string | null>(null)
   const [disputeClaimText, setDisputeClaimText] = useState('')
 
-  // Auth guard
-  useEffect(() => {
-    if (sessionStatus === 'loading') return
-    if (!session) { router.replace('/login'); return }
-    if (session.user.role === 'CLEANER') router.replace('/dashboard/cleaner')
-  }, [session, sessionStatus, router])
-
   // Fetch introductions once confirmed CUSTOMER
   useEffect(() => {
     if (sessionStatus !== 'authenticated' || session?.user.role !== 'CUSTOMER') return
@@ -163,9 +156,9 @@ export default function DashboardPage() {
     }
   }
 
-  if (sessionStatus === 'loading' || !session || session.user.role === 'CLEANER') {
-    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
-  }
+  // (app)/layout.tsx already gates loading/auth/role — this is pure TS
+  // narrowing for the session-shaped code below, never actually renders.
+  if (!session) return null
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     day: 'numeric', month: 'short', year: 'numeric',

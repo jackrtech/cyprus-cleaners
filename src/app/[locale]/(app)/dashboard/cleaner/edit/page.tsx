@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
-import { Link, useRouter } from '@/navigation'
+import { Link } from '@/navigation'
 import { compressImage } from '@/lib/utils/compressImage'
 import { CITIES } from '@/lib/cities'
 
@@ -22,7 +22,6 @@ function getInitials(name: string): string {
 export default function EditProfilePage() {
   const t       = useTranslations('dashboard')
   const tCities = useTranslations('cities')
-  const router  = useRouter()
   const { data: session, status: sessionStatus } = useSession()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const coverFileInputRef = useRef<HTMLInputElement>(null)
@@ -47,13 +46,6 @@ export default function EditProfilePage() {
   const [languages,    setLanguages]    = useState<string[]>([])
   const [availability, setAvailability] = useState<string[]>([])
   const [hasTransport, setHasTransport] = useState(false)
-
-  // Auth guard
-  useEffect(() => {
-    if (sessionStatus === 'loading') return
-    if (!session) { router.replace('/login'); return }
-    if (session.user.role === 'CUSTOMER') router.replace('/dashboard')
-  }, [session, sessionStatus, router])
 
   // Fetch and populate form via API (uses admin client server-side, bypasses RLS)
   useEffect(() => {
@@ -194,9 +186,9 @@ export default function EditProfilePage() {
     }
   }
 
-  if (sessionStatus === 'loading' || !session || session.user.role === 'CUSTOMER') {
-    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
-  }
+  // (app)/layout.tsx already gates loading/auth/role — this is pure TS
+  // narrowing for the session-shaped code below, never actually renders.
+  if (!session) return null
 
   if (loading) {
     return (

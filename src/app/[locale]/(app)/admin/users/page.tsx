@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
-import { useRouter } from '@/navigation'
 import { extractErrorMessage } from '@/lib/utils'
 import AdminNav from '@/components/admin/AdminNav'
 
@@ -36,7 +35,6 @@ export default function AdminUsersPage() {
   const t      = useTranslations('admin')
   const tNav   = useTranslations('nav')
   const locale = useLocale()
-  const router = useRouter()
 
   const [users,   setUsers]   = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,11 +43,6 @@ export default function AdminUsersPage() {
   const [pendingId,   setPendingId]   = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (sessionStatus === 'loading') return
-    if (!session) { router.replace('/login'); return }
-    if (session.user.role !== 'ADMIN') router.replace('/dashboard')
-  }, [session, sessionStatus, router])
 
   useEffect(() => {
     if (sessionStatus !== 'authenticated' || session?.user.role !== 'ADMIN') return
@@ -87,9 +80,9 @@ export default function AdminUsersPage() {
     return users.filter(u => u.full_name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
   }, [users, search])
 
-  if (sessionStatus === 'loading' || !session || session.user.role !== 'ADMIN') {
-    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
-  }
+  // (app)/layout.tsx already gates loading/auth/role — this is pure TS
+  // narrowing for the session-shaped code below, never actually renders.
+  if (!session) return null
 
   const dateFormatter = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
   const roleLabel = (role: AdminUser['role']) =>

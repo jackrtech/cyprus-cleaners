@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
-import { Link, useRouter } from '@/navigation'
+import { Link } from '@/navigation'
 import LanguageToggle from '@/components/layout/LanguageToggle'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import AddressFormModal, { type SavedAddress } from '@/components/addresses/AddressFormModal'
@@ -19,18 +19,12 @@ export default function ProfilePage() {
   const tNav = useTranslations('nav')
   const tAddr = useTranslations('address')
   const tCommon = useTranslations('common')
-  const router = useRouter()
 
   const [cleanerSlug, setCleanerSlug] = useState<string | null>(null)
   const [cleanerPhotoUrl, setCleanerPhotoUrl] = useState<string | null>(null)
 
   const [addresses, setAddresses] = useState<SavedAddress[]>([])
   const [showAddressModal, setShowAddressModal] = useState(false)
-
-  useEffect(() => {
-    if (sessionStatus === 'loading') return
-    if (!session) { router.replace('/login'); return }
-  }, [session, sessionStatus, router])
 
   useEffect(() => {
     if (session?.user.role !== 'CLEANER') return
@@ -51,9 +45,9 @@ export default function ProfilePage() {
       .catch(() => {})
   }, [session])
 
-  if (sessionStatus === 'loading' || !session) {
-    return <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" />
-  }
+  // (app)/layout.tsx already gates loading/auth — this is pure TS narrowing
+  // for the session-shaped code below, never actually renders.
+  if (!session) return null
 
   const role = session.user.role
   const roleLabel = role === 'CUSTOMER' ? tNav('roleCustomer')
