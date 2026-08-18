@@ -157,14 +157,6 @@ export interface Review {
   customer?: User
 }
 
-export interface ChatNotification {
-  id: string
-  introduction_id: string
-  recipient_id: string
-  last_notified_at: string | null
-  pending_count: number
-}
-
 // ─── Cyprus geography ─────────────────────────────────────────────────────────
 
 export const CYPRUS_CITIES = [

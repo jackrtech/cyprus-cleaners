@@ -382,17 +382,6 @@ create index idx_disputes_status  on disputes (status);
 create index idx_disputes_booking on disputes (booking_id);
 create index idx_disputes_open_resolve_by on disputes (resolve_by) where status = 'OPEN';  -- backs the auto-resolve-disputes cron/lazy-check's overdue lookup
 
--- ─── CHAT NOTIFICATIONS ──────────────────────────────────────
-
-create table chat_notifications (
-  id                uuid primary key default gen_random_uuid(),
-  introduction_id   uuid not null references introductions(id) on delete cascade,
-  recipient_id      uuid not null references users(id) on delete cascade,
-  last_notified_at  timestamptz,
-  pending_count     int not null default 0,
-  unique (introduction_id, recipient_id)
-);
-
 -- ─── TRIGGER: Update cleaner stats on review INSERT ──────────
 
 create or replace function update_cleaner_stats()
@@ -466,7 +455,6 @@ alter table bookings            enable row level security;
 alter table addresses           enable row level security;
 alter table messages            enable row level security;
 alter table reviews             enable row level security;
-alter table chat_notifications  enable row level security;
 alter table payments             enable row level security;
 alter table disputes             enable row level security;
 alter table verification_tokens  enable row level security;
