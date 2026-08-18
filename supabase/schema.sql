@@ -170,7 +170,7 @@ create index idx_bookings_date     on bookings (date);
 --
 -- `amount_eur` is the TOTAL charged to the customer: the cleaner's
 -- (hourly_rate_eur × duration_hours) plus a flat platform booking fee
--- (`platform_fee_eur`, BOOKING_FEE_EUR in src/lib/constants/payments.ts) —
+-- (`platform_fee_eur`, BOOKING_FEE_EUR in src/lib/stripe.ts — €0.50) —
 -- this is a Connect "separate charges and transfers" setup, not a
 -- destination charge: the charge itself is a plain platform-account charge
 -- (as before Connect existed), and the cleaner's cut only moves as a

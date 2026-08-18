@@ -216,7 +216,7 @@ describe.skipIf(!hasLiveCreds || !isTestStripeKey)('Booking confirm concurrency 
     // charged exactly once for the quoted amount — not twice.
     const paymentIntent = await stripe.paymentIntents.retrieve(payment!.provider_payment_intent_id!)
     expect(paymentIntent.status).toBe('succeeded')
-    expect(paymentIntent.amount_received).toBe(6100) // 20 EUR/hr x 3h + BOOKING_FEE_EUR, charged once
+    expect(paymentIntent.amount_received).toBe(6050) // 20 EUR/hr x 3h + BOOKING_FEE_EUR (0.5), charged once
 
     const { data: finalBooking } = await admin
       .from('bookings')

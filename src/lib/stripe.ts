@@ -15,11 +15,11 @@ export function getStripe(): Stripe {
 
 // Flat fee added to every booking on top of the cleaner's own rate, kept
 // entirely by the platform — the cleaner is never charged a commission (see
-// schema.sql's payments table comment). Placeholder pricing: confirm the
-// real number before launch, not an engineering decision. Server-only, same
-// as the rest of this file — the customer-facing price breakdown is read
-// back from the payments row after booking, not computed client-side.
-export const BOOKING_FEE_EUR = 1.00
+// schema.sql's payments table comment). Finalized 2026-08-18 at €0.50 (was
+// a €1 placeholder). Server-only, same as the rest of this file — the
+// customer-facing price breakdown is read back from the payments row after
+// booking, not computed client-side.
+export const BOOKING_FEE_EUR = 0.50
 
 // How long a completed booking's payout is held before it's eligible for
 // release — mirrors the 24h dispute filing window (src/app/api/disputes/route.ts)

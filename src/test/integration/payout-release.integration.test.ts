@@ -118,9 +118,9 @@ describe.skipIf(!hasLiveCreds || !isTestStripeKey)('Payout release (live DB, no 
     }).select('id').single()
     if (bookingErr || !booking) throw new Error(`Failed to create booking: ${bookingErr?.message}`)
 
-    // rate 20 x 2h = 40, + BOOKING_FEE_EUR (1) = 41 total charged
+    // rate 20 x 2h = 40, + BOOKING_FEE_EUR (0.5) = 40.5 total charged
     const { error: paymentErr } = await admin.from('payments').insert({
-      booking_id: booking.id, amount_eur: 41, platform_fee_eur: 1, status: 'PAID',
+      booking_id: booking.id, amount_eur: 40.5, platform_fee_eur: 0.5, status: 'PAID',
     })
     if (paymentErr) throw new Error(`Failed to create payment: ${paymentErr.message}`)
 
