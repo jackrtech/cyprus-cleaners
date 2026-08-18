@@ -11,6 +11,7 @@ import { useCity } from '@/hooks/useCity'
 import ChatModal from '@/components/chat/ChatModal'
 import LoadingImage from '@/components/ui/LoadingImage'
 import { getTenure } from '@/lib/utils'
+import { deriveAvailabilityTags, type WeeklyAvailability } from '@/lib/availability'
 
 interface DbCleanerRow {
   id:                    string
@@ -31,7 +32,7 @@ interface DbCleanerRow {
   review_count:          number
   unique_customer_count: number
   total_jobs_count:      number
-  availability:          Record<string, boolean> | null
+  availability:          WeeklyAvailability | null
   is_mock:               boolean
   is_company:            boolean
   is_own_profile:        boolean
@@ -79,10 +80,6 @@ function hashString(str: string): number {
   return hash
 }
 
-function mapAvailability(raw: Record<string, boolean> | null): ('weekdays' | 'weekends' | 'evenings')[] {
-  if (!raw) return []
-  return (['weekdays', 'weekends', 'evenings'] as const).filter(key => raw[key])
-}
 
 function mapCleaner(row: DbCleanerRow): MockCleaner {
   const palette      = AVATAR_PALETTE[hashString(row.id) % AVATAR_PALETTE.length]
@@ -104,7 +101,7 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
     avatarColor:            palette.bg,
     avatarText:             palette.text,
     gender,
-    availability:           mapAvailability(row.availability),
+    availability:           deriveAvailabilityTags(row.availability),
     cleaner_type:           cleanerType,
     total_jobs_count:       row.total_jobs_count,
     unique_customer_count:  row.unique_customer_count,

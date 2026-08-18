@@ -11,6 +11,7 @@ import { compressImage } from '@/lib/utils/compressImage'
 import ChatPanel from '@/components/chat/ChatPanel'
 import DashboardTabs from '@/components/dashboard/DashboardTabs'
 import BookingDetailModal from '@/components/dashboard/BookingDetailModal'
+import { isAvailabilitySet, type WeeklyAvailability } from '@/lib/availability'
 import type { BookingStatus, CleaningType } from '@/types'
 
 interface CleanerProfile {
@@ -18,6 +19,7 @@ interface CleanerProfile {
   bio:       string | null
   photo_url: string | null
   cities:    string[] | null
+  availability:         WeeklyAvailability | null
   verified:             boolean
   verification_status:  'PENDING' | 'APPROVED' | 'REJECTED' | null
   verification_note:    string | null
@@ -362,7 +364,7 @@ export default function CleanerDashboardPage() {
         .then(({ token }: { token: string }) =>
           createClient(token)
             .from('cleaner_profiles')
-            .select('slug, bio, photo_url, cities, verified, verification_status, verification_note')
+            .select('slug, bio, photo_url, cities, availability, verified, verification_status, verification_note')
             .eq('user_id', session.user.id)
             .single()
             .then(({ data }) => data)
@@ -391,7 +393,8 @@ export default function CleanerDashboardPage() {
   if (!session) return null
 
   const profileIncomplete =
-    !profile?.bio || !profile?.photo_url || !profile?.cities || profile.cities.length === 0
+    !profile?.bio || !profile?.photo_url || !profile?.cities || profile.cities.length === 0 ||
+    !isAvailabilitySet(profile?.availability)
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     day: 'numeric', month: 'short', year: 'numeric',

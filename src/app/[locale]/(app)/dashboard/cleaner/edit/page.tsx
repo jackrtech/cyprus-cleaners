@@ -6,8 +6,14 @@ import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import { compressImage } from '@/lib/utils/compressImage'
 import { CITIES } from '@/lib/cities'
+import { DAYS, isAvailabilitySet, type DayKey, type WeeklyAvailability } from '@/lib/availability'
 
 const MAX_BIO = 500
+const DEFAULT_START = 9
+const DEFAULT_END = 17
+// 06:00–23:00 — a working cleaner's realistic hour range, kept to whole
+// hours in v1 (no half-hours).
+const HOUR_OPTIONS = Array.from({ length: 18 }, (_, i) => i + 6)
 
 const LANGUAGES = [
   { code: 'EN', label: 'English' },
@@ -41,7 +47,7 @@ export default function EditProfilePage() {
   const [gender,       setGender]       = useState<'female' | 'male' | null>(null)
   const [hourlyRate,   setHourlyRate]   = useState('10')
   const [languages,    setLanguages]    = useState<string[]>([])
-  const [availability, setAvailability] = useState<string[]>([])
+  const [availability, setAvailability] = useState<WeeklyAvailability>({})
   const [hasTransport, setHasTransport] = useState(false)
 
   // Fetch and populate form via API (uses admin client server-side, bypasses RLS)
@@ -58,7 +64,14 @@ export default function EditProfilePage() {
         setGender((data.gender as 'female' | 'male' | null) ?? null)
         setHourlyRate(String(data.hourly_rate_eur ?? 10))
         setLanguages((data.languages as string[]) ?? [])
-        setAvailability((data.availability as string[]) ?? [])
+        // Old data may still carry the pre-fix shape (a plain string array) —
+        // treat anything that isn't a real object as unset rather than crash.
+        const rawAvailability = data.availability
+        setAvailability(
+          rawAvailability && typeof rawAvailability === 'object' && !Array.isArray(rawAvailability)
+            ? (rawAvailability as WeeklyAvailability)
+            : {}
+        )
         setHasTransport(Boolean(data.has_transport))
         if (data.photo_url) setPhotoPreview(data.photo_url as string)
       })
@@ -81,8 +94,23 @@ export default function EditProfilePage() {
     setLanguages(prev => prev.includes(code) ? prev.filter(l => l !== code) : [...prev, code])
   }
 
-  function toggleAvailability(value: string) {
-    setAvailability(prev => prev.includes(value) ? prev.filter(a => a !== value) : [...prev, value])
+  function toggleAvailabilityDay(day: DayKey) {
+    setAvailability(prev => {
+      if (prev[day]) {
+        const next = { ...prev }
+        delete next[day]
+        return next
+      }
+      return { ...prev, [day]: { start: DEFAULT_START, end: DEFAULT_END } }
+    })
+  }
+
+  function setAvailabilityHour(day: DayKey, field: 'start' | 'end', hour: number) {
+    setAvailability(prev => {
+      const current = prev[day]
+      if (!current) return prev
+      return { ...prev, [day]: { ...current, [field]: hour } }
+    })
   }
 
   function handleSetCleanerType(type: 'individual' | 'company') {
@@ -105,6 +133,7 @@ export default function EditProfilePage() {
 
     if (cities.length === 0) { setFormError(t('atLeastOneCity')); return }
     if (languages.length === 0) { setFormError(t('atLeastOneLanguage')); return }
+    if (!isAvailabilitySet(availability)) { setFormError(t('atLeastOneAvailabilityDay')); return }
 
     setSaving(true)
     try {
@@ -391,24 +420,58 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            {/* 8. Availability */}
+            {/* 8. Availability — mandatory weekly recurring hours. Required to
+                save (same pattern as cities above), and defaults to fully
+                unset rather than assuming availability the cleaner hasn't
+                actually confirmed. */}
             <div>
-              <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
+              <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1">
                 {t('availability')}
               </label>
-              <div className="space-y-2.5">
-                {(['weekdays', 'weekends', 'evenings'] as const).map(slot => (
-                  <label key={slot} htmlFor={`cleaner-edit-availability-${slot}`} className="flex items-center gap-2.5 cursor-pointer">
-                    <input
-                      id={`cleaner-edit-availability-${slot}`}
-                      type="checkbox"
-                      checked={availability.includes(slot)}
-                      onChange={() => toggleAvailability(slot)}
-                      className="w-4 h-4 accent-[#19706A]"
-                    />
-                    <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{t(slot)}</span>
-                  </label>
-                ))}
+              <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mb-2">{t('availabilityHint')}</p>
+              <div className="space-y-2">
+                {DAYS.map(day => {
+                  const hours = availability[day]
+                  return (
+                    <div key={day} className="flex items-center gap-2.5 flex-wrap">
+                      <label htmlFor={`cleaner-edit-availability-${day}`} className="flex items-center gap-2.5 cursor-pointer w-28 shrink-0">
+                        <input
+                          id={`cleaner-edit-availability-${day}`}
+                          type="checkbox"
+                          checked={!!hours}
+                          onChange={() => toggleAvailabilityDay(day)}
+                          className="w-4 h-4 accent-[#19706A]"
+                        />
+                        <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{t(`day_${day}`)}</span>
+                      </label>
+                      {hours && (
+                        <div className="flex items-center gap-1.5">
+                          <select
+                            aria-label={t('availabilityStart')}
+                            value={hours.start}
+                            onChange={e => setAvailabilityHour(day, 'start', Number(e.target.value))}
+                            className="input !py-1.5 !px-2 text-[13px] w-auto"
+                          >
+                            {HOUR_OPTIONS.filter(h => h < hours.end).map(h => (
+                              <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>
+                            ))}
+                          </select>
+                          <span className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">{t('availabilityToLabel')}</span>
+                          <select
+                            aria-label={t('availabilityEnd')}
+                            value={hours.end}
+                            onChange={e => setAvailabilityHour(day, 'end', Number(e.target.value))}
+                            className="input !py-1.5 !px-2 text-[13px] w-auto"
+                          >
+                            {[...HOUR_OPTIONS, 24].filter(h => h > hours.start).map(h => (
+                              <option key={h} value={h}>{String(h % 24).padStart(2, '0')}:00</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
 

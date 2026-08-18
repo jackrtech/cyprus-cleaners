@@ -611,9 +611,18 @@
     "female": "Γυναίκα",
     "male": "Άνδρας",
     "notApplicable": "Δεν εφαρμόζεται",
-    "weekdays": "Καθημερινές",
-    "weekends": "Σαββατοκύριακα",
-    "evenings": "Βράδια"
+    "atLeastOneAvailabilityDay": "Επιλέξτε τουλάχιστον μία διαθέσιμη ημέρα",
+    "availabilityHint": "Ορίστε τις τακτικές εβδομαδιαίες ώρες σας — απαιτείται ώστε το προφίλ σας να μην εμφανίζεται ως διαθέσιμο όλο το εικοσιτετράωρο.",
+    "availabilityStart": "Ώρα έναρξης",
+    "availabilityEnd": "Ώρα λήξης",
+    "availabilityToLabel": "έως",
+    "day_mon": "Δευτέρα",
+    "day_tue": "Τρίτη",
+    "day_wed": "Τετάρτη",
+    "day_thu": "Πέμπτη",
+    "day_fri": "Παρασκευή",
+    "day_sat": "Σάββατο",
+    "day_sun": "Κυριακή"
   },
   "address": {
     "yourAddresses": "Οι διευθύνσεις σας",

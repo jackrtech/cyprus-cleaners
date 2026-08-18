@@ -601,9 +601,18 @@
     "female": "Female",
     "male": "Male",
     "notApplicable": "Not applicable",
-    "weekdays": "Weekdays",
-    "weekends": "Weekends",
-    "evenings": "Evenings"
+    "atLeastOneAvailabilityDay": "Please set at least one available day",
+    "availabilityHint": "Set your regular weekly hours — required so your profile doesn't read as available around the clock.",
+    "availabilityStart": "Start time",
+    "availabilityEnd": "End time",
+    "availabilityToLabel": "to",
+    "day_mon": "Monday",
+    "day_tue": "Tuesday",
+    "day_wed": "Wednesday",
+    "day_thu": "Thursday",
+    "day_fri": "Friday",
+    "day_sat": "Saturday",
+    "day_sun": "Sunday"
   },
   "address": {
     "yourAddresses": "Your addresses",

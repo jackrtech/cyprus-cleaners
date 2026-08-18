@@ -99,7 +99,12 @@ create table cleaner_profiles (
   review_count          int not null default 0,
   unique_customer_count int not null default 0,
   total_jobs_count      int not null default 0,
-  -- Availability: {"mon": [9, 17], "tue": [9, 17], ...}
+  -- Weekly recurring availability, whole hours (24h clock). A day key is
+  -- present only when the cleaner is available that day; absent = not
+  -- available. Mandatory (nudged via the profile-completion banner, folded
+  -- in 2026-08-18) — never assume availability the cleaner hasn't set.
+  -- See src/lib/availability.ts for the shared type + helpers.
+  -- e.g. {"mon": {"start": 9, "end": 17}, "wed": {"start": 9, "end": 17}}
   availability          jsonb,
   created_at            timestamptz not null default now()
 );

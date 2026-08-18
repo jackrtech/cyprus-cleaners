@@ -6,6 +6,7 @@ import { Link } from '@/navigation'
 import type { MockCleaner } from '@/lib/mockCleaners'
 import CleanerCard from '@/components/cleaners/CleanerCard'
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/cleaners/FilterBar'
+import { deriveAvailabilityTags, type WeeklyAvailability } from '@/lib/availability'
 
 type SortKey = 'top-rated' | 'price-asc' | 'price-desc' | 'most-reviews' | 'most-jobs'
 
@@ -28,7 +29,7 @@ interface DbCleanerRow {
   review_count:          number
   unique_customer_count: number
   total_jobs_count:      number
-  availability:          Record<string, boolean> | null
+  availability:          WeeklyAvailability | null
   is_mock:               boolean
   is_company:            boolean
   created_at:            string
@@ -54,10 +55,6 @@ function hashString(str: string): number {
   return hash
 }
 
-function mapAvailability(raw: Record<string, boolean> | null): ('weekdays' | 'weekends' | 'evenings')[] {
-  if (!raw) return []
-  return (['weekdays', 'weekends', 'evenings'] as const).filter(key => raw[key])
-}
 
 function mapCleaner(row: DbCleanerRow): MockCleaner {
   const palette      = AVATAR_PALETTE[hashString(row.id) % AVATAR_PALETTE.length]
@@ -79,7 +76,7 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
     avatarColor:            palette.bg,
     avatarText:             palette.text,
     gender,
-    availability:           mapAvailability(row.availability),
+    availability:           deriveAvailabilityTags(row.availability),
     cleaner_type:           cleanerType,
     total_jobs_count:       row.total_jobs_count,
     unique_customer_count:  row.unique_customer_count,
