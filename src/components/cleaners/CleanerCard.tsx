@@ -4,7 +4,6 @@ import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import type { MockCleaner } from '@/lib/mockCleaners'
 import { useCity } from '@/hooks/useCity'
-import LoadingImage from '@/components/ui/LoadingImage'
 
 function StarRow({ rating }: { rating: number }) {
   const t = useTranslations('cleaners')
@@ -27,85 +26,66 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
   return (
     <Link
       href={`/cleaners/${cleaner.slug}`}
-      className="group block bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(25,112,106,0.14)]"
+      className="group block bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(25,112,106,0.14)]"
     >
-      {/* Cover photo — falls back to a plain colour when the cleaner hasn't set one */}
-      <div
-        className="h-[120px] relative"
-        style={cleaner.cover_photo_url ? undefined : { background: cleaner.avatarColor }}
-      >
-        {cleaner.cover_photo_url && (
-          <LoadingImage
-            src={cleaner.cover_photo_url}
-            wrapperClassName="absolute inset-0"
-            className="object-cover"
-          />
-        )}
-        {cleaner.verified && (
-          <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-[#19706A] rounded-full px-2 py-0.5">
-            <span className="w-1 h-1 rounded-full bg-white dark:bg-[#16211F] shrink-0" />
-            <span className="text-[9px] font-medium text-white">{t('verified')}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Card body */}
-      <div className="px-3 pb-3.5">
-        {/* Avatar — overlaps the boundary between the cover photo and the body.
-            Biggest on mobile (single-column cards have the most room), a
-            bit smaller on desktop grid columns, but still clearly bigger
-            than the original 56px which read as too small there too. */}
-        <div className="-mt-10 sm:-mt-8 mb-2 relative z-10">
+      {/* Header — modest avatar, name + verified badge, rate */}
+      <div className="flex items-start gap-3">
+        <div className="relative shrink-0">
           {cleaner.photo_url ? (
             <img
               src={cleaner.photo_url}
               alt={cleaner.display_name}
-              className="w-20 h-20 sm:w-16 sm:h-16 rounded-full object-cover border-[3px] border-white shadow-sm"
+              className="w-14 h-14 rounded-full object-cover"
             />
           ) : (
             <div
-              className="w-20 h-20 sm:w-16 sm:h-16 rounded-full border-[3px] border-white shadow-sm flex items-center justify-center text-[26px] sm:text-[22px] font-medium bg-white dark:bg-[#16211F]"
-              style={{ color: cleaner.avatarText }}
+              className="w-14 h-14 rounded-full flex items-center justify-center text-[20px] font-medium"
+              style={{ background: cleaner.avatarColor, color: cleaner.avatarText }}
             >
               {cleaner.initials}
             </div>
           )}
-        </div>
-
-        <div className="flex justify-between items-start mb-0.5">
-          <span className="text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] leading-snug">{cleaner.display_name}</span>
-          <span className="text-right shrink-0 ml-1.5">
-            <span className="text-[12px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">€{cleaner.hourly_rate_eur}</span>
-            <span className="text-[10px] text-[#5B7472] dark:text-[#9BB0AE]">{tCommon('perHour')}</span>
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1 my-1.5 flex-wrap">
-          <span className="inline-block bg-[#E6F1FF] dark:bg-[#122A42] text-[#2D8CFF] rounded-[6px] px-2 py-0.5 text-[10px] font-medium">
-            {getCityName(cleaner.cities[0])}
-          </span>
-          {cleaner.cities.length > 1 && (
-            <span className="text-[10px] text-[#5B7472] dark:text-[#9BB0AE]">+{cleaner.cities.length - 1} more</span>
+          {cleaner.verified && (
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#19706A] border-2 border-white dark:border-[#16211F] flex items-center justify-center" title={t('verified')}>
+              <span className="w-1.5 h-1.5 rounded-full bg-white" />
+            </div>
           )}
         </div>
 
-        <div className="flex gap-1 flex-wrap mb-2.5">
-          <span className="bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A] rounded-[6px] px-2 py-0.5 text-[10px] font-medium">
-            {cleaner.languages.join(' · ')}
-          </span>
-        </div>
-
-        <div className="border-t border-[#F0F5F4] dark:border-[#142220] pt-2 flex justify-between items-center">
-          <div className="flex items-center gap-1">
+        <div className="flex-1 min-w-0 pt-0.5">
+          <div className="flex justify-between items-start gap-1.5">
+            <span className="text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] leading-snug truncate">{cleaner.display_name}</span>
+            <span className="text-right shrink-0">
+              <span className="text-[12px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">€{cleaner.hourly_rate_eur}</span>
+              <span className="text-[10px] text-[#5B7472] dark:text-[#9BB0AE]">{tCommon('perHour')}</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-1 mt-0.5">
             <StarRow rating={cleaner.avg_rating} />
             <span className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] ml-0.5">
               {cleaner.avg_rating} ({cleaner.review_count})
             </span>
           </div>
-          <span className="bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A] rounded-full px-2.5 py-1 text-[10px] font-medium group-hover:bg-[#19706A] group-hover:text-white transition-colors">
-            {t('viewProfile')}
-          </span>
         </div>
+      </div>
+
+      {/* Tags */}
+      <div className="flex items-center gap-1 mt-2.5 flex-wrap">
+        <span className="inline-block bg-[#E6F1FF] dark:bg-[#122A42] text-[#2D8CFF] rounded-[6px] px-2 py-0.5 text-[10px] font-medium">
+          {getCityName(cleaner.cities[0])}
+        </span>
+        {cleaner.cities.length > 1 && (
+          <span className="text-[10px] text-[#5B7472] dark:text-[#9BB0AE]">+{cleaner.cities.length - 1} more</span>
+        )}
+        <span className="bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A] rounded-[6px] px-2 py-0.5 text-[10px] font-medium">
+          {cleaner.languages.join(' · ')}
+        </span>
+      </div>
+
+      <div className="border-t border-[#F0F5F4] dark:border-[#142220] mt-2.5 pt-2 flex justify-end">
+        <span className="bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A] rounded-full px-2.5 py-1 text-[10px] font-medium group-hover:bg-[#19706A] group-hover:text-white transition-colors">
+          {t('viewProfile')}
+        </span>
       </div>
     </Link>
   )

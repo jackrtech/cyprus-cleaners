@@ -24,7 +24,6 @@ export default function EditProfilePage() {
   const tCities = useTranslations('cities')
   const { data: session, status: sessionStatus } = useSession()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const coverFileInputRef = useRef<HTMLInputElement>(null)
 
   const [loading,      setLoading]      = useState(true)
   const [saving,       setSaving]       = useState(false)
@@ -33,8 +32,6 @@ export default function EditProfilePage() {
   const [fetchError,   setFetchError]   = useState<string | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [newPhotoFile, setNewPhotoFile] = useState<File | null>(null)
-  const [coverPhotoPreview, setCoverPhotoPreview] = useState<string | null>(null)
-  const [newCoverPhotoFile, setNewCoverPhotoFile] = useState<File | null>(null)
   const [profileSlug,  setProfileSlug]  = useState<string | null>(null)
 
   const [displayName,  setDisplayName]  = useState('')
@@ -64,7 +61,6 @@ export default function EditProfilePage() {
         setAvailability((data.availability as string[]) ?? [])
         setHasTransport(Boolean(data.has_transport))
         if (data.photo_url) setPhotoPreview(data.photo_url as string)
-        if (data.cover_photo_url) setCoverPhotoPreview(data.cover_photo_url as string)
       })
       .catch(() => setFetchError('Failed to load profile. Please refresh.'))
       .finally(() => setLoading(false))
@@ -102,14 +98,6 @@ export default function EditProfilePage() {
     setPhotoPreview(URL.createObjectURL(compressed))
   }
 
-  async function handleCoverPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const compressed = await compressImage(file)
-    setNewCoverPhotoFile(compressed)
-    setCoverPhotoPreview(URL.createObjectURL(compressed))
-  }
-
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setFormError(null)
@@ -121,7 +109,6 @@ export default function EditProfilePage() {
     setSaving(true)
     try {
       let photoUrl: string | undefined
-      let coverPhotoUrl: string | undefined
 
       if (newPhotoFile) {
         const fd = new FormData()
@@ -136,20 +123,6 @@ export default function EditProfilePage() {
         photoUrl = url
       }
 
-      if (newCoverPhotoFile) {
-        const fd = new FormData()
-        fd.append('photo', newCoverPhotoFile)
-        fd.append('type', 'cover')
-        const uploadRes = await fetch('/api/cleaner-profiles/upload-photo', { method: 'POST', body: fd })
-        if (!uploadRes.ok) {
-          const uploadData = await uploadRes.json()
-          console.error('Cover photo upload error:', uploadData)
-          throw new Error('Cover photo upload failed. Please try again.')
-        }
-        const { url } = await uploadRes.json()
-        coverPhotoUrl = url
-      }
-
       const body: Record<string, unknown> = {
         display_name:    displayName,
         bio:             bio.trim() || null,
@@ -162,7 +135,6 @@ export default function EditProfilePage() {
         has_transport: hasTransport,
       }
       if (photoUrl) body.photo_url = photoUrl
-      if (coverPhotoUrl) body.cover_photo_url = coverPhotoUrl
 
       const res = await fetch('/api/cleaner-profiles/me', {
         method:  'PATCH',
@@ -177,7 +149,6 @@ export default function EditProfilePage() {
 
       setSuccess(true)
       setNewPhotoFile(null)
-      setNewCoverPhotoFile(null)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Something went wrong')
@@ -238,35 +209,7 @@ export default function EditProfilePage() {
               </div>
             )}
 
-            {/* 1. Cover photo — shown behind the avatar on your search card and profile */}
-            <div>
-              <label htmlFor="cleaner-edit-cover-photo" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
-                {t('coverPhoto')}
-              </label>
-              <div
-                className="relative h-28 rounded-[10px] bg-[#E8F4F3] dark:bg-[#17302D] bg-cover bg-center overflow-hidden"
-                style={coverPhotoPreview ? { backgroundImage: `url(${coverPhotoPreview})` } : undefined}
-              >
-                <input
-                  id="cleaner-edit-cover-photo"
-                  ref={coverFileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={handleCoverPhotoSelect}
-                />
-                <button
-                  type="button"
-                  onClick={() => coverFileInputRef.current?.click()}
-                  className="absolute bottom-2.5 right-2.5 btn-secondary rounded-full px-4 py-1.5 text-[12px] shadow-sm"
-                >
-                  {t('uploadCoverPhoto')}
-                </button>
-              </div>
-              <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mt-1.5">{t('coverPhotoHint')}</p>
-            </div>
-
-            {/* 2. Profile photo */}
+            {/* 1. Profile photo */}
             <div>
               <label htmlFor="cleaner-edit-profile-photo" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('profilePhoto')}
@@ -313,7 +256,7 @@ export default function EditProfilePage() {
               />
             </div>
 
-            {/* 3. Bio */}
+            {/* 2. Bio */}
             <div>
               <label htmlFor="cleaner-edit-bio" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('bio')}
@@ -329,7 +272,7 @@ export default function EditProfilePage() {
               <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] text-right mt-1">{bio.length}/{MAX_BIO}</p>
             </div>
 
-            {/* 4. Cities */}
+            {/* 3. Cities */}
             <div>
               <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('citiesLabel')}
@@ -355,7 +298,7 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            {/* 5. Hourly rate */}
+            {/* 4. Hourly rate */}
             <div>
               <label htmlFor="cleaner-edit-hourly-rate" className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1.5">
                 {t('hourlyRate')}
@@ -375,7 +318,7 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            {/* 6. Account type */}
+            {/* 5. Account type */}
             <div>
               <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('accountType')}
@@ -398,7 +341,7 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            {/* 7. Gender — hidden for company */}
+            {/* 6. Gender — hidden for company */}
             {cleanerType === 'individual' && (
               <div>
                 <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
@@ -427,7 +370,7 @@ export default function EditProfilePage() {
               </div>
             )}
 
-            {/* 8. Languages */}
+            {/* 7. Languages */}
             <div>
               <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('languages')}
@@ -448,7 +391,7 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            {/* 9. Availability */}
+            {/* 8. Availability */}
             <div>
               <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('availability')}
@@ -469,7 +412,7 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            {/* 9b. Transport */}
+            {/* 8b. Transport */}
             <div>
               <label htmlFor="cleaner-edit-has-transport" className="flex items-center gap-2.5 cursor-pointer">
                 <input
@@ -483,7 +426,7 @@ export default function EditProfilePage() {
               </label>
             </div>
 
-            {/* 10. Services — pre-ticked, disabled */}
+            {/* 9. Services — pre-ticked, disabled */}
             <div>
               <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">
                 {t('services')}

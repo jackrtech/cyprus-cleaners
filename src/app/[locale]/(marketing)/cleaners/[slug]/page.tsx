@@ -323,11 +323,6 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
 
   return (
     <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]">
-      {/* Cover photo — only shown once the cleaner has set one */}
-      {cleaner.cover_photo_url && (
-        <LoadingImage src={cleaner.cover_photo_url} wrapperClassName="h-32 sm:h-44 w-full" className="object-cover" />
-      )}
-
       {/* Page header */}
       <div className="bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] px-4 sm:px-10 py-6">
         {/* Breadcrumb — replaced with a preview banner + one-tap exit when a
