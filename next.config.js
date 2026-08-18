@@ -22,9 +22,15 @@ const nextConfig = {
     // Baseline security headers. CSP allows 'unsafe-inline' for styles because
     // styled-jsx (used in ChatPanel) injects inline <style> tags without a
     // nonce — tightening that further needs per-request nonce middleware.
+    // Next.js dev mode's React Refresh runtime evaluates code via eval() —
+    // blocked without 'unsafe-eval'. Production never needs it.
+    const scriptSrc = process.env.NODE_ENV === 'development'
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com"
+      : "script-src 'self' 'unsafe-inline' https://js.stripe.com"
+
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://js.stripe.com",
+      scriptSrc,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https://*.supabase.co https://images.unsplash.com https://basemaps.cartocdn.com",
       "font-src 'self' data:",
