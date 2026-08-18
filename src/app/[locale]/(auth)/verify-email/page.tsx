@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Link } from '@/navigation'
-import Footer from '@/components/Footer'
 import type { UserRole } from '@/types'
 
 type Status = 'loading' | 'success' | 'error'
@@ -37,7 +36,6 @@ export default function VerifyEmailPage() {
   const dashboardHref = role === 'CLEANER' ? '/dashboard/cleaner' : '/dashboard'
 
   return (
-    <>
     <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] flex items-center justify-center px-4">
       <div className="card max-w-[480px] w-full p-10 flex flex-col items-center text-center gap-5">
 
@@ -87,7 +85,5 @@ export default function VerifyEmailPage() {
         )}
       </div>
     </div>
-    <Footer />
-    </>
   )
 }

@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
-import Footer from '@/components/Footer'
 import Spinner from '@/components/ui/Spinner'
 import { CITIES } from '@/lib/cities'
 
@@ -86,7 +85,6 @@ export default function RegisterCleanerPage() {
   }
 
   return (
-    <>
     <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] py-10 px-4">
       <div className="w-full max-w-[480px] mx-auto">
         <div className="card p-8">
@@ -315,7 +313,5 @@ export default function RegisterCleanerPage() {
         </div>
       </div>
     </div>
-    <Footer />
-    </>
   )
 }

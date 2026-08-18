@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
-import Footer from '@/components/Footer'
 import { pageMetadata } from '@/lib/seo'
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
@@ -12,7 +11,6 @@ export default function GetStartedPage() {
   const t = useTranslations('getStarted')
 
   return (
-    <>
     <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-[600px]">
         {/* Heading */}
@@ -63,7 +61,5 @@ export default function GetStartedPage() {
         </p>
       </div>
     </div>
-    <Footer />
-    </>
   )
 }
