@@ -27,7 +27,15 @@ export function useTheme() {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setTheme(getStoredOrSystemTheme())
+    const stored = getStoredOrSystemTheme()
+    setTheme(stored)
+    // The inline no-flash script in the root layout only runs once, on the
+    // very first hard page load — it does not re-run when a locale switch
+    // remounts the root layout's <html> tree client-side (root layout lives
+    // under the [locale] dynamic segment), which was silently dropping the
+    // `dark` class while localStorage still correctly said 'dark'. Applying
+    // it here too makes every mount of this hook self-correcting.
+    applyTheme(stored)
     setMounted(true)
   }, [])
 
