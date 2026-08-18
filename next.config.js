@@ -24,11 +24,12 @@ const nextConfig = {
     // nonce — tightening that further needs per-request nonce middleware.
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' https://js.stripe.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https://*.supabase.co https://images.unsplash.com https://basemaps.cartocdn.com",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org https://api.stripe.com",
+      "frame-src https://js.stripe.com https://hooks.stripe.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
