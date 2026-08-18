@@ -101,6 +101,10 @@ export async function PATCH(
           }, {
             idempotencyKey: `dispute-split-refund-${dispute.booking_id}`,
           })
+          await supabase.from('payments').update({
+            status: 'REFUNDED',
+            refunded_at: new Date().toISOString(),
+          }).eq('id', payment.id)
         } catch (refundErr) {
           console.error('Dispute UNRESOLVABLE refund failed:', refundErr)
           await supabase.from('payments').update({ status: 'REFUND_FAILED' }).eq('id', payment.id)
