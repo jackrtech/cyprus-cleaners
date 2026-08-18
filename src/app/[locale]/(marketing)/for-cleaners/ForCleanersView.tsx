@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
+import { useTheme } from '@/hooks/useTheme'
 
 type StepTitleKey = 'step1Title' | 'step2Title' | 'step3Title'
 type StepBodyKey  = 'step1Body'  | 'step2Body'  | 'step3Body'
@@ -39,6 +40,25 @@ const CHECKMARK = (
 
 export default function ForCleanersPage() {
   const t = useTranslations('forCleaners')
+  const { theme } = useTheme()
+  const dark = theme === 'dark'
+
+  // This page is built with inline styles rather than Tailwind classes (predates
+  // the rest of the app's dark-mode pass), so it can't use `dark:` variants —
+  // colors are switched here instead. The "arch" section (always #0D1F1E bg,
+  // white text) and the closing CTA band (always teal bg, white text) are
+  // deliberately left out of this — same as the Footer, they're colored bands
+  // that read fine in both themes regardless of the toggle, not neutral page
+  // background that needs to track it.
+  const c = {
+    text:    dark ? '#ECF3F2' : '#0D1F1E',
+    muted:   dark ? '#9BB0AE' : '#5B7472',
+    bg:      dark ? '#0F1817' : '#F7FAF9',
+    surface: dark ? '#16211F' : '#FFFFFF',
+    surfaceTranslucent: dark ? 'rgba(22,33,31,0.95)' : 'rgba(255,255,255,0.95)',
+    pill:    dark ? '#17302D' : '#E8F4F3',
+    border:  dark ? '#253634' : '#E0EDEC',
+  }
 
   // Hide global navbar — this page has its own landing nav
   useEffect(() => {
@@ -47,7 +67,7 @@ export default function ForCleanersPage() {
   }, [])
 
   return (
-    <div style={{ fontFamily: 'var(--font-sans)', color: '#0D1F1E' }}>
+    <div style={{ fontFamily: 'var(--font-sans)', color: c.text }}>
       <style>{`
         html.fc-landing header.sticky { display: none !important; }
 
@@ -99,8 +119,8 @@ export default function ForCleanersPage() {
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          background: 'white',
-          borderBottom: '1px solid #E0EDEC',
+          background: c.surface,
+          borderBottom: `1px solid ${c.border}`,
         }}
       >
         <div
@@ -126,7 +146,7 @@ export default function ForCleanersPage() {
           </Link>
 
           <nav className="fc-hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-            <Link href="/cleaners" style={{ fontSize: '14px', color: '#5B7472', textDecoration: 'none' }}>
+            <Link href="/cleaners" style={{ fontSize: '14px', color: c.muted, textDecoration: 'none' }}>
               {t('navCustomers')}
             </Link>
             <Link href="/for-cleaners" style={{ fontSize: '14px', color: '#19706A', fontWeight: 500, textDecoration: 'none' }}>
@@ -148,7 +168,7 @@ export default function ForCleanersPage() {
       <section
         aria-label="Hero"
         style={{
-          background: '#F7FAF9',
+          background: c.bg,
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -177,7 +197,7 @@ export default function ForCleanersPage() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: '#E8F4F3',
+                background: c.pill,
                 borderRadius: '9999px',
                 padding: '6px 14px',
                 fontSize: '13px',
@@ -197,7 +217,7 @@ export default function ForCleanersPage() {
                 fontWeight: 500,
                 lineHeight: 1.08,
                 letterSpacing: '-0.03em',
-                color: '#0D1F1E',
+                color: c.text,
                 marginBottom: 'clamp(20px,3vw,32px)',
               }}
             >
@@ -235,7 +255,7 @@ export default function ForCleanersPage() {
             <p
               style={{
                 fontSize: 'clamp(15px,1.5vw,17px)',
-                color: '#5B7472',
+                color: c.muted,
                 lineHeight: 1.65,
                 maxWidth: '460px',
                 marginBottom: 'clamp(28px,4vw,40px)',
@@ -261,7 +281,7 @@ export default function ForCleanersPage() {
                     alignItems: 'center',
                     gap: '6px',
                     fontSize: '13px',
-                    color: '#5B7472',
+                    color: c.muted,
                     fontWeight: 500,
                   }}
                 >
@@ -324,7 +344,7 @@ export default function ForCleanersPage() {
                 position: 'absolute',
                 bottom: 'clamp(24px,4vw,40px)',
                 left: '-28px',
-                background: 'white',
+                background: c.surface,
                 borderRadius: '16px',
                 padding: '16px 22px',
                 boxShadow: '0 8px 32px rgba(13,31,30,0.12)',
@@ -332,10 +352,10 @@ export default function ForCleanersPage() {
                 minWidth: '160px',
               }}
             >
-              <p style={{ fontSize: 'clamp(22px,2.5vw,30px)', fontWeight: 500, color: '#0D1F1E', lineHeight: 1, marginBottom: '4px' }}>
+              <p style={{ fontSize: 'clamp(22px,2.5vw,30px)', fontWeight: 500, color: c.text, lineHeight: 1, marginBottom: '4px' }}>
                 {t('heroStatNum')}
               </p>
-              <p style={{ fontSize: '12px', color: '#5B7472', fontWeight: 500 }}>
+              <p style={{ fontSize: '12px', color: c.muted, fontWeight: 500 }}>
                 {t('heroStatLabel')}
               </p>
             </div>
@@ -347,7 +367,7 @@ export default function ForCleanersPage() {
                 position: 'absolute',
                 top: 'clamp(24px,4vw,40px)',
                 right: '-16px',
-                background: 'white',
+                background: c.surface,
                 borderRadius: '9999px',
                 padding: '8px 16px',
                 boxShadow: '0 4px 20px rgba(13,31,30,0.10)',
@@ -357,7 +377,7 @@ export default function ForCleanersPage() {
                 zIndex: 10,
                 fontSize: '13px',
                 fontWeight: 500,
-                color: '#0D1F1E',
+                color: c.text,
                 whiteSpace: 'nowrap',
               }}
             >
@@ -372,7 +392,7 @@ export default function ForCleanersPage() {
       <section
         aria-label="How it works"
         style={{
-          background: '#FFFFFF',
+          background: c.surface,
           padding: 'clamp(80px,10vh,120px) clamp(24px,5vw,72px)',
         }}
       >
@@ -393,7 +413,7 @@ export default function ForCleanersPage() {
               style={{
                 fontSize: '12px',
                 fontWeight: 500,
-                color: '#5B7472',
+                color: c.muted,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
                 marginBottom: '16px',
@@ -407,7 +427,7 @@ export default function ForCleanersPage() {
                 fontWeight: 500,
                 lineHeight: 1.15,
                 letterSpacing: '-0.02em',
-                color: '#0D1F1E',
+                color: c.text,
                 marginBottom: '14px',
               }}
             >
@@ -417,7 +437,7 @@ export default function ForCleanersPage() {
             <p
               style={{
                 fontSize: 'clamp(14px,1.4vw,16px)',
-                color: '#5B7472',
+                color: c.muted,
                 lineHeight: 1.65,
                 marginBottom: 'clamp(28px,4vw,44px)',
               }}
@@ -447,14 +467,14 @@ export default function ForCleanersPage() {
                   position: 'absolute',
                   bottom: '20px',
                   left: '20px',
-                  background: 'rgba(255,255,255,0.95)',
+                  background: c.surfaceTranslucent,
                   backdropFilter: 'blur(8px)',
                   WebkitBackdropFilter: 'blur(8px)',
                   borderRadius: '9999px',
                   padding: '8px 18px',
                   fontSize: '13px',
                   fontWeight: 500,
-                  color: '#0D1F1E',
+                  color: c.text,
                 }}
               >
                 {t('howPhotoPill')}
@@ -469,7 +489,7 @@ export default function ForCleanersPage() {
                 key={step.num}
                 style={{
                   padding: 'clamp(24px,3.5vw,40px) 0',
-                  borderBottom: i < STEPS.length - 1 ? '1px solid #E0EDEC' : 'none',
+                  borderBottom: i < STEPS.length - 1 ? `1px solid ${c.border}` : 'none',
                 }}
               >
                 <span
@@ -478,7 +498,7 @@ export default function ForCleanersPage() {
                     display: 'block',
                     fontSize: '12px',
                     fontWeight: 500,
-                    color: '#5B7472',
+                    color: c.muted,
                     letterSpacing: '0.06em',
                     marginBottom: '10px',
                   }}
@@ -489,7 +509,7 @@ export default function ForCleanersPage() {
                   style={{
                     fontSize: 'clamp(17px,1.8vw,21px)',
                     fontWeight: 500,
-                    color: '#0D1F1E',
+                    color: c.text,
                     lineHeight: 1.25,
                     letterSpacing: '-0.01em',
                     marginBottom: '8px',
@@ -497,7 +517,7 @@ export default function ForCleanersPage() {
                 >
                   {t(step.title)}
                 </p>
-                <p style={{ fontSize: 'clamp(14px,1.3vw,15px)', color: '#5B7472', lineHeight: 1.65 }}>
+                <p style={{ fontSize: 'clamp(14px,1.3vw,15px)', color: c.muted, lineHeight: 1.65 }}>
                   {t(step.body)}
                 </p>
               </div>
@@ -508,7 +528,7 @@ export default function ForCleanersPage() {
 
       {/* ── ARCH SECTION — SIGNATURE ─────────────────────────────── */}
       {/* White wrapper so clipped arch top matches the white section above */}
-      <div style={{ background: '#FFFFFF' }}>
+      <div style={{ background: c.surface }}>
       <section
         aria-label="What's different"
         className="fc-arch-section"
@@ -606,7 +626,7 @@ export default function ForCleanersPage() {
       <section
         aria-label="Testimonial"
         style={{
-          background: '#F7FAF9',
+          background: c.bg,
           padding: 'clamp(80px,10vh,120px) clamp(24px,5vw,72px)',
         }}
       >
@@ -628,7 +648,7 @@ export default function ForCleanersPage() {
               style={{
                 fontSize: '88px',
                 lineHeight: 0.72,
-                color: '#E0EDEC',
+                color: c.border,
                 fontWeight: 500,
                 marginBottom: '8px',
                 letterSpacing: '-0.04em',
@@ -652,7 +672,7 @@ export default function ForCleanersPage() {
                 {t('quote')}
               </p>
               <footer>
-                <cite style={{ fontSize: '14px', fontStyle: 'normal', fontWeight: 500, color: '#5B7472' }}>
+                <cite style={{ fontSize: '14px', fontStyle: 'normal', fontWeight: 500, color: c.muted }}>
                   {t('quoteAttr')}
                 </cite>
               </footer>
@@ -660,7 +680,7 @@ export default function ForCleanersPage() {
           </div>
 
           {/* Right: testimonial card with photo */}
-          <div style={{ width: '240px', flexShrink: 0, background: 'white', borderRadius: '16px', border: '1px solid #E0EDEC', overflow: 'hidden', boxShadow: '0 4px 20px rgba(13,31,30,0.06)' }}>
+          <div style={{ width: '240px', flexShrink: 0, background: c.surface, borderRadius: '16px', border: `1px solid ${c.border}`, overflow: 'hidden', boxShadow: '0 4px 20px rgba(13,31,30,0.06)' }}>
             <div style={{ position: 'relative', height: '220px' }}>
               <Image
                 src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=300&h=280&q=80&auto=format&fit=crop&crop=face"
@@ -672,16 +692,16 @@ export default function ForCleanersPage() {
             </div>
             <div style={{ padding: '16px 18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontWeight: 500, fontSize: '15px', color: '#0D1F1E' }}>Elena K.</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#E8F4F3', borderRadius: '9999px', padding: '2px 8px', fontSize: '11px', fontWeight: 600, color: '#19706A' }}>
+                <span style={{ fontWeight: 500, fontSize: '15px', color: c.text }}>Elena K.</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: c.pill, borderRadius: '9999px', padding: '2px 8px', fontSize: '11px', fontWeight: 600, color: '#19706A' }}>
                   ✓ Verified
                 </span>
               </div>
-              <p style={{ fontSize: '12px', color: '#5B7472', marginBottom: '10px' }}>Limassol · €18/hr</p>
+              <p style={{ fontSize: '12px', color: c.muted, marginBottom: '10px' }}>Limassol · €18/hr</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <span aria-hidden="true" style={{ color: '#7A5F00', fontSize: '12px', letterSpacing: '-0.5px' }}>★★★★★</span>
-                <span style={{ fontSize: '12px', fontWeight: 500, color: '#0D1F1E' }}>4.9</span>
-                <span style={{ fontSize: '12px', color: '#5B7472' }}>(38 reviews)</span>
+                <span style={{ fontSize: '12px', fontWeight: 500, color: c.text }}>4.9</span>
+                <span style={{ fontSize: '12px', color: c.muted }}>(38 reviews)</span>
               </div>
             </div>
           </div>
