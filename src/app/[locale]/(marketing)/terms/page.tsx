@@ -113,13 +113,15 @@ export default function TermsOfServicePage() {
         <Section title="6. Disputes and quality issues" id="disputes">
           <p>
             If a Customer isn&rsquo;t satisfied with completed work, they can file a dispute within{' '}
-            <strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">7 days</strong> of the booking being marked complete. The Cleaner gets
+            <strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">24 hours</strong> of the booking being marked complete. The Cleaner gets
             a chance to respond, and an administrator reviews both sides (including the completion photos) and rules
-            within an internal <strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">5-day service-level target</strong>. Possible
+            within an internal <strong className="text-[#0D1F1E] dark:text-[#ECF3F2]">24-hour service-level target</strong>. Possible
             outcomes: in the Customer&rsquo;s favour (refund), in the Cleaner&rsquo;s favour (no refund), or
             unresolvable (a neutral split decision where the platform made a fair call with the information
-            available — not a finding against either party). Any refund tied to a dispute ruling is processed the
-            same way as a cancellation refund.
+            available — not a finding against either party). If a case isn&rsquo;t reviewed within that 24-hour
+            target, it is automatically resolved in the Customer&rsquo;s favour with a full refund, as a default
+            protection rather than a finding against the Cleaner. Any refund tied to a dispute ruling is processed
+            the same way as a cancellation refund.
           </p>
           <p>Disputes are for quality/property claims about a specific completed job — not a substitute for the cancellation process in §5.</p>
         </Section>

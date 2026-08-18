@@ -304,14 +304,15 @@ create table disputes (
   cleaner_response    text,
   status              dispute_status not null default 'OPEN',
   resolution          dispute_resolution,
-  refund_percentage   int not null default 0 check (refund_percentage >= 0 and refund_percentage <= 100),  -- 100 for CUSTOMER (manual refund button), 0 for CLEANER, admin-chosen (default 50) for UNRESOLVABLE (auto-refunded on resolution)
-  resolve_by          timestamptz,  -- created_at + 5 days, stamped on insert — admin SLA, shown as a countdown/overdue flag in the queue
+  refund_percentage   int not null default 0 check (refund_percentage >= 0 and refund_percentage <= 100),  -- 100 for CUSTOMER (manual refund button, or auto on SLA timeout — see auto_resolved), 0 for CLEANER, admin-chosen (default 50) for UNRESOLVABLE (auto-refunded on resolution)
+  resolve_by          timestamptz,  -- created_at + 24h, stamped on insert — admin SLA, shown as a countdown/overdue flag in the queue
+  auto_resolved       boolean not null default false,  -- true only when the auto-resolve-disputes cron/lazy-check closed this on SLA timeout (resolution forced to CUSTOMER/100%, no admin ever ruled) — distinguishes a real admin decision from a default-by-timeout one, so admin can spot a customer repeatedly waiting out the clock (see the per-customer dispute-history panel on /admin/users)
   admin_note          text,
   created_at          timestamptz not null default now(),
   resolved_at         timestamptz
 );
--- Applying refund_percentage/resolve_by to an existing database:
--- `alter table disputes add column refund_percentage int not null default 0 check (refund_percentage >= 0 and refund_percentage <= 100), add column resolve_by timestamptz;`
+-- Applying refund_percentage/resolve_by/auto_resolved to an existing database:
+-- `alter table disputes add column refund_percentage int not null default 0 check (refund_percentage >= 0 and refund_percentage <= 100), add column resolve_by timestamptz, add column auto_resolved boolean not null default false;`
 
 -- ─── CONTACT SUBMISSIONS ─────────────────────────────────────
 -- General-inquiry contact form — separate from disputes (a specific claim
@@ -333,6 +334,7 @@ create index idx_contact_submissions_resolved on contact_submissions (resolved_a
 
 create index idx_disputes_status  on disputes (status);
 create index idx_disputes_booking on disputes (booking_id);
+create index idx_disputes_open_resolve_by on disputes (resolve_by) where status = 'OPEN';  -- backs the auto-resolve-disputes cron/lazy-check's overdue lookup
 
 -- ─── CHAT NOTIFICATIONS ──────────────────────────────────────
 

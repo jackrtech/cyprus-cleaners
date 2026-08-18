@@ -21,17 +21,38 @@ export async function GET() {
     cleaner_profiles: CleanerProfileRow | CleanerProfileRow[] | null
   }
 
-  const { data, error } = await supabase
-    .from('users')
-    .select(`
-      id, email, full_name, role, email_verified, created_at,
-      cleaner_profiles ( id, status, verified )
-    `)
-    .order('created_at', { ascending: false })
+  const [{ data, error }, { data: disputeRows, error: disputeError }] = await Promise.all([
+    supabase
+      .from('users')
+      .select(`
+        id, email, full_name, role, email_verified, created_at,
+        cleaner_profiles ( id, status, verified )
+      `)
+      .order('created_at', { ascending: false }),
+    // Per-customer dispute/refund pattern — surfaced inline on each
+    // customer's card below rather than a separate lookup, so admin sees a
+    // repeat-timeout customer without having to go dig for it (that's the
+    // whole point: the 24h auto-resolve-to-refund policy is only safe if
+    // this pattern stays visible).
+    supabase.from('disputes').select('customer_id, status, auto_resolved'),
+  ])
 
   if (error) {
     console.error('GET admin users error:', error)
     return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
+  }
+  if (disputeError) {
+    console.error('GET admin users — dispute history error:', disputeError)
+  }
+
+  interface DisputeStats { total: number; autoResolved: number; adminResolved: number }
+  const disputeStatsByCustomer = new Map<string, DisputeStats>()
+  for (const d of (disputeRows ?? []) as { customer_id: string; status: string; auto_resolved: boolean }[]) {
+    const stats = disputeStatsByCustomer.get(d.customer_id) ?? { total: 0, autoResolved: 0, adminResolved: 0 }
+    stats.total += 1
+    if (d.auto_resolved) stats.autoResolved += 1
+    else if (d.status === 'RESOLVED') stats.adminResolved += 1
+    disputeStatsByCustomer.set(d.customer_id, stats)
   }
 
   // cleaner_profiles is a one-to-one embed (one profile per user) but
@@ -40,6 +61,7 @@ export async function GET() {
     id: u.id, email: u.email, full_name: u.full_name, role: u.role,
     email_verified: u.email_verified, created_at: u.created_at,
     cleaner_profile: Array.isArray(u.cleaner_profiles) ? u.cleaner_profiles[0] ?? null : u.cleaner_profiles,
+    dispute_history: disputeStatsByCustomer.get(u.id) ?? null,
   }))
 
   return NextResponse.json(rows)

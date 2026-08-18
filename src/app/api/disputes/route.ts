@@ -6,8 +6,8 @@ import { sendDisputeFiledAlertEmail, sendDisputeFiledConfirmationEmail } from '@
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 const CLAIM_MAX_LENGTH = 2000
-const FILING_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
-const RESOLUTION_SLA_MS = 5 * 24 * 60 * 60 * 1000
+const FILING_WINDOW_MS = 24 * 60 * 60 * 1000
+const RESOLUTION_SLA_MS = 24 * 60 * 60 * 1000
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Only a completed booking can be disputed' }, { status: 409 })
   }
   if (booking.completed_at && Date.now() - new Date(booking.completed_at).getTime() > FILING_WINDOW_MS) {
-    return NextResponse.json({ error: 'The 7-day window to raise a concern about this booking has passed' }, { status: 400 })
+    return NextResponse.json({ error: 'The 24-hour window to raise a concern about this booking has passed' }, { status: 400 })
   }
 
   const { data: existing } = await supabase

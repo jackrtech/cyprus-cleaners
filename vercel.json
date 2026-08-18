@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/cleanup-chat-photos",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/auto-resolve-disputes",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

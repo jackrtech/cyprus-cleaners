@@ -43,6 +43,7 @@ interface Dispute {
   resolution: DisputeResolution | null
   refund_percentage: number
   resolve_by: string | null
+  auto_resolved: boolean
   admin_note: string | null
   created_at: string
   resolved_at: string | null
@@ -167,6 +168,8 @@ export default function AdminDisputesPage() {
                 ? (isOverdue
                     ? { label: t('statusOverdue'), className: 'bg-red-100 text-red-700' }
                     : { label: t('statusOpen'), className: 'bg-gold-50 dark:bg-[#332B0F] text-gold-700 dark:text-gold-300' })
+                : d.resolution === 'CUSTOMER' && d.auto_resolved
+                ? { label: t('resolvedAutoTimeout'), className: 'bg-gold-50 dark:bg-[#332B0F] text-gold-700 dark:text-gold-300' }
                 : d.resolution === 'CUSTOMER'
                 ? { label: t('resolvedForCustomer'), className: 'bg-teal-50 dark:bg-[#17302D] text-teal-600 dark:text-teal-300' }
                 : d.resolution === 'UNRESOLVABLE'
@@ -199,7 +202,7 @@ export default function AdminDisputesPage() {
                           <span className={`text-label uppercase tracking-widest ${isOverdue ? 'text-red-600' : 'text-muted dark:text-[#9BB0AE]'}`}>
                             {isOverdue
                               ? t('slaOverdue')
-                              : t('slaDaysLeft', { days: Math.max(0, Math.ceil((new Date(d.resolve_by).getTime() - Date.now()) / 86400000)) })}
+                              : t('slaHoursLeft', { hours: Math.max(0, Math.ceil((new Date(d.resolve_by).getTime() - Date.now()) / 3600000)) })}
                           </span>
                         )}
                       </div>
@@ -299,7 +302,9 @@ export default function AdminDisputesPage() {
                   <div>
                     <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('resolutionLabel')}</p>
                     <p className="text-body text-teal-900 dark:text-[#ECF3F2]">
-                      {viewing.resolution === 'CUSTOMER'
+                      {viewing.resolution === 'CUSTOMER' && viewing.auto_resolved
+                        ? t('resolvedAutoTimeoutNamed', { name: customerName })
+                        : viewing.resolution === 'CUSTOMER'
                         ? t('resolvedForCustomerNamed', { name: customerName })
                         : viewing.resolution === 'UNRESOLVABLE'
                         ? t('resolvedUnresolvableNamed', { percentage: viewing.refund_percentage })

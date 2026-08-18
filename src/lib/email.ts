@@ -347,10 +347,10 @@ export async function sendDisputeFiledConfirmationEmail({
 
   const html = layout(isEl
     ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Λάβαμε την αναφορά σας</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Η ομάδα μας θα την εξετάσει και θα απαντήσει εντός 5 ημερών. Θα σας ενημερώσουμε με email μόλις ληφθεί απόφαση.</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Η ομάδα μας θα την εξετάσει και θα απαντήσει εντός 24 ωρών. Αν δεν προλάβουμε να την εξετάσουμε εγκαίρως, εκδίδεται αυτόματα πλήρης επιστροφή χρημάτων προς εσάς. Θα σας ενημερώσουμε με email μόλις ληφθεί απόφαση.</p>
        ${cta('Μετάβαση στον πίνακα ελέγχου', dashboardUrl)}`
     : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">We received your report</h2>
-       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Our team will review this and respond within 5 days. You'll get an email as soon as a decision has been made.</p>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Our team will review this and respond within 24 hours. If we don't get to it in time, a full refund is issued to you automatically. You'll get an email as soon as a decision has been made.</p>
        ${cta('Go to dashboard', dashboardUrl)}`)
 
   return sendEmail({ to, subject, html })

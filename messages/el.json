@@ -425,8 +425,11 @@
     "resolvedUnresolvableNamed": "Κρίθηκε άλυτη — εκδόθηκε επιστροφή {percentage}% ως δίκαιη λύση.",
     "resolveUnresolvable": "Άλυτη — διαμοιρασμένη απόφαση",
     "splitRefundLabel": "Επιστροφή αν κριθεί άλυτη:",
-    "slaDaysLeft": "{days, plural, one {Απομένει # ημέρα για επίλυση} other {Απομένουν # ημέρες για επίλυση}}",
-    "slaOverdue": "Εκτός προθεσμίας 5 ημερών"
+    "slaHoursLeft": "{hours, plural, one {Απομένει # ώρα για επίλυση} other {Απομένουν # ώρες για επίλυση}}",
+    "slaOverdue": "Εκτός προθεσμίας 24 ωρών",
+    "resolvedAutoTimeout": "Αυτόματη επίλυση — εκπρόθεσμη προθεσμία",
+    "resolvedAutoTimeoutNamed": "Έγινε αυτόματη επιστροφή χρημάτων στον/στην {name} — δεν υπήρξε απάντηση διαχειριστή εντός της προθεσμίας 24 ωρών.",
+    "disputeHistory": "{total, plural, one {# διαφορά} other {# διαφορές}} — {autoResolved} αυτόματες, {adminResolved} από διαχειριστή"
   },
   "cleaners": {
     "topRated": "Κορυφαίοι",
@@ -678,7 +681,7 @@
     "submitDispute": "Υποβολή αναφοράς",
     "disputeSubmitted": "Η αναφορά υποβλήθηκε — θα την εξετάσουμε και θα επικοινωνήσουμε μαζί σας",
     "disputeWindowPassed": "Η προθεσμία για αναφορά προβλήματος σε αυτή την κράτηση έχει λήξει",
-    "disputeDaysLeft": "{days, plural, one {Απομένει # ημέρα για αναφορά προβλήματος} other {Απομένουν # ημέρες για αναφορά προβλήματος}}",
+    "disputeHoursLeft": "{hours, plural, one {Απομένει # ώρα για αναφορά προβλήματος} other {Απομένουν # ώρες για αναφορά προβλήματος}}",
     "requestedOn": "Αίτημα στις",
     "timeLeftToRespond": "Απομένουν {hours}ω για απάντηση",
     "lessThanHourLeft": "Απομένει λιγότερο από 1ω για απάντηση",

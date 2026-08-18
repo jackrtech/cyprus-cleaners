@@ -313,10 +313,10 @@ export default function DashboardPage() {
                 )
               )}
               {booking.status === 'COMPLETED' && (() => {
-                const daysLeft = booking.completed_at
-                  ? 7 - Math.floor((Date.now() - new Date(booking.completed_at).getTime()) / 86400000)
+                const hoursLeft = booking.completed_at
+                  ? 24 - Math.floor((Date.now() - new Date(booking.completed_at).getTime()) / 3600000)
                   : null
-                const windowExpired = daysLeft !== null && daysLeft <= 0
+                const windowExpired = hoursLeft !== null && hoursLeft <= 0
                 return (booking.disputes?.length ?? 0) > 0 ? (
                   <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] mt-2">{tBooking('disputeSubmitted')}</p>
                 ) : windowExpired ? (
@@ -358,9 +358,9 @@ export default function DashboardPage() {
                     >
                       {tBooking('fileDispute')}
                     </button>
-                    {daysLeft !== null && (
+                    {hoursLeft !== null && (
                       <span className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE]">
-                        {tBooking('disputeDaysLeft', { days: daysLeft })}
+                        {tBooking('disputeHoursLeft', { hours: hoursLeft })}
                       </span>
                     )}
                   </div>

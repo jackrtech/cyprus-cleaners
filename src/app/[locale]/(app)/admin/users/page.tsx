@@ -14,6 +14,12 @@ interface CleanerProfileSummary {
   verified: boolean
 }
 
+interface DisputeHistory {
+  total:         number
+  autoResolved:  number
+  adminResolved: number
+}
+
 interface AdminUser {
   id:              string
   email:           string
@@ -22,6 +28,7 @@ interface AdminUser {
   email_verified:  boolean
   created_at:      string
   cleaner_profile: CleanerProfileSummary | null
+  dispute_history: DisputeHistory | null
 }
 
 const CLEANER_STATUS_BADGE: Record<CleanerStatus, string> = {
@@ -152,6 +159,16 @@ export default function AdminUsersPage() {
                     </span>
                   )}
                 </div>
+
+                {u.dispute_history && u.dispute_history.total > 0 && (
+                  <p className="text-body text-muted dark:text-[#9BB0AE] mt-2">
+                    {t('disputeHistory', {
+                      total:         u.dispute_history.total,
+                      autoResolved:  u.dispute_history.autoResolved,
+                      adminResolved: u.dispute_history.adminResolved,
+                    })}
+                  </p>
+                )}
 
                 {u.cleaner_profile && (
                   <div className="flex items-center gap-3 mt-3">

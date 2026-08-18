@@ -415,8 +415,11 @@
     "resolvedUnresolvableNamed": "Ruled unresolvable — a {percentage}% refund was issued as a fair resolution.",
     "resolveUnresolvable": "Unresolvable — split decision",
     "splitRefundLabel": "Split refund if unresolvable:",
-    "slaDaysLeft": "{days, plural, one {# day left to resolve} other {# days left to resolve}}",
-    "slaOverdue": "Past 5-day SLA"
+    "slaHoursLeft": "{hours, plural, one {# hour left to resolve} other {# hours left to resolve}}",
+    "slaOverdue": "Past 24h SLA",
+    "resolvedAutoTimeout": "Auto-resolved — SLA timeout",
+    "resolvedAutoTimeoutNamed": "Refunded to {name} automatically — no admin response within the 24-hour SLA.",
+    "disputeHistory": "{total, plural, one {# dispute} other {# disputes}} filed — {autoResolved} auto-resolved, {adminResolved} admin-resolved"
   },
   "cleaners": {
     "topRated": "Top rated",
@@ -668,7 +671,7 @@
     "submitDispute": "Submit report",
     "disputeSubmitted": "Report submitted — we'll review it and get back to you",
     "disputeWindowPassed": "The window to raise a concern about this booking has passed",
-    "disputeDaysLeft": "{days, plural, one {# day left to report a problem} other {# days left to report a problem}}",
+    "disputeHoursLeft": "{hours, plural, one {# hour left to report a problem} other {# hours left to report a problem}}",
     "requestedOn": "Requested",
     "timeLeftToRespond": "{hours}h left to respond",
     "lessThanHourLeft": "Less than 1h left to respond",

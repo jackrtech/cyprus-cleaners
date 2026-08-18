@@ -52,7 +52,9 @@ File paths below sit under one of three route groups — `(marketing)/`, `(auth)
 | `/admin/disputes` | Dispute resolution queue | `ADMIN` only | Rule for customer or cleaner | — |
 | `/admin/cancellations` | Cancellation ledger | `ADMIN` only | Read-only | — |
 
-**Not a page, but worth listing alongside them** — `POST /api/cron/cleanup-chat-photos`, a Vercel Cron job (bearer-auth'd via `CRON_SECRET`) that deletes chat photos older than 90 days and blanks the message's `photo_path`. No UI; runs on a schedule.
+**Not pages, but worth listing alongside them** — two Vercel Cron jobs (both bearer-auth'd via `CRON_SECRET`, no UI, `vercel.json`):
+- `GET /api/cron/cleanup-chat-photos` — deletes chat photos older than 90 days and blanks the message's `photo_path`.
+- `GET /api/cron/auto-resolve-disputes` — closes any dispute past its 24h SLA with a forced full customer refund; see §7. Scheduled every 15 minutes, but the *actual* enforcement doesn't depend on that cadence — `GET /api/admin/disputes` runs the same check lazily on every load.
 
 **Confirmed rough edge:** what an `ADMIN` sees at `/dashboard` (as opposed to `/admin`) isn't handled explicitly — the redirect in `(app)/layout.tsx` only special-cases `CLEANER`. Verified against a live admin session (2026-08-18): an admin visiting `/dashboard` renders "Welcome back, {name}" with the booking/message panels stuck on their loading skeleton forever — `dashboard/page.tsx`'s data-fetch effects are gated on `role === 'CUSTOMER'`, so they never fire for `ADMIN`. Not a crash, just a dead end; no redirect exists to bounce an admin back to `/admin`.
 
@@ -83,7 +85,7 @@ File paths below sit under one of three route groups — `(marketing)/`, `(auth)
 
 **Reviewing** — appears inline under a completed booking once, per booking, if no review exists yet. "Skip" is session-local state only — it comes back on reload.
 
-**Disputing a completed job** — `POST /api/disputes`, filed from a "File dispute" action on the completed booking's card in `dashboard/page.tsx`, within a 7-day window of `completed_at`. One dispute per booking (unique constraint on `booking_id`); confirms to the customer by email with the 5-day admin SLA, and alerts admin.
+**Disputing a completed job** — `POST /api/disputes`, filed from a "File dispute" action on the completed booking's card in `dashboard/page.tsx`, within a 24-hour window of `completed_at`. One dispute per booking (unique constraint on `booking_id`); confirms to the customer by email with the 24-hour admin SLA (and that an unreviewed case auto-resolves to a full refund — see §7), and alerts admin.
 
 ### Cleaner
 
@@ -140,7 +142,8 @@ State machine: `REQUESTED → CONFIRMED → COMPLETED`, or `REQUESTED|CONFIRMED 
 - **No Stripe webhook route exists anywhere in `src/app/api/`.** All state above is set synchronously from what the inline API call returns. If Stripe's own async view of a charge (a disputed/reversed charge, a delayed failure) ever diverges from what was returned in the moment, nothing in the codebase reconciles it.
 - A failed refund is logged to the console and silently left `PAID` — no retry, no admin alert, no visible "refund pending/failed" state beyond what the cancellations ledger badge shows admin (see §7).
 - No idempotency key is passed to `paymentIntents.create` — see [§10](#10-edge-cases-and-race-conditions) for the double-charge race this opens up.
-- Dispute resolution never triggers a refund or any payment action — it purely records an admin decision (see §6).
+- **Dispute resolution refund behaviour varies by outcome** (see §6/§7): `CLEANER` triggers no payment action; `UNRESOLVABLE` auto-issues a split refund at the admin-chosen percentage the moment it's resolved; `CUSTOMER` stays a deliberate manual action (an admin clicks "Refund customer" in the queue) **unless** the dispute was auto-resolved on SLA timeout (see below), in which case the full refund is issued automatically, same as `UNRESOLVABLE`.
+- **Disputes auto-resolve to a full customer refund if unreviewed within 24h** (`disputes.resolve_by`) — see §6. Unlike every other refund path in the app, this one is enforced both by a Vercel Cron (`/api/cron/auto-resolve-disputes`, `src/lib/disputes.ts`) and lazily at the top of `GET /api/admin/disputes`, since a plan-capped cron frequency alone could leave a breach sitting well past its 24h SLA.
 
 ---
 
@@ -194,10 +197,15 @@ Five tabs under `/admin/**`, all gated to `token.role === 'ADMIN'` by middleware
   - Either outcome emails the cleaner.
 
 ### Dispute resolution (`/admin/disputes`)
-- `GET /api/admin/disputes` joins customer, cleaner profile, and booking (including signed completion-photo URLs).
-- `PATCH /api/admin/disputes/[id]` with `{resolution: 'CUSTOMER'|'CLEANER', note?}` → stamps `status = 'RESOLVED'`, `resolved_at`, `admin_note`. Both resolved and still-open disputes remain visible in the list.
-- Emails both parties, same note, framed as won/lost from each one's own side.
-- **No refund or compensation logic is tied to a dispute ruling** — resolving one purely records a decision (contrast with cancellation refunds, which are automatic).
+- `GET /api/admin/disputes` joins customer, cleaner profile, and booking (including signed completion-photo URLs) — and, before returning, lazily auto-resolves any `OPEN` dispute past its `resolve_by` SLA (see below), so a breach never sits stale just because the cron hasn't ticked yet.
+- `PATCH /api/admin/disputes/[id]` with `{resolution: 'CUSTOMER'|'CLEANER'|'UNRESOLVABLE', note?, refund_percentage?}` → stamps `status = 'RESOLVED'`, `resolved_at`, `admin_note`. Both resolved and still-open disputes remain visible in the list.
+  - `CLEANER` → no refund.
+  - `CUSTOMER` → no automatic refund; a "Refund customer" button appears in the detail view for the admin to trigger manually.
+  - `UNRESOLVABLE` (a neutral split decision) → auto-issues a Stripe refund immediately at the admin-chosen percentage (default 50%). A failed refund doesn't unwind the ruling — `payments.status → REFUND_FAILED` and an admin alert email fires instead.
+- Emails both parties, same note, framed as won/lost from each one's own side (`UNRESOLVABLE` gets its own neutral framing).
+- **Filing window & resolution SLA: 24h/24h** (`src/app/api/disputes/route.ts`'s `FILING_WINDOW_MS`/`RESOLUTION_SLA_MS`) — a customer has 24h from `booking.completed_at` to file, and `disputes.resolve_by` (stamped `created_at + 24h` on filing) is the admin SLA shown as a countdown/overdue badge in the queue.
+- **Auto-resolve on SLA timeout** (`src/lib/disputes.ts`'s `autoResolveOverdueDisputes()`, triggered by `/api/cron/auto-resolve-disputes` — Vercel Cron, `vercel.json` — and lazily by the `GET` above): any `OPEN` dispute past `resolve_by` is force-resolved as `CUSTOMER`/100% refund, `disputes.auto_resolved = true`, and the Stripe refund is issued automatically (full refund, same call shape as a cancellation refund — sets `payments.status → REFUNDED` on success, `REFUND_FAILED` + admin alert on failure). Both parties get the standard resolved email, but with a note explaining it was a timeout default, not a considered ruling. The queue badges these distinctly ("Auto-resolved — SLA timeout") from an admin's own `CUSTOMER` ruling.
+- **Per-customer dispute/refund history** — `/admin/users` shows, inline on each customer's card, "N disputes filed — X auto-resolved, Y admin-resolved" whenever a customer has ≥1 dispute (`GET /api/admin/users` aggregates the `disputes` table by `customer_id`). This is the safety net for the auto-refund-on-timeout policy: a customer repeatedly filing and waiting out the clock for a free refund is visible to admin without a separate query, though nothing currently acts on the pattern automatically (flagging/restricting a repeat customer is still a manual admin judgment call).
 
 ### Cancellations (`/admin/cancellations`)
 - `GET /api/admin/cancellations` lists every `CANCELLED` booking that has a `cancellation_reason`, joined with who cancelled it and the payment's refund state.
@@ -288,7 +296,7 @@ Authoritative schema: `supabase/schema.sql`. TS mirror: `src/types/index.ts`.
 - `payment_status`: `PENDING | PAID | REFUNDED | FAILED`
 - `cleaning_type`: `STANDARD | DEEP`
 - `dispute_status`: `OPEN | RESOLVED`
-- `dispute_resolution`: `CUSTOMER | CLEANER` (who the admin ruled for)
+- `dispute_resolution`: `CUSTOMER | CLEANER | UNRESOLVABLE` (who the admin ruled for; `UNRESOLVABLE` is a neutral split decision, not a finding against either party — see §7). `disputes.auto_resolved` (not an enum, a plain boolean) separately flags a `CUSTOMER` resolution that was forced by SLA timeout rather than an actual admin ruling.
 
 ### Triggers — never replicate this logic in application code
 - `on_review_insert` → `update_cleaner_stats()`: recomputes `avg_rating`, `review_count` (from `reviews`) and `unique_customer_count`, `total_jobs_count` (from `COMPLETED` `bookings`) on the cleaner's profile, fired on every review insert.

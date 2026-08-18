@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
+import { autoResolveOverdueDisputes } from '@/lib/disputes'
 
 const SIGNED_URL_TTL = 60 * 60 // 1 hour
 
@@ -27,6 +28,7 @@ interface DisputeRow {
   resolution: string | null
   refund_percentage: number
   resolve_by: string | null
+  auto_resolved: boolean
   admin_note: string | null
   created_at: string
   resolved_at: string | null
@@ -46,12 +48,18 @@ export async function GET() {
 
   const supabase = createAdminClient()
 
+  // Lazy backstop for the 24h auto-resolve SLA, same idea as bookings'
+  // expireOverdueRequests() — the cron (vercel.json) is the primary trigger,
+  // this just guarantees a breach is caught the moment an admin opens the
+  // queue even if the cron hasn't fired yet.
+  await autoResolveOverdueDisputes(supabase)
+
   // Both open and resolved disputes stay on the list — a resolved dispute is
   // still part of the record, not something to just disappear once handled.
   const { data, error } = await supabase
     .from('disputes')
     .select(`
-      id, claim, cleaner_response, status, resolution, refund_percentage, resolve_by, admin_note, created_at, resolved_at,
+      id, claim, cleaner_response, status, resolution, refund_percentage, resolve_by, auto_resolved, admin_note, created_at, resolved_at,
       customer:users!disputes_customer_id_fkey ( id, full_name, email ),
       cleaner_profiles ( id, display_name, user_id ),
       booking:bookings ( id, date, start_time, duration_hours, bedrooms, bathrooms, cleaning_type, address, notes, photo_paths, payments ( status, amount_eur ) )
