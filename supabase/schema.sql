@@ -85,6 +85,15 @@ create table cleaner_profiles (
   verification_note     text,  -- Admin's note from the last approve/reject decision
   verification_status   verification_status,  -- null = never submitted; PENDING while awaiting review; APPROVED/REJECTED after a decision. Kept separate from `verified` (which drives the public badge and predates this column) so the cleaner dashboard can distinguish REJECTED from never-submitted.
   status                cleaner_status not null default 'ACTIVE',
+  -- Stripe Connect (payouts) — separate from the id_photo_url/selfie_photo_url
+  -- trust-and-safety verification above: this is Stripe's own financial KYC,
+  -- gating payouts specifically, not the public verified badge. A cleaner can
+  -- be `verified` (badge) with no Connect account, or Connect-onboarded with
+  -- no badge — the two are unrelated.
+  stripe_connect_account_id       text,
+  stripe_connect_details_submitted boolean not null default false,
+  stripe_connect_payouts_enabled   boolean not null default false,  -- mirrors Stripe's own Account.payouts_enabled; kept via the account.updated webhook, never polled
+  -- Applying to an existing database: `alter table cleaner_profiles add column stripe_connect_account_id text, add column stripe_connect_details_submitted boolean not null default false, add column stripe_connect_payouts_enabled boolean not null default false;`
   -- Denormalised stats (updated by triggers)
   avg_rating            numeric(3,2) not null default 0,
   review_count          int not null default 0,
@@ -100,6 +109,7 @@ create index idx_cleaner_status   on cleaner_profiles (status);
 create index idx_cleaner_verified on cleaner_profiles (verified);
 create index idx_cleaner_rating   on cleaner_profiles (avg_rating desc);
 create index idx_cleaner_services on cleaner_profiles using gin (services);
+create index idx_cleaner_connect_account on cleaner_profiles (stripe_connect_account_id);  -- backs the account.updated webhook's lookup
 
 -- ─── INTRODUCTIONS ───────────────────────────────────────────
 -- One messaging thread per customer/cleaner pair — no approval gate,
@@ -140,7 +150,7 @@ create table bookings (
   photo_paths         text[] not null default '{}',  -- Private storage paths in 'booking-photos' bucket; signed URLs generated at read time
   status              booking_status not null default 'REQUESTED',
   review_prompted_at  timestamptz,  -- Set when status → COMPLETED; triggers review prompt
-  completed_at        timestamptz,  -- Set when status → COMPLETED; anchors the 7-day customer dispute-filing window. Applying to an existing database: `alter table bookings add column completed_at timestamptz;`
+  completed_at        timestamptz,  -- Set when status → COMPLETED; anchors the 24h customer dispute-filing window (src/app/api/disputes/route.ts) and the cleaner payout hold (src/lib/payouts.ts). Applying to an existing database: `alter table bookings add column completed_at timestamptz;`
   cancellation_reason text,  -- Free-text reason, set on CANCEL/DECLINE
   cancelled_by        uuid references users(id),  -- Who initiated the cancellation
   review_skipped_at   timestamptz,  -- Customer dismissed the review prompt; suppresses it going forward instead of re-showing on every reload. Applying to an existing database: `alter table bookings add column review_skipped_at timestamptz;`
@@ -157,6 +167,18 @@ create index idx_bookings_date     on bookings (date);
 -- confirms the booking (not on completion) — deliberate choice to discourage
 -- last-minute cancellations, and it sidesteps card auth holds expiring
 -- (~7 days) for bookings confirmed well ahead of the job date.
+--
+-- `amount_eur` is the TOTAL charged to the customer: the cleaner's
+-- (hourly_rate_eur × duration_hours) plus a flat platform booking fee
+-- (`platform_fee_eur`, BOOKING_FEE_EUR in src/lib/constants/payments.ts) —
+-- this is a Connect "separate charges and transfers" setup, not a
+-- destination charge: the charge itself is a plain platform-account charge
+-- (as before Connect existed), and the cleaner's cut only moves as a
+-- separate stripe.transfers.create() call once the payout hold clears (see
+-- src/lib/payouts.ts) — a destination charge's automatic transfer would
+-- instead pay the cleaner the moment the charge succeeds (at CONFIRM,
+-- days before the job happens), which is incompatible with holding the
+-- payout through the post-completion dispute window.
 
 create type payment_status as enum ('PENDING', 'PAID', 'REFUNDED', 'FAILED', 'REFUND_FAILED');
 -- REFUND_FAILED: the Stripe refund call itself errored after a CANCEL — the
@@ -166,6 +188,16 @@ create type payment_status as enum ('PENDING', 'PAID', 'REFUNDED', 'FAILED', 'RE
 create type verification_status as enum ('PENDING', 'APPROVED', 'REJECTED');
 -- Applying to an existing database: `create type verification_status as enum ('PENDING', 'APPROVED', 'REJECTED');`
 -- then `alter table cleaner_profiles add column verification_status verification_status;`
+create type payout_status as enum ('PENDING', 'BLOCKED', 'PAID', 'FAILED');
+-- PENDING: booking not yet COMPLETED, or completed but still inside the
+--   post-completion hold window / an open dispute. BLOCKED: hold has
+--   cleared and a payout amount is known, but the cleaner hasn't finished
+--   Stripe Connect onboarding yet — queued, released the moment they do
+--   (see the account.updated webhook case). PAID: transferred (or nothing
+--   was owed — e.g. a fully-refunded dispute — cleaner_payout_eur is 0 in
+--   that case, distinguishable in the UI by the amount, not the status).
+--   FAILED: the transfer attempt itself errored — needs manual retry,
+--   mirrors REFUND_FAILED's admin-alert-and-retry pattern.
 
 create table payments (
   id                          uuid primary key default gen_random_uuid(),
@@ -177,10 +209,24 @@ create table payments (
   provider_payment_method_id  text,  -- saved off-session, at booking request time
   paid_at                     timestamptz,
   refunded_at                 timestamptz,
+  -- Cleaner payout (see the block comment above this table)
+  platform_fee_eur            numeric(6,2),   -- the flat fee portion of amount_eur, stored per-payment (not read from the constant later) so a future fee change never rewrites history
+  cleaner_payout_eur          numeric(10,2),  -- null until the payout-release job decides the final figure; only then is it the cleaner's rate, or less if a dispute ruling reduced it
+  payout_status                payout_status not null default 'PENDING',
+  payout_release_at           timestamptz,    -- informational "held until" for the cleaner-facing UI; the release job re-derives eligibility live rather than trusting this as authoritative
+  stripe_transfer_id          text,
+  paid_out_at                 timestamptz,
   created_at                  timestamptz not null default now()
 );
+-- Applying platform_fee_eur/cleaner_payout_eur/payout_status/payout_release_at/stripe_transfer_id/paid_out_at
+-- to an existing database:
+-- `alter table payments add column platform_fee_eur numeric(6,2), add column cleaner_payout_eur numeric(10,2), add column payout_status payout_status not null default 'PENDING', add column payout_release_at timestamptz, add column stripe_transfer_id text, add column paid_out_at timestamptz;`
+-- Then backfill existing rows — under the pre-Connect model the whole
+-- charged amount was the cleaner's earning, no fee taken:
+-- `update payments set platform_fee_eur = 0, cleaner_payout_eur = amount_eur where platform_fee_eur is null;`
 
 create index idx_payments_status on payments (status);
+create index idx_payments_payout_status on payments (payout_status) where payout_status in ('PENDING', 'BLOCKED');  -- backs the payout-release job's due/blocked lookup
 
 -- ─── ADDRESSES ───────────────────────────────────────────────
 -- A customer's saved addresses, offered as a picker on the booking form.

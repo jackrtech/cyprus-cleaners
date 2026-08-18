@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
 import { sendBookingConfirmedEmail, sendBookingCompletedEmail, sendBookingDeclinedEmail, sendBookingCancelledEmail, sendRefundFailedAlertEmail, sendBookingConfirmedAdminAlertEmail } from '@/lib/email'
 import Stripe from 'stripe'
-import { getStripe } from '@/lib/stripe'
+import { getStripe, PAYOUT_HOLD_MS } from '@/lib/stripe'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
@@ -205,6 +205,16 @@ export async function PATCH(
     return NextResponse.json({ error: 'This booking was just updated by another request — refresh and try again' }, { status: 409 })
   }
   const data = updateRows[0]
+
+  // Stamp an informational "held until" on the payment row — the actual
+  // release decision is re-derived live by src/lib/payouts.ts (an open
+  // dispute extends the real hold well past this), this is just what the
+  // cleaner's earnings view shows before that job has run.
+  if (newStatus === 'COMPLETED') {
+    await supabase.from('payments').update({
+      payout_release_at: new Date(Date.now() + PAYOUT_HOLD_MS).toISOString(),
+    }).eq('booking_id', booking.id)
+  }
 
   // Refund on cancellation — only relevant for CANCEL (DECLINE only ever
   // applies to a REQUESTED booking, which was never charged). Full refund

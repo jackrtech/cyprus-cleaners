@@ -189,6 +189,10 @@ export default function CleanerDashboardPage() {
 
   const [emailVerified, setEmailVerified] = useState<boolean | null>(null)
   const [openDisputeCount, setOpenDisputeCount] = useState(0)
+  const [earningsSummary, setEarningsSummary] = useState<{
+    payoutsEnabled: boolean
+    owedEur: number
+  } | null>(null)
   const [resending,     setResending]     = useState(false)
   const [resendResult,  setResendResult]  = useState<'sent' | 'rate_limited' | null>(null)
 
@@ -213,6 +217,24 @@ export default function CleanerDashboardPage() {
       .then((data: { status: string; cleaner_response: string | null }[]) => {
         if (Array.isArray(data)) {
           setOpenDisputeCount(data.filter(d => d.status === 'OPEN' && !d.cleaner_response).length)
+        }
+      })
+      .catch(() => {})
+  }, [sessionStatus])
+
+  // Fetch payout status, for the earnings banner below — shown when setup
+  // is still needed or there's a balance worth knowing about, not on every
+  // load regardless of state.
+  useEffect(() => {
+    if (sessionStatus !== 'authenticated') return
+    fetch('/api/cleaner-profiles/me/earnings')
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { connect: { payouts_enabled: boolean }; summary: { held_eur: number; blocked_eur: number } } | null) => {
+        if (data) {
+          setEarningsSummary({
+            payoutsEnabled: data.connect.payouts_enabled,
+            owedEur:        data.summary.held_eur + data.summary.blocked_eur,
+          })
         }
       })
       .catch(() => {})
@@ -575,6 +597,22 @@ export default function CleanerDashboardPage() {
             <p className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] flex-1">{tDisputes('dashboardBanner', { count: openDisputeCount })}</p>
             <Link href="/dashboard/cleaner/disputes" className="btn-primary shrink-0 text-[13px] px-4 py-2 rounded-full">
               {tDisputes('respondLink')}
+            </Link>
+          </div>
+        )}
+
+        {/* Payout setup / balance banner — shown when setup is still needed,
+            or there's a balance worth knowing about; silent once payouts are
+            live and nothing's currently owed. */}
+        {earningsSummary && (!earningsSummary.payoutsEnabled || earningsSummary.owedEur > 0) && (
+          <div className="flex items-center gap-3 bg-[#F7FAF9] dark:bg-[#0F1817] border-l-4 border-[#19706A] rounded-lg p-4 mb-4 flex-wrap">
+            <p className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] flex-1">
+              {!earningsSummary.payoutsEnabled
+                ? t('payoutSetupBanner')
+                : t('payoutOwedBanner', { amount: earningsSummary.owedEur.toFixed(2) })}
+            </p>
+            <Link href="/dashboard/cleaner/earnings" className="btn-primary shrink-0 text-[13px] px-4 py-2 rounded-full">
+              {t('viewEarnings')}
             </Link>
           </div>
         )}

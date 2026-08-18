@@ -4,6 +4,7 @@ import Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
 import { sendAdminAlertEmail, sendRefundFailedAlertEmail } from '@/lib/email'
+import { releaseBlockedPayoutsForCleaner } from '@/lib/payouts'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
@@ -21,6 +22,7 @@ const RELEVANT_EVENTS = new Set([
   'payment_intent.payment_failed',
   'charge.dispute.created',
   'refund.failed',
+  'account.updated',
 ])
 
 type PaymentRow = {
@@ -154,6 +156,34 @@ export async function POST(req: NextRequest) {
         if (payment && payment.status !== 'REFUND_FAILED') {
           await supabase.from('payments').update({ status: 'REFUND_FAILED' }).eq('id', payment.id)
           await alertForPayment(supabase, payment, refund.failure_reason ?? 'Refund failed asynchronously')
+        }
+        break
+      }
+
+      // Fires automatically for any Express account this platform created,
+      // no separate Connect webhook subscription needed. Tracks onboarding
+      // completion so the payout-release job (src/lib/payouts.ts) knows
+      // when a cleaner can actually receive a transfer — and releases
+      // anything queued for them the moment it flips true, rather than
+      // waiting for the next cron sweep.
+      case 'account.updated': {
+        const account = event.data.object as Stripe.Account
+        const { data: cleanerProfile } = await supabase
+          .from('cleaner_profiles')
+          .select('id, stripe_connect_payouts_enabled')
+          .eq('stripe_connect_account_id', account.id)
+          .maybeSingle()
+
+        if (!cleanerProfile) break
+
+        const payoutsEnabled = account.payouts_enabled ?? false
+        await supabase.from('cleaner_profiles').update({
+          stripe_connect_details_submitted: account.details_submitted ?? false,
+          stripe_connect_payouts_enabled:   payoutsEnabled,
+        }).eq('id', cleanerProfile.id)
+
+        if (payoutsEnabled && !cleanerProfile.stripe_connect_payouts_enabled) {
+          await releaseBlockedPayoutsForCleaner(supabase, cleanerProfile.id)
         }
         break
       }

@@ -62,6 +62,7 @@ interface Booking {
   created_at:      string
   photo_paths:     string[]
   photo_urls:      string[]
+  payments?:       { amount_eur: number; platform_fee_eur: number | null } | { amount_eur: number; platform_fee_eur: number | null }[] | null
 }
 
 interface ChatPanelProps {
@@ -704,6 +705,10 @@ export default function ChatPanel({
           addressLng:     b.address_lng,
           findingUsNotes: b.finding_us_notes,
           photo_urls:     b.photo_urls,
+          payment: (() => {
+            const p = Array.isArray(b.payments) ? b.payments[0] ?? null : b.payments
+            return p ? { amountEur: p.amount_eur, platformFeeEur: p.platform_fee_eur } : null
+          })(),
         }
       })()}
     />

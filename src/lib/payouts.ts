@@ -1,0 +1,198 @@
+import Stripe from 'stripe'
+import { createAdminClient } from '@/lib/supabase/server'
+import { getStripe, PAYOUT_HOLD_MS } from '@/lib/stripe'
+import { sendAdminAlertEmail } from '@/lib/email'
+
+interface DisputeRow {
+  status:            string
+  resolution:        string | null
+  refund_percentage: number
+}
+
+interface CleanerProfileRow {
+  id:                              string
+  stripe_connect_account_id:       string | null
+  stripe_connect_payouts_enabled:  boolean
+}
+
+interface BookingRow {
+  id:                 string
+  status:             string
+  completed_at:       string | null
+  cleaner_profile_id: string
+  disputes:           DisputeRow | DisputeRow[] | null
+  cleaner_profiles:   CleanerProfileRow | CleanerProfileRow[] | null
+}
+
+interface PayoutCandidateRow {
+  id:                string
+  booking_id:        string
+  amount_eur:         number
+  platform_fee_eur:  number | null
+  payout_status:     string
+  booking:           BookingRow | BookingRow[] | null
+}
+
+function one<T>(x: T | T[] | null): T | null {
+  return Array.isArray(x) ? x[0] ?? null : x
+}
+
+// Decides whether a completed booking's payout is ready to move, and for
+// how much. Deliberately re-derived live every time rather than trusting
+// `payments.payout_release_at` — that column is only a display hint for the
+// cleaner's earnings view; an open dispute holds the real payout well past
+// it, and a resolved dispute changes the amount, neither of which the
+// booking-completion-time stamp knows about.
+function evaluateReadiness(booking: BookingRow): { ready: boolean; refundPercentage: number } {
+  const dispute = one(booking.disputes)
+
+  if (dispute?.status === 'OPEN') return { ready: false, refundPercentage: 0 }
+  if (dispute?.status === 'RESOLVED') return { ready: true, refundPercentage: dispute.refund_percentage }
+
+  // No dispute at all — ready once the plain post-completion hold elapses.
+  const completedAt = booking.completed_at ? new Date(booking.completed_at).getTime() : null
+  const ready = completedAt !== null && Date.now() - completedAt >= PAYOUT_HOLD_MS
+  return { ready, refundPercentage: 0 }
+}
+
+async function processOneCandidate(
+  supabase: ReturnType<typeof createAdminClient>,
+  row: PayoutCandidateRow
+): Promise<void> {
+  const booking = one(row.booking)
+  if (!booking || booking.status !== 'COMPLETED') return
+
+  const { ready, refundPercentage } = evaluateReadiness(booking)
+  if (!ready) return
+
+  const rateEur = row.amount_eur - (row.platform_fee_eur ?? 0)
+  const finalPayoutEur = Math.max(0, Math.round(rateEur * (1 - refundPercentage / 100) * 100) / 100)
+
+  // Nothing owed — a fully (or, after rounding, effectively fully) refunded
+  // dispute. No transfer to make; done.
+  if (finalPayoutEur <= 0) {
+    await supabase.from('payments')
+      .update({ payout_status: 'PAID', cleaner_payout_eur: 0, paid_out_at: new Date().toISOString() })
+      .eq('id', row.id)
+      .eq('payout_status', row.payout_status)
+    return
+  }
+
+  const cleanerProfile = one(booking.cleaner_profiles)
+
+  if (!cleanerProfile?.stripe_connect_payouts_enabled || !cleanerProfile.stripe_connect_account_id) {
+    // Amount is known, cleaner isn't ready to receive it yet — queued.
+    // Released immediately (not on the next sweep) by the account.updated
+    // webhook once they finish onboarding — see releaseBlockedPayoutsForCleaner.
+    await supabase.from('payments')
+      .update({ payout_status: 'BLOCKED', cleaner_payout_eur: finalPayoutEur })
+      .eq('id', row.id)
+      .eq('payout_status', row.payout_status)
+    return
+  }
+
+  try {
+    const stripe = getStripe()
+    const transfer = await stripe.transfers.create({
+      amount:          Math.round(finalPayoutEur * 100),
+      currency:        'eur',
+      destination:     cleanerProfile.stripe_connect_account_id,
+      transfer_group:  `booking_${booking.id}`,
+    }, {
+      // Scoped to the booking, not the payment row, so a retry after a
+      // BLOCKED→ready transition never double-transfers even if this
+      // function somehow runs twice for the same booking.
+      idempotencyKey: `payout-${booking.id}`,
+    })
+
+    await supabase.from('payments')
+      .update({
+        payout_status:       'PAID',
+        cleaner_payout_eur:  finalPayoutEur,
+        stripe_transfer_id:  transfer.id,
+        paid_out_at:         new Date().toISOString(),
+      })
+      .eq('id', row.id)
+      .eq('payout_status', row.payout_status)
+  } catch (transferErr) {
+    console.error(`Payout transfer failed (booking ${booking.id}):`, transferErr)
+    await supabase.from('payments')
+      .update({ payout_status: 'FAILED', cleaner_payout_eur: finalPayoutEur })
+      .eq('id', row.id)
+      .eq('payout_status', row.payout_status)
+
+    try {
+      await sendAdminAlertEmail({
+        subject:  `Cleaner payout failed — booking ${booking.id}`,
+        heading:  'A cleaner payout transfer failed',
+        bodyHtml: `<p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Booking <strong>${booking.id}</strong> owed the cleaner <strong>€${finalPayoutEur.toFixed(2)}</strong>, but the Stripe transfer errored: ${transferErr instanceof Stripe.errors.StripeError ? transferErr.message : 'Unknown error'}. Needs manual follow-up — check the connected account's status in the Stripe dashboard before retrying.</p>`,
+      })
+    } catch (alertErr) {
+      console.error('Payout-failed admin alert error:', alertErr)
+    }
+  }
+}
+
+const CANDIDATE_SELECT = `
+  id, booking_id, amount_eur, platform_fee_eur, payout_status,
+  booking:bookings (
+    id, status, completed_at, cleaner_profile_id,
+    disputes ( status, resolution, refund_percentage ),
+    cleaner_profiles ( id, stripe_connect_account_id, stripe_connect_payouts_enabled )
+  )
+`
+
+// Scans every payment whose payout is still owed and releases whatever is
+// actually ready — called from the cron (src/app/api/cron/release-payouts)
+// and lazily wherever a cleaner or admin might be looking at payout state,
+// same two-pronged pattern as the dispute auto-resolve job.
+export async function releaseDuePayouts(supabase: ReturnType<typeof createAdminClient>): Promise<number> {
+  const { data, error } = await supabase
+    .from('payments')
+    .select(CANDIDATE_SELECT)
+    .in('payout_status', ['PENDING', 'BLOCKED'])
+
+  if (error) {
+    console.error('releaseDuePayouts fetch error:', error)
+    return 0
+  }
+
+  const candidates = (data ?? []) as unknown as PayoutCandidateRow[]
+  for (const row of candidates) {
+    await processOneCandidate(supabase, row)
+  }
+  return candidates.length
+}
+
+// Scoped to one cleaner — called from the account.updated webhook the
+// moment their Connect onboarding completes, so a payout that's been
+// sitting BLOCKED doesn't wait for the next cron tick to actually move.
+export async function releaseBlockedPayoutsForCleaner(
+  supabase: ReturnType<typeof createAdminClient>,
+  cleanerProfileId: string
+): Promise<number> {
+  const { data: bookingIds } = await supabase
+    .from('bookings')
+    .select('id')
+    .eq('cleaner_profile_id', cleanerProfileId)
+
+  const ids = ((bookingIds ?? []) as { id: string }[]).map(b => b.id)
+  if (ids.length === 0) return 0
+
+  const { data, error } = await supabase
+    .from('payments')
+    .select(CANDIDATE_SELECT)
+    .eq('payout_status', 'BLOCKED')
+    .in('booking_id', ids)
+
+  if (error) {
+    console.error('releaseBlockedPayoutsForCleaner fetch error:', error)
+    return 0
+  }
+
+  const candidates = (data ?? []) as unknown as PayoutCandidateRow[]
+  for (const row of candidates) {
+    await processOneCandidate(supabase, row)
+  }
+  return candidates.length
+}

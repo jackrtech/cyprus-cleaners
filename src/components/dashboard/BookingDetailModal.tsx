@@ -24,6 +24,7 @@ export interface BookingDetailData {
   findingUsNotes?:    string | null
   photo_urls:         string[]
   cancellationReason?: string | null
+  payment?:           { amountEur: number; platformFeeEur: number | null } | null
 }
 
 interface Props {
@@ -164,6 +165,27 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
             })}
           </p>
         </div>
+
+        {booking.payment && (
+          <div className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3 space-y-1">
+            {booking.payment.platformFeeEur != null && (
+              <div className="flex justify-between text-[#5B7472] dark:text-[#9BB0AE]">
+                <span>{tBooking('cleanerRateLine')}</span>
+                <span>€{(booking.payment.amountEur - booking.payment.platformFeeEur).toFixed(2)}</span>
+              </div>
+            )}
+            {booking.payment.platformFeeEur != null && (
+              <div className="flex justify-between text-[#5B7472] dark:text-[#9BB0AE]">
+                <span>{tBooking('bookingFeeLine')}</span>
+                <span>€{booking.payment.platformFeeEur.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-medium">
+              <span>{tBooking('totalLine')}</span>
+              <span>€{booking.payment.amountEur.toFixed(2)}</span>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-start gap-2.5">
           <PinIcon />

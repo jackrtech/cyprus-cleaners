@@ -202,7 +202,7 @@ describe.skipIf(!hasLiveCreds || !isTestStripeKey)('Money path (live DB + Stripe
       .eq('booking_id', bookingId)
       .single()
     expect(pendingPayment?.status).toBe('PENDING')
-    expect(pendingPayment?.amount_eur).toBe(40) // 20 EUR/hr x 2h
+    expect(pendingPayment?.amount_eur).toBe(41) // 20 EUR/hr x 2h + BOOKING_FEE_EUR
 
     // 2. Cleaner confirms -> real off-session Stripe charge in test mode
     sessionAs(cleanerUserId, 'CLEANER')
@@ -224,7 +224,7 @@ describe.skipIf(!hasLiveCreds || !isTestStripeKey)('Money path (live DB + Stripe
 
     const paymentIntent = await stripe.paymentIntents.retrieve(paidPayment!.provider_payment_intent_id!)
     expect(paymentIntent.status).toBe('succeeded')
-    expect(paymentIntent.amount).toBe(4000)
+    expect(paymentIntent.amount).toBe(4100)
 
     // 3. Satisfy COMPLETE's preconditions (date reached, >=4 photos) directly —
     // photo upload UX isn't part of the money path being verified here.
@@ -272,5 +272,27 @@ describe.skipIf(!hasLiveCreds || !isTestStripeKey)('Money path (live DB + Stripe
       .single()
     expect(finalStats?.review_count).toBe(1)
     expect(finalStats?.avg_rating).toBe(5)
+
+    // 5. Payout: fee split is recorded, and the payout is correctly NOT
+    // released yet — the booking just completed, nowhere near the 24h hold.
+    const { data: paymentAfterComplete } = await admin
+      .from('payments')
+      .select('platform_fee_eur, cleaner_payout_eur, payout_status')
+      .eq('booking_id', bookingId)
+      .single()
+    expect(paymentAfterComplete?.platform_fee_eur).toBe(1)
+    expect(paymentAfterComplete?.cleaner_payout_eur).toBeNull()
+    expect(paymentAfterComplete?.payout_status).toBe('PENDING')
+
+    const { releaseDuePayouts } = await import('../../lib/payouts')
+    const processed = await releaseDuePayouts(admin as never)
+    expect(processed).toBeGreaterThanOrEqual(1) // this booking was scanned...
+
+    const { data: paymentAfterRelease } = await admin
+      .from('payments')
+      .select('payout_status')
+      .eq('booking_id', bookingId)
+      .single()
+    expect(paymentAfterRelease?.payout_status).toBe('PENDING') // ...but still held, correctly
   })
 })

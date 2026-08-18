@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
 import { sendNewBookingRequestEmail } from '@/lib/email'
+import { BOOKING_FEE_EUR } from '@/lib/stripe'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
@@ -198,10 +199,16 @@ export async function POST(req: NextRequest) {
 
   // Payment isn't charged yet (that happens when the cleaner confirms — see
   // /api/bookings/[id] CONFIRM) — this just records the saved card against
-  // the booking so the amount is locked in at the rate quoted now.
+  // the booking so the amount is locked in at the rate (and fee) quoted now.
+  // amount_eur is the TOTAL the customer pays — cleaner's rate plus the flat
+  // platform fee, stored per-payment via platform_fee_eur (see schema.sql's
+  // payments table comment) — cleaner_payout_eur is left null until the
+  // payout-release job determines the final figure (see src/lib/payouts.ts).
+  const cleanerPortionEur = Math.round(cleanerProfile.hourly_rate_eur * duration_hours * 100) / 100
   const { error: paymentError } = await supabase.from('payments').insert({
     booking_id: data.id,
-    amount_eur: Math.round(cleanerProfile.hourly_rate_eur * duration_hours * 100) / 100,
+    amount_eur: Math.round((cleanerPortionEur + BOOKING_FEE_EUR) * 100) / 100,
+    platform_fee_eur: BOOKING_FEE_EUR,
     status: 'PENDING',
     provider: 'stripe',
     provider_payment_method_id: payment_method_id,
@@ -271,7 +278,8 @@ export async function GET(req: NextRequest) {
         *,
         cleaner_profiles ( id, slug, display_name, photo_url, cities ),
         reviews ( id ),
-        disputes ( id, status )
+        disputes ( id, status ),
+        payments ( amount_eur, platform_fee_eur, status )
       `)
       .eq('customer_id', userId)
 
@@ -301,7 +309,8 @@ export async function GET(req: NextRequest) {
       .from('bookings')
       .select(`
         *,
-        users ( full_name )
+        users ( full_name ),
+        payments ( amount_eur, platform_fee_eur, cleaner_payout_eur, status, payout_status, payout_release_at )
       `)
       .eq('cleaner_profile_id', profile.id)
 

@@ -68,6 +68,7 @@ interface Booking {
   cancellation_reason: string | null
   review_skipped_at:  string | null
   completed_at:       string | null
+  payments:           { amount_eur: number; platform_fee_eur: number | null; status: string } | { amount_eur: number; platform_fee_eur: number | null; status: string }[] | null
 }
 
 const BOOKING_STATUS_BADGE: Record<BookingStatus, string> = {
@@ -642,6 +643,10 @@ export default function DashboardPage() {
             findingUsNotes:     b.finding_us_notes,
             photo_urls:         b.photo_urls,
             cancellationReason: b.cancellation_reason,
+            payment: (() => {
+              const p = Array.isArray(b.payments) ? b.payments[0] ?? null : b.payments
+              return p ? { amountEur: p.amount_eur, platformFeeEur: p.platform_fee_eur } : null
+            })(),
           }
         })()}
         onBookAgain={() => {

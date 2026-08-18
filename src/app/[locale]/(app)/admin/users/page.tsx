@@ -21,14 +21,15 @@ interface DisputeHistory {
 }
 
 interface AdminUser {
-  id:              string
-  email:           string
-  full_name:       string
-  role:            'CUSTOMER' | 'CLEANER' | 'ADMIN'
-  email_verified:  boolean
-  created_at:      string
-  cleaner_profile: CleanerProfileSummary | null
-  dispute_history: DisputeHistory | null
+  id:                  string
+  email:               string
+  full_name:           string
+  role:                'CUSTOMER' | 'CLEANER' | 'ADMIN'
+  email_verified:      boolean
+  created_at:          string
+  cleaner_profile:     CleanerProfileSummary | null
+  dispute_history:     DisputeHistory | null
+  failed_payout_count: number
 }
 
 const CLEANER_STATUS_BADGE: Record<CleanerStatus, string> = {
@@ -167,6 +168,12 @@ export default function AdminUsersPage() {
                       autoResolved:  u.dispute_history.autoResolved,
                       adminResolved: u.dispute_history.adminResolved,
                     })}
+                  </p>
+                )}
+
+                {u.failed_payout_count > 0 && (
+                  <p className="text-body text-red-600 mt-2">
+                    {t('failedPayoutCount', { count: u.failed_payout_count })}
                   </p>
                 )}
 

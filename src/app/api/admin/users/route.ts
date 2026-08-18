@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
+import { releaseDuePayouts } from '@/lib/payouts'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -14,6 +15,11 @@ export async function GET() {
 
   const supabase = createAdminClient()
 
+  // Lazy backstop for the payout-release cron, same pattern as the dispute
+  // auto-resolve check — admin looking at this list is a natural moment to
+  // also make sure no payout is sitting stale past its release point.
+  await releaseDuePayouts(supabase)
+
   interface CleanerProfileRow { id: string; status: string; verified: boolean }
   interface UserRow {
     id: string; email: string; full_name: string; role: string
@@ -21,7 +27,7 @@ export async function GET() {
     cleaner_profiles: CleanerProfileRow | CleanerProfileRow[] | null
   }
 
-  const [{ data, error }, { data: disputeRows, error: disputeError }] = await Promise.all([
+  const [{ data, error }, { data: disputeRows, error: disputeError }, { data: failedPayoutRows, error: payoutError }] = await Promise.all([
     supabase
       .from('users')
       .select(`
@@ -35,6 +41,11 @@ export async function GET() {
     // whole point: the 24h auto-resolve-to-refund policy is only safe if
     // this pattern stays visible).
     supabase.from('disputes').select('customer_id, status, auto_resolved'),
+    // Per-cleaner failed-payout visibility — a FAILED transfer needs manual
+    // Stripe-dashboard follow-up (src/lib/payouts.ts); surfaced here rather
+    // than only in the admin alert email so it doesn't get lost if that
+    // email is missed.
+    supabase.from('bookings').select('cleaner_profile_id, payments!inner ( payout_status )').eq('payments.payout_status', 'FAILED'),
   ])
 
   if (error) {
@@ -43,6 +54,9 @@ export async function GET() {
   }
   if (disputeError) {
     console.error('GET admin users — dispute history error:', disputeError)
+  }
+  if (payoutError) {
+    console.error('GET admin users — failed payout error:', payoutError)
   }
 
   interface DisputeStats { total: number; autoResolved: number; adminResolved: number }
@@ -55,14 +69,23 @@ export async function GET() {
     disputeStatsByCustomer.set(d.customer_id, stats)
   }
 
+  const failedPayoutCountByCleanerProfile = new Map<string, number>()
+  for (const row of (failedPayoutRows ?? []) as { cleaner_profile_id: string }[]) {
+    failedPayoutCountByCleanerProfile.set(row.cleaner_profile_id, (failedPayoutCountByCleanerProfile.get(row.cleaner_profile_id) ?? 0) + 1)
+  }
+
   // cleaner_profiles is a one-to-one embed (one profile per user) but
   // PostgREST returns it as an array — normalise to a single object or null.
-  const rows = ((data ?? []) as unknown as UserRow[]).map(u => ({
-    id: u.id, email: u.email, full_name: u.full_name, role: u.role,
-    email_verified: u.email_verified, created_at: u.created_at,
-    cleaner_profile: Array.isArray(u.cleaner_profiles) ? u.cleaner_profiles[0] ?? null : u.cleaner_profiles,
-    dispute_history: disputeStatsByCustomer.get(u.id) ?? null,
-  }))
+  const rows = ((data ?? []) as unknown as UserRow[]).map(u => {
+    const cleanerProfile = Array.isArray(u.cleaner_profiles) ? u.cleaner_profiles[0] ?? null : u.cleaner_profiles
+    return {
+      id: u.id, email: u.email, full_name: u.full_name, role: u.role,
+      email_verified: u.email_verified, created_at: u.created_at,
+      cleaner_profile: cleanerProfile,
+      dispute_history: disputeStatsByCustomer.get(u.id) ?? null,
+      failed_payout_count: cleanerProfile ? (failedPayoutCountByCleanerProfile.get(cleanerProfile.id) ?? 0) : 0,
+    }
+  })
 
   return NextResponse.json(rows)
 }
