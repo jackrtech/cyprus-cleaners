@@ -52,7 +52,7 @@ File paths below sit under one of three route groups — `(marketing)/`, `(auth)
 
 **Not a page, but worth listing alongside them** — `POST /api/cron/cleanup-chat-photos`, a Vercel Cron job (bearer-auth'd via `CRON_SECRET`) that deletes chat photos older than 90 days and blanks the message's `photo_path`. No UI; runs on a schedule.
 
-**Ambiguous:** what an `ADMIN` sees at `/dashboard` (as opposed to `/admin`) isn't handled explicitly — the redirect in `(app)/layout.tsx` only special-cases `CLEANER`. An admin visiting `/dashboard` likely renders the customer dashboard's empty states rather than being redirected; not verified against a live admin session.
+**Confirmed rough edge:** what an `ADMIN` sees at `/dashboard` (as opposed to `/admin`) isn't handled explicitly — the redirect in `(app)/layout.tsx` only special-cases `CLEANER`. Verified against a live admin session (2026-08-18): an admin visiting `/dashboard` renders "Welcome back, {name}" with the booking/message panels stuck on their loading skeleton forever — `dashboard/page.tsx`'s data-fetch effects are gated on `role === 'CUSTOMER'`, so they never fire for `ADMIN`. Not a crash, just a dead end; no redirect exists to bounce an admin back to `/admin`.
 
 ---
 
