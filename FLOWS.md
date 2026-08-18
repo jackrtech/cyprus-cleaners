@@ -18,6 +18,7 @@ File refs are `path:line` — anchors as of this writing, not permanent.
 8. [Cross-party interactions](#8-cross-party-interactions)
 9. [Authentication and access control](#9-authentication-and-access-control)
 10. [Edge cases and race conditions](#10-edge-cases-and-race-conditions)
+11. [Data model reference](#11-data-model-reference)
 
 ---
 
@@ -272,3 +273,46 @@ Every point where one role's action visibly changes what another role sees or ca
 - **Email failures never block the action they're attached to** — every email call site across the app is wrapped in its own try/catch with the error only logged, consistent with the "best-effort" framing in §5. There's no retry queue; a Resend outage at the exact moment of a booking confirmation means that email is simply lost.
 - **Review submission race**: `POST /api/reviews` both pre-checks for an existing review and relies on a DB-level unique constraint on `booking_id` as the actual guard (`reviews/route.ts:43-51`) — two near-simultaneous submissions for the same booking would have the second one fail at the DB constraint rather than silently duplicate.
 - **Duplicate dispute-response submission is blocked by status, not a lock** — `PATCH /api/cleaner/disputes/[id]` rejects if `status !== 'OPEN'`, but since resolution requires an admin action in between, this isn't a tight race window in practice.
+
+---
+
+## 11. Data model reference
+
+Authoritative schema: `supabase/schema.sql`. TS mirror: `src/types/index.ts`.
+
+### Enums (`schema.sql:11-16`, `types/index.ts:1-16`)
+- `user_role`: `CUSTOMER | CLEANER | ADMIN`
+- `cleaner_status`: `ACTIVE | PAUSED | SUSPENDED` (only `ACTIVE` is used anywhere in app code — `PAUSED`/`SUSPENDED` have no booking-flow effect, see §10)
+- `service_type`: `HOUSE | APARTMENT`
+- `booking_status`: `REQUESTED → CONFIRMED → COMPLETED`, or `→ CANCELLED` from either of the first two
+- `payment_status`: `PENDING | PAID | REFUNDED | FAILED`
+- `cleaning_type`: `STANDARD | DEEP`
+- `dispute_status`: `OPEN | RESOLVED`
+- `dispute_resolution`: `CUSTOMER | CLEANER` (who the admin ruled for)
+
+### Triggers — never replicate this logic in application code
+- `on_review_insert` → `update_cleaner_stats()`: recomputes `avg_rating`, `review_count` (from `reviews`) and `unique_customer_count`, `total_jobs_count` (from `COMPLETED` `bookings`) on the cleaner's profile, fired on every review insert.
+- `on_booking_status_change` (BEFORE UPDATE) → `on_booking_completed()`: when `status` transitions to `COMPLETED`, stamps `review_prompted_at = now()` and increments `total_jobs_count` / recomputes `unique_customer_count` on the cleaner profile.
+
+### RLS by table
+- `users`: select/update own row only.
+- `addresses`: select/insert/delete own rows only (no update policy — client does delete+re-add).
+- `cleaner_profiles`: public select where `status='ACTIVE'`, plus the owner can always select their own row regardless of status.
+- `introductions`, `messages`: visible only to the two thread parties.
+- `reviews`: public select; no insert/update policy for anon/authenticated roles (writes go through the admin client from `/api/reviews`).
+- `payments`, `disputes`: RLS enabled with **no policies at all**, by design — both are only ever touched via the service-role admin client, never the anon-key browser client.
+- `support_threads`: owner or any admin. `messages_own_thread` extends the same rule to the support-thread branch.
+
+### `schema.sql` undersells the live schema
+A whole table and several actively-used columns are used throughout the app's API routes but absent from the checked-in `schema.sql` — treat them as real, in-production schema, just undocumented there:
+
+| Used in code | Not in schema.sql |
+|---|---|
+| `verification_tokens` table (email verify / password reset tokens) — `api/auth/register/route.ts:97`, `verify-email/route.ts:13`, `forgot-password/route.ts:32`, `reset-password/route.ts:18`, `resend-verification/route.ts:31` | entire table missing |
+| `cleaner_profiles.cities` (text array, plural) — used everywhere instead of the singular `city` column schema.sql defines | not in schema.sql |
+| `cleaner_profiles.cleaner_type` (`'individual' \| 'company'`) — `dashboard/cleaner/edit/page.tsx:44` | not in schema.sql (schema has `is_company boolean` instead, now only a legacy read-fallback, see `cleaners/page.tsx:64`) |
+| `cleaner_profiles.gender` (`'female' \| 'male' \| null`) | not in schema.sql |
+| `cleaner_profiles.is_mock` (boolean) — `api/cleaners/route.ts:16` | not in schema.sql |
+| `users.locale` — actively read (e.g. `admin/disputes/[id]/route.ts:70`) | schema.sql *does* define this one, just noting it's live |
+
+If you're changing schema, reconcile this drift rather than assuming `schema.sql` is complete.

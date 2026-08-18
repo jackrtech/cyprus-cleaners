@@ -84,7 +84,7 @@ These rules apply to every task, in addition to whatever the task description sa
 A task is not complete until ALL of the following are true, not just "the code works":
 
 1. **Code is committed** with a clear message describing what changed.
-2. **FLOWS.md is updated in the same commit** if the task did any of:
+2. **`FLOWS.md` (repo root — the only copy; do not create one under `docs/` or anywhere else) is updated in the same commit** if the task did any of:
    - added, removed, or changed a user-facing screen or step
    - changed a state machine (booking status, payment status, dispute status, verification status)
    - added or changed an email/notification trigger
