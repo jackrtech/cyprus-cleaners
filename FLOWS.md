@@ -25,6 +25,8 @@ File refs are `path:line` — anchors as of this writing, not permanent.
 
 Every `page.tsx` under `src/app/[locale]/`, in the order a user would typically meet them. "Access" is the enforced rule — middleware where noted, otherwise a client-side `useSession` guard (belt-and-suspenders, not the real boundary).
 
+File paths below sit under one of three route groups — `(marketing)/`, `(auth)/`, or `(app)/` — which only organize files, not URLs (a route group's parentheses never appear in the actual path, so every URL in the table below is unchanged). `(marketing)/layout.tsx` renders Navbar+Footer; `(auth)/layout.tsx` is a minimal logo-only header (no Navbar/Footer, to reduce signup drop-off); `(app)/layout.tsx` renders Navbar (desktop) + `BottomTabBar` (mobile) and is the one place the per-page auth/role redirect guard now lives (see below) — `BottomTabBar` no longer renders outside this group, so it no longer shows on marketing pages for a logged-in user the way it briefly used to.
+
 | Route | Renders | Access | Key actions | Leads to |
 |---|---|---|---|---|
 | `/` | Home — hero, featured cleaners, footer | Public | Browse cleaners, get started | `/cleaners`, `/get-started` |
@@ -50,7 +52,7 @@ Every `page.tsx` under `src/app/[locale]/`, in the order a user would typically 
 
 **Not a page, but worth listing alongside them** — `POST /api/cron/cleanup-chat-photos`, a Vercel Cron job (bearer-auth'd via `CRON_SECRET`) that deletes chat photos older than 90 days and blanks the message's `photo_path`. No UI; runs on a schedule.
 
-**Ambiguous:** what an `ADMIN` sees at `/dashboard` (as opposed to `/admin`) isn't handled explicitly — the redirect at `dashboard/page.tsx:113` only special-cases `CLEANER`. An admin visiting `/dashboard` likely renders the customer dashboard's empty states rather than being redirected; not verified against a live admin session.
+**Ambiguous:** what an `ADMIN` sees at `/dashboard` (as opposed to `/admin`) isn't handled explicitly — the redirect in `(app)/layout.tsx` only special-cases `CLEANER`. An admin visiting `/dashboard` likely renders the customer dashboard's empty states rather than being redirected; not verified against a live admin session.
 
 ---
 
