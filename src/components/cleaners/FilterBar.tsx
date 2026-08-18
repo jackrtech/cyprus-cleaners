@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { MOCK_CLEANERS } from '@/lib/mockCleaners'
 import { useCity } from '@/hooks/useCity'
@@ -133,18 +133,24 @@ export default function FilterBar({ filters, onChange, children }: Props) {
   const getCityName = useCity()
   const [openPanel, setOpenPanel] = useState<string | null>(null)
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  // Every pill button and dropdown Panel calls stopPropagation() on its own
-  // mousedown, so this document-level listener only ever fires for clicks
-  // that weren't already handled — i.e. genuine "outside" clicks, whether
-  // that's blank space, a result card, or anywhere else. No ref/boundary
-  // needed. (Deliberately not ref-scoped: the sticky bar's containing block
-  // has to include the results list for position:sticky to have room to stay
-  // pinned through the whole scroll — see the wrapping div below — which
-  // means a ref scoped to "just the bar" can't also be its DOM parent.)
+  // Every pill button and dropdown Panel also calls stopPropagation() on its
+  // own mousedown, but that alone doesn't stop this listener from firing:
+  // React 18 delegates its synthetic mousedown handling at `document` too,
+  // the same node this raw listener is on — stopPropagation only blocks an
+  // event from reaching *other* nodes, not other listeners already on the
+  // same node, so it was closing whatever panel had just opened in the same
+  // tick. Checking containerRef instead — clicking anywhere inside the bar
+  // (a pill, a panel, the results list under it) never closes it; only a
+  // click genuinely outside this wrapping div does. This is the same div
+  // that has to wrap {children} for the sticky positioning below, so no
+  // extra DOM node needed for the boundary.
   useEffect(() => {
-    function handle() {
-      setOpenPanel(null)
+    function handle(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpenPanel(null)
+      }
     }
     document.addEventListener('mousedown', handle)
     return () => document.removeEventListener('mousedown', handle)
@@ -176,7 +182,7 @@ export default function FilterBar({ filters, onChange, children }: Props) {
     // immediate parent. An extra wrapper level around just {children}
     // wouldn't work: the sticky element's parent specifically needs to be
     // tall, not merely some ancestor further up.
-    <div>
+    <div ref={containerRef}>
       {/*
         sticky top-16: sits just below the navbar (h-16 = 64px)
         z-[60]: above navbar z-50, so dropdowns (z-200 within this context) also render above navbar
