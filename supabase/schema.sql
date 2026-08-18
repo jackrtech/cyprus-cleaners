@@ -270,6 +270,24 @@ create table disputes (
 -- Applying refund_percentage/resolve_by to an existing database:
 -- `alter table disputes add column refund_percentage int not null default 0 check (refund_percentage >= 0 and refund_percentage <= 100), add column resolve_by timestamptz;`
 
+-- ─── CONTACT SUBMISSIONS ─────────────────────────────────────
+-- General-inquiry contact form — separate from disputes (a specific claim
+-- against a completed booking) and from in-app chat (an existing customer/
+-- cleaner messaging a cleaner they've already found). This is for anyone,
+-- logged in or not, with a question before that relationship exists —
+-- no user_id, since the sender may not have an account at all.
+
+create table contact_submissions (
+  id           uuid primary key default gen_random_uuid(),
+  name         text not null,
+  email        text not null,
+  message      text not null,
+  created_at   timestamptz not null default now(),
+  resolved_at  timestamptz
+);
+
+create index idx_contact_submissions_resolved on contact_submissions (resolved_at);
+
 create index idx_disputes_status  on disputes (status);
 create index idx_disputes_booking on disputes (booking_id);
 
@@ -358,13 +376,14 @@ alter table addresses           enable row level security;
 alter table messages            enable row level security;
 alter table reviews             enable row level security;
 alter table chat_notifications  enable row level security;
-alter table payments            enable row level security;
-alter table disputes            enable row level security;
-alter table verification_tokens enable row level security;
--- No policies beyond enabling it on payments/disputes/verification_tokens —
--- all three are only ever read/written via the service-role admin client
--- (API routes), never the anon-key browser client, so RLS just needs to
--- deny by default here.
+alter table payments             enable row level security;
+alter table disputes             enable row level security;
+alter table verification_tokens  enable row level security;
+alter table contact_submissions  enable row level security;
+-- No policies beyond enabling it on payments/disputes/verification_tokens/
+-- contact_submissions — all four are only ever read/written via the
+-- service-role admin client (API routes), never the anon-key browser
+-- client, so RLS just needs to deny by default here.
 
 -- Users: can only see and edit own record
 create policy "users_select_own" on users for select using (auth.uid()::text = id::text);

@@ -52,6 +52,7 @@ const RATE_LIMITED_PREFIXES = [
   '/api/auth/validate-reset-token',
   '/api/auth/verify-email',
   '/api/auth/callback/credentials', // NextAuth credentials sign-in
+  '/api/contact', // public, unauthenticated form — otherwise open to spam
 ]
 
 const RATE_LIMIT_WINDOW_MS = 60_000

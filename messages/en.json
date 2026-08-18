@@ -10,6 +10,8 @@
     "privacyDescription": "How Cyprus Cleaners collects, uses, and protects your personal data.",
     "termsTitle": "Terms of Service",
     "termsDescription": "The terms that govern using Cyprus Cleaners, including our booking, payment, and cancellation policy.",
+    "contactTitle": "Contact us",
+    "contactDescription": "Get in touch with Cyprus Cleaners — questions, feedback, or anything else.",
     "getStartedTitle": "Get started",
     "getStartedDescription": "Find a cleaner or sign up as a cleaner on Cyprus Cleaners."
   },
@@ -674,5 +676,18 @@
     "cleanerCta": "Join as a cleaner",
     "alreadyHaveAccount": "Already have an account?",
     "signIn": "Sign in"
+  },
+  "contact": {
+    "heading": "Get in touch",
+    "subtitle": "Questions, feedback, or anything else — we'll get back to you by email.",
+    "name": "Your name",
+    "email": "Email address",
+    "message": "Message",
+    "messagePlaceholder": "How can we help?",
+    "submit": "Send message",
+    "submitting": "Sending…",
+    "submitError": "Failed to send your message. Please try again.",
+    "successHeading": "Message sent",
+    "successBody": "Thanks for reaching out — we'll reply by email as soon as we can."
   }
 }

@@ -575,3 +575,38 @@ export async function sendDisputeFiledAlertEmail({
     bodyHtml,
   })
 }
+
+// ─── Contact form ─────────────────────────────────────────────────────────────
+
+export async function sendContactSubmissionAlertEmail({
+  name, email, message, adminUrl,
+}: {
+  name:     string
+  email:    string
+  message:  string
+  adminUrl: string
+}) {
+  const bodyHtml =
+    `<p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 12px;">Someone submitted the contact form.</p>
+     <table style="width:100%;font-size:13px;color:#0D1F1E;border-collapse:collapse;margin-top:8px;">
+       <tr><td style="padding:4px 0;color:#5B7472;">Name</td><td style="padding:4px 0;">${escapeHtml(name)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Email</td><td style="padding:4px 0;">${escapeHtml(email)}</td></tr>
+     </table>
+     <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Message:</p>
+     <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${escapeHtml(message)}</blockquote>
+     ${cta('Open inbox', adminUrl)}`
+
+  return sendAdminAlertEmail({
+    subject: `New contact form message from ${name}`,
+    heading: 'New contact submission',
+    bodyHtml,
+  })
+}
+
+export async function sendContactSubmissionConfirmationEmail({ to }: { to: string }) {
+  const html = layout(
+    `<h2 style="color:#0D1F1E;font-size:20px;font-weight:600;margin:0 0 16px;">We got your message</h2>
+     <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Thanks for reaching out to Cyprus Cleaners — we'll get back to you by email as soon as we can.</p>`
+  )
+  return sendEmail({ to, subject: 'We got your message — Cyprus Cleaners', html })
+}
