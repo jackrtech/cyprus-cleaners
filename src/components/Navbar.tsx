@@ -7,7 +7,19 @@ import { useSession, signOut } from 'next-auth/react'
 import LanguageToggle from '@/components/layout/LanguageToggle'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 
-export default function Navbar() {
+interface NavbarProps {
+  // Only meaningful when true: hides the whole header on mobile for a
+  // logged-in visitor. Safe ONLY where something else provides mobile nav
+  // instead — today that's BottomTabBar, which (app)/layout.tsx renders
+  // alongside this. (marketing)/layout.tsx does NOT render BottomTabBar, so
+  // it must leave this false, or a logged-in mobile visitor browsing
+  // marketing pages gets no nav at all (regression fixed 2026-08-18: this
+  // prop didn't exist, the hide was unconditional, and it silently relied
+  // on BottomTabBar having been global before the route-group split).
+  hideOnMobileWhenLoggedIn?: boolean
+}
+
+export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps) {
   const t = useTranslations('nav')
   const pathname = usePathname()
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -60,7 +72,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className={`sticky top-0 z-50 w-full bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] ${isLoggedIn ? 'hidden md:block' : ''}`}>
+    <header className={`sticky top-0 z-50 w-full bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] ${isLoggedIn && hideOnMobileWhenLoggedIn ? 'hidden md:block' : ''}`}>
       <div className="px-6 lg:px-12 flex items-center justify-between h-16">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">

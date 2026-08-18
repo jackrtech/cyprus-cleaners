@@ -50,7 +50,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Navbar />
+      <Navbar hideOnMobileWhenLoggedIn />
       <main id="main-content">
         {blocked ? <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" /> : children}
       </main>
