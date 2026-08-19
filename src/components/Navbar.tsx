@@ -71,7 +71,14 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
   }
 
   return (
-    <header className={`sticky top-0 z-50 w-full bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] ${isLoggedIn && hideOnMobileWhenLoggedIn ? 'hidden md:block' : ''}`}>
+    // Wrapper is a plain `relative` positioning anchor for the mobile drawer
+    // below — NOT a stacking context of its own (no z-index here), so the
+    // drawer's z-[70] competes directly with page-level siblings like
+    // FilterBar's sticky bar, instead of being capped at <header>'s z-50
+    // (which it would be if it stayed nested inside <header>, since z-index
+    // only ever resolves within the nearest ANCESTOR stacking context).
+    <div className="relative">
+      <header className={`sticky top-0 z-50 w-full bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] ${isLoggedIn && hideOnMobileWhenLoggedIn ? 'hidden md:block' : ''}`}>
       <div className="px-6 lg:px-12 flex items-center justify-between h-16">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
@@ -124,6 +131,7 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
           {drawerOpen ? '✕' : '☰'}
         </button>
       </div>
+      </header>
 
       {/* Mobile drawer — each group gets a divider instead of relying on gap
           spacing alone, so an empty group (e.g. no nav links for a cleaner)
@@ -131,7 +139,11 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
           across every plain row, leaving the Dashboard button as the one
           deliberately-emphasized action, same as it is on desktop. */}
       {drawerOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] px-6 py-5 flex flex-col gap-4" style={{ boxShadow: '0 8px 24px rgba(25,112,106,0.08)' }}>
+        // z-[70]: this had no explicit z-index before (just inherited the
+        // header's z-50), so on any page with a sticky element above z-50 —
+        // e.g. FilterBar's sticky filters bar at z-[60] on /cleaners — the
+        // drawer rendered UNDER it instead of on top (2026-08-19 bug fix).
+        <div className="md:hidden absolute top-full left-0 w-full z-[70] bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] px-6 py-5 flex flex-col gap-4" style={{ boxShadow: '0 8px 24px rgba(25,112,106,0.08)' }}>
           {isLoggedIn && session?.user?.name && (
             <span className="text-[14px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">
               {session.user.name}
@@ -168,6 +180,6 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
           </div>
         </div>
       )}
-    </header>
+    </div>
   )
 }
