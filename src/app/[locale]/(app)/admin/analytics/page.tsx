@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import AdminNav from '@/components/admin/AdminNav'
+import InfoTooltip from '@/components/ui/InfoTooltip'
 
 interface WeekBucket {
   weekStart:  string
@@ -107,42 +108,69 @@ export default function AdminAnalyticsPage() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
               <div className="card p-4">
-                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('totalBookingsLabel')}</p>
+                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
+                  {t('totalBookingsLabel')}
+                  <InfoTooltip label={t('totalBookingsInfo')}>{t('totalBookingsDef')}</InfoTooltip>
+                </p>
                 <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.totals.totalBookings}</p>
               </div>
               <div className="card p-4">
-                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('completedBookingsLabel')}</p>
+                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
+                  {t('completedBookingsLabel')}
+                  <InfoTooltip label={t('completedBookingsInfo')}>{t('completedBookingsDef')}</InfoTooltip>
+                </p>
                 <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.totals.completedBookings}</p>
               </div>
               <div className="card p-4">
-                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('cancelledBookingsLabel')}</p>
+                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
+                  {t('cancelledBookingsLabel')}
+                  <InfoTooltip label={t('cancelledBookingsInfo')}>{t('cancelledBookingsDef')}</InfoTooltip>
+                </p>
                 <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.totals.cancelledBookings}</p>
               </div>
               <div className="card p-4">
-                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('totalCustomersLabel')}</p>
+                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
+                  {t('totalCustomersLabel')}
+                  <InfoTooltip label={t('totalCustomersInfo')}>{t('totalCustomersDef')}</InfoTooltip>
+                </p>
                 <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.totals.totalCustomers}</p>
               </div>
               <div className="card p-4">
-                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('activeCleanersLabel')}</p>
+                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
+                  {t('activeCleanersLabel')}
+                  <InfoTooltip label={t('activeCleanersInfo')}>{t('activeCleanersDef')}</InfoTooltip>
+                </p>
                 <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.totals.activeCleaners}</p>
               </div>
               <div className="card p-4">
-                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('revenueLabel')}</p>
+                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
+                  {t('revenueLabel')}
+                  <InfoTooltip label={t('revenueInfo')}>{t('revenueDef')}</InfoTooltip>
+                </p>
                 <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">€{analytics.totals.revenueEur.toFixed(2)}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
               <div className="card p-4">
-                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('repeatCustomerRateLabel')}</p>
+                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
+                  {t('repeatCustomerRateLabel')}
+                  <InfoTooltip label={t('repeatCustomerRateInfo')}>{t('repeatCustomerRateDef')}</InfoTooltip>
+                </p>
                 <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.repeatCustomerRatePct}%</p>
               </div>
               <div className="card p-4">
-                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('disputeRateLabel')}</p>
+                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
+                  {t('disputeRateLabel')}
+                  <InfoTooltip label={t('disputeRateInfo')}>{t('disputeRateDef')}</InfoTooltip>
+                </p>
                 <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.disputeRatePct}%</p>
               </div>
               <div className="card p-4">
-                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('autoResolveRateLabel')}</p>
+                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
+                  {t('autoResolveRateLabel')}
+                  <InfoTooltip label={t('autoResolveRateInfo')}>{t('autoResolveRateDef')}</InfoTooltip>
+                </p>
                 <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">
                   {analytics.autoResolveRatePct === null ? '—' : `${analytics.autoResolveRatePct}%`}
                 </p>
@@ -156,7 +184,10 @@ export default function AdminAnalyticsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="card p-4">
                   <div className="flex items-baseline justify-between mb-3">
-                    <p className="font-medium text-teal-900 dark:text-[#ECF3F2] text-body">{t('weeklyBookingsTitle')}</p>
+                    <p className="font-medium text-teal-900 dark:text-[#ECF3F2] text-body">
+                      {t('weeklyBookingsTitle')}
+                      <InfoTooltip label={t('weeklyChartsInfo')}>{t('weeklyChartsDef')}</InfoTooltip>
+                    </p>
                     <p className="text-label text-muted dark:text-[#9BB0AE]">{t('last12Weeks')}</p>
                   </div>
                   <BarChart
@@ -172,7 +203,10 @@ export default function AdminAnalyticsPage() {
                 </div>
                 <div className="card p-4">
                   <div className="flex items-baseline justify-between mb-3">
-                    <p className="font-medium text-teal-900 dark:text-[#ECF3F2] text-body">{t('weeklyRevenueTitle')}</p>
+                    <p className="font-medium text-teal-900 dark:text-[#ECF3F2] text-body">
+                      {t('weeklyRevenueTitle')}
+                      <InfoTooltip label={t('weeklyChartsInfo')}>{t('weeklyChartsDef')}</InfoTooltip>
+                    </p>
                     <p className="text-label text-muted dark:text-[#9BB0AE]">{t('last12Weeks')}</p>
                   </div>
                   <BarChart
