@@ -362,7 +362,7 @@ export async function GET(req: NextRequest) {
       .from('bookings')
       .select(`
         *,
-        users ( full_name ),
+        users!bookings_customer_id_fkey ( full_name ),
         payments ( amount_eur, platform_fee_eur, cleaner_payout_eur, status, payout_status, payout_release_at )
       `)
       .eq('cleaner_profile_id', profile.id)
