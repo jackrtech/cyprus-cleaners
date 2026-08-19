@@ -1,36 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import type { MockCleaner } from '@/lib/mockCleaners'
 import { useCity } from '@/hooks/useCity'
 import CleanerCard from '@/components/cleaners/CleanerCard'
-import { deriveAvailabilityTags, type WeeklyAvailability } from '@/lib/availability'
-
-interface DbCleanerRow {
-  id:                    string
-  slug:                  string
-  display_name:          string
-  bio:                   string | null
-  photo_url:             string | null
-  city:                  string | null
-  cities:                string[] | null
-  hourly_rate_eur:       number
-  services:              ('HOUSE' | 'APARTMENT')[] | null
-  languages:             string[] | null
-  cleaner_type:          'individual' | 'company' | null
-  gender:                'female' | 'male' | null
-  verified:              boolean
-  avg_rating:            number
-  review_count:          number
-  unique_customer_count: number
-  total_jobs_count:      number
-  availability:          WeeklyAvailability | null
-  is_mock:               boolean
-  is_company:            boolean
-  is_favorited:          boolean
-}
+import { deriveAvailabilityTags } from '@/lib/availability'
+import type { CleanerListRow as DbCleanerRow } from '@/lib/cleaners'
 
 const AVATAR_PALETTE = [
   { bg: '#E8F4F3', text: '#19706A' },
@@ -92,20 +69,11 @@ const CITY_TABS = [
 ]
 
 
-export default function FeaturedCleaners() {
+export default function FeaturedCleaners({ initialCleaners }: { initialCleaners: DbCleanerRow[] }) {
   const t = useTranslations('cleaners')
   const getCityName = useCity()
   const [activeCity, setActiveCity] = useState('all')
-  const [cleaners, setCleaners] = useState<MockCleaner[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch('/api/cleaners', { cache: 'no-store' })
-      .then(r => { if (!r.ok) throw new Error(); return r.json() })
-      .then((rows: DbCleanerRow[]) => setCleaners(rows.map(mapCleaner)))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+  const [cleaners] = useState<MockCleaner[]>(() => initialCleaners.map(mapCleaner))
 
   const featured = useMemo(() => {
     return [...cleaners]
@@ -156,26 +124,11 @@ export default function FeaturedCleaners() {
       </div>
 
       {/* Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] overflow-hidden animate-pulse">
-              <div className="h-[120px] bg-[#E0EDEC] dark:bg-[#253634]" />
-              <div className="p-3 pb-3.5 space-y-2">
-                <div className="h-3.5 bg-[#E0EDEC] dark:bg-[#253634] rounded w-3/4" />
-                <div className="h-3 bg-[#E0EDEC] dark:bg-[#253634] rounded w-1/2" />
-                <div className="h-3 bg-[#E0EDEC] dark:bg-[#253634] rounded w-2/3" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(cleaner => (
-            <CleanerCard key={cleaner.id} cleaner={cleaner} />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.map(cleaner => (
+          <CleanerCard key={cleaner.id} cleaner={cleaner} />
+        ))}
+      </div>
     </section>
   )
 }

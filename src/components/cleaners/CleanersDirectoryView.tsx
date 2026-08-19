@@ -1,41 +1,16 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import type { MockCleaner } from '@/lib/mockCleaners'
 import CleanerCard from '@/components/cleaners/CleanerCard'
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/cleaners/FilterBar'
-import { deriveAvailabilityTags, type WeeklyAvailability } from '@/lib/availability'
+import { deriveAvailabilityTags } from '@/lib/availability'
+import type { CleanerListRow as DbCleanerRow } from '@/lib/cleaners'
 
 type SortKey = 'top-rated' | 'price-asc' | 'price-desc' | 'most-reviews' | 'most-jobs'
-
-interface DbCleanerRow {
-  id:                    string
-  slug:                  string
-  display_name:          string
-  bio:                   string | null
-  photo_url:             string | null
-  cover_photo_url:       string | null
-  city:                  string | null
-  cities:                string[] | null
-  hourly_rate_eur:       number
-  services:              ('HOUSE' | 'APARTMENT')[] | null
-  languages:             string[] | null
-  cleaner_type:          'individual' | 'company' | null
-  gender:                'female' | 'male' | null
-  verified:              boolean
-  avg_rating:            number
-  review_count:          number
-  unique_customer_count: number
-  total_jobs_count:      number
-  availability:          WeeklyAvailability | null
-  is_mock:               boolean
-  is_company:            boolean
-  created_at:            string
-  is_favorited:          boolean
-}
 
 const AVATAR_PALETTE = [
   { bg: '#E8F4F3', text: '#19706A' },
@@ -90,7 +65,7 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
   }
 }
 
-export default function CleanersPage() {
+export default function CleanersPage({ initialCleaners }: { initialCleaners: DbCleanerRow[] | null }) {
   const t = useTranslations('directory')
   const router = useRouter()
   const { data: session } = useSession()
@@ -113,17 +88,8 @@ export default function CleanersPage() {
     setSelectedSlugs(prev => prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug])
   }
 
-  const [cleaners, setCleaners] = useState<MockCleaner[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState<string | null>(null)
-
-  useEffect(() => {
-    fetch('/api/cleaners', { cache: 'no-store' })
-      .then(r => { if (!r.ok) throw new Error(); return r.json() })
-      .then((rows: DbCleanerRow[]) => setCleaners(rows.map(mapCleaner)))
-      .catch(() => setError('Failed to load cleaners. Please refresh.'))
-      .finally(() => setLoading(false))
-  }, [])
+  const [cleaners] = useState<MockCleaner[]>(() => (initialCleaners ?? []).map(mapCleaner))
+  const error = initialCleaners === null ? 'Failed to load cleaners. Please refresh.' : null
 
   const results = useMemo(() => {
     let r = [...cleaners]
@@ -212,21 +178,6 @@ export default function CleanersPage() {
           <p className="text-[13px] text-red-600 bg-red-50 border border-red-200 rounded-[10px] px-4 py-3">
             {error}
           </p>
-        ) : loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-3.5 animate-pulse">
-                <div className="flex items-start gap-3">
-                  <div className="w-14 h-14 rounded-full bg-[#E0EDEC] dark:bg-[#253634] shrink-0" />
-                  <div className="flex-1 space-y-2 pt-0.5">
-                    <div className="h-3.5 bg-[#E0EDEC] dark:bg-[#253634] rounded w-3/4" />
-                    <div className="h-3 bg-[#E0EDEC] dark:bg-[#253634] rounded w-1/2" />
-                  </div>
-                </div>
-                <div className="h-3 bg-[#E0EDEC] dark:bg-[#253634] rounded w-2/3 mt-3" />
-              </div>
-            ))}
-          </div>
         ) : results.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
             {results.map(cleaner => (
