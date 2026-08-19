@@ -298,6 +298,137 @@ async function processOneAssignmentCandidate(
   }
 }
 
+// ─── Manual admin retry for a FAILED payout ──────────────────────────────
+// Added 2026-08-19: releaseDuePayouts only ever re-scans PENDING/BLOCKED —
+// once a transfer attempt throws, the row sits at FAILED forever with no
+// automatic retry. These two are called from admin-triggered retry routes
+// (mirrors the existing cancellations retry-refund pattern). Deliberately
+// NOT a rescan of readiness/dispute logic — that already ran once to reach
+// FAILED in the first place; a retry just re-attempts the same transfer for
+// the same already-computed amount, with the same idempotency key as the
+// original attempt (so if that attempt actually succeeded at Stripe but our
+// own DB update failed, this returns the existing transfer instead of
+// creating a second one).
+
+interface RetryPaymentRow {
+  id:                 string
+  booking_id:         string
+  cleaner_payout_eur: number | null
+  payout_status:      string
+  booking:            { id: string; cleaner_profiles: CleanerProfileRow | CleanerProfileRow[] | null } | { id: string; cleaner_profiles: CleanerProfileRow | CleanerProfileRow[] | null }[] | null
+}
+
+export async function retryFailedPayout(
+  supabase: ReturnType<typeof createAdminClient>,
+  paymentId: string
+): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  const { data, error } = await supabase
+    .from('payments')
+    .select(`
+      id, booking_id, cleaner_payout_eur, payout_status,
+      booking:bookings ( id, cleaner_profiles ( id, stripe_connect_account_id, stripe_connect_payouts_enabled ) )
+    `)
+    .eq('id', paymentId)
+    .single()
+
+  if (error || !data) return { ok: false, status: 404, error: 'Payment not found' }
+  const row = data as unknown as RetryPaymentRow
+
+  if (row.payout_status !== 'FAILED') {
+    return { ok: false, status: 409, error: `Payout is ${row.payout_status}, not FAILED — nothing to retry` }
+  }
+  if (!row.cleaner_payout_eur || row.cleaner_payout_eur <= 0) {
+    return { ok: false, status: 409, error: 'No payout amount recorded for this payment' }
+  }
+
+  const booking = one(row.booking)
+  const cleanerProfile = booking ? one(booking.cleaner_profiles) : null
+  if (!cleanerProfile?.stripe_connect_payouts_enabled || !cleanerProfile.stripe_connect_account_id) {
+    return { ok: false, status: 409, error: "Cleaner's Stripe Connect account isn't ready to receive payouts" }
+  }
+
+  try {
+    const stripe = getStripe()
+    const transfer = await stripe.transfers.create({
+      amount:          Math.round(row.cleaner_payout_eur * 100),
+      currency:        'eur',
+      destination:     cleanerProfile.stripe_connect_account_id,
+      transfer_group:  `booking_${row.booking_id}`,
+    }, {
+      idempotencyKey: `payout-${row.booking_id}`,
+    })
+
+    await supabase.from('payments')
+      .update({ payout_status: 'PAID', stripe_transfer_id: transfer.id, paid_out_at: new Date().toISOString() })
+      .eq('id', row.id)
+
+    return { ok: true }
+  } catch (transferErr) {
+    console.error(`Payout retry failed (payment ${row.id}):`, transferErr)
+    const message = transferErr instanceof Stripe.errors.StripeError ? transferErr.message : 'Transfer failed'
+    return { ok: false, status: 502, error: message }
+  }
+}
+
+interface RetryAssignmentRow {
+  id:                 string
+  booking_id:         string
+  cleaner_payout_eur: number | null
+  payout_status:      string
+  cleaner_profiles:   CleanerProfileRow | CleanerProfileRow[] | null
+}
+
+export async function retryFailedAssignmentPayout(
+  supabase: ReturnType<typeof createAdminClient>,
+  assignmentId: string
+): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  const { data, error } = await supabase
+    .from('booking_assignments')
+    .select(`
+      id, booking_id, cleaner_profile_id, cleaner_payout_eur, payout_status,
+      cleaner_profiles ( id, stripe_connect_account_id, stripe_connect_payouts_enabled )
+    `)
+    .eq('id', assignmentId)
+    .single()
+
+  if (error || !data) return { ok: false, status: 404, error: 'Assignment not found' }
+  const row = data as unknown as RetryAssignmentRow & { cleaner_profile_id: string }
+
+  if (row.payout_status !== 'FAILED') {
+    return { ok: false, status: 409, error: `Payout is ${row.payout_status}, not FAILED — nothing to retry` }
+  }
+  if (!row.cleaner_payout_eur || row.cleaner_payout_eur <= 0) {
+    return { ok: false, status: 409, error: 'No payout amount recorded for this assignment' }
+  }
+
+  const cleanerProfile = one(row.cleaner_profiles)
+  if (!cleanerProfile?.stripe_connect_payouts_enabled || !cleanerProfile.stripe_connect_account_id) {
+    return { ok: false, status: 409, error: "Cleaner's Stripe Connect account isn't ready to receive payouts" }
+  }
+
+  try {
+    const stripe = getStripe()
+    const transfer = await stripe.transfers.create({
+      amount:          Math.round(row.cleaner_payout_eur * 100),
+      currency:        'eur',
+      destination:     cleanerProfile.stripe_connect_account_id,
+      transfer_group:  `booking_${row.booking_id}`,
+    }, {
+      idempotencyKey: `payout-${row.booking_id}-${row.cleaner_profile_id}`,
+    })
+
+    await supabase.from('booking_assignments')
+      .update({ payout_status: 'PAID', stripe_transfer_id: transfer.id, paid_out_at: new Date().toISOString() })
+      .eq('id', row.id)
+
+    return { ok: true }
+  } catch (transferErr) {
+    console.error(`Payout retry failed (assignment ${row.id}):`, transferErr)
+    const message = transferErr instanceof Stripe.errors.StripeError ? transferErr.message : 'Transfer failed'
+    return { ok: false, status: 502, error: message }
+  }
+}
+
 // Scans every payment whose payout is still owed and releases whatever is
 // actually ready — called from the cron (src/app/api/cron/release-payouts)
 // and lazily wherever a cleaner or admin might be looking at payout state,
