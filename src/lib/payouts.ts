@@ -142,6 +142,162 @@ const CANDIDATE_SELECT = `
   )
 `
 
+// ─── Multi-cleaner bookings (booking_assignments) ────────────────────────
+// Added 2026-08-19, stage 3 of the multi-cleaner plan (see FLOWS.md §11).
+// A second, parallel candidate path — the single-cleaner path above is
+// completely untouched. A multi-cleaner booking has no `payments.
+// cleaner_payout_eur` to move (that table only ever holds the combined
+// customer charge for these bookings); each `booking_assignments` row is
+// its own independent payout, scoped to one cleaner's own `tier_rate_eur`.
+//
+// Readiness (is the dispute window/hold clear) is still governed by the
+// booking's single `disputes` row, same as single-cleaner — a dispute on a
+// multi-cleaner booking is always filed against the whole job (§11). What
+// differs is the refund PERCENTAGE: single-cleaner reads it straight off
+// `disputes.refund_percentage`; multi-cleaner looks up this specific
+// cleaner's own ruling in `dispute_assignment_outcomes` (0% if the dispute
+// resolved without naming this cleaner, or if there's no dispute at all).
+// `no_show` is an independent, unconditional override — a no-show cleaner
+// is owed nothing regardless of any dispute outcome.
+
+interface AssignmentDisputeRow {
+  id:     string
+  status: string
+}
+
+interface AssignmentBookingRow {
+  id:             string
+  status:         string
+  completed_at:   string | null
+  duration_hours: number
+  disputes:       AssignmentDisputeRow | AssignmentDisputeRow[] | null
+}
+
+interface AssignmentCandidateRow {
+  id:                 string
+  booking_id:         string
+  cleaner_profile_id: string
+  tier_rate_eur:      number
+  payout_status:      string
+  no_show:            boolean
+  booking:            AssignmentBookingRow | AssignmentBookingRow[] | null
+  cleaner_profiles:   CleanerProfileRow | CleanerProfileRow[] | null
+}
+
+const ASSIGNMENT_CANDIDATE_SELECT = `
+  id, booking_id, cleaner_profile_id, tier_rate_eur, payout_status, no_show,
+  booking:bookings (
+    id, status, completed_at, duration_hours,
+    disputes ( id, status )
+  ),
+  cleaner_profiles ( id, stripe_connect_account_id, stripe_connect_payouts_enabled )
+`
+
+async function resolveAssignmentRefundPercentage(
+  supabase: ReturnType<typeof createAdminClient>,
+  dispute: AssignmentDisputeRow | null,
+  cleanerProfileId: string
+): Promise<{ ready: boolean; refundPercentage: number }> {
+  if (dispute?.status === 'OPEN') return { ready: false, refundPercentage: 0 }
+  if (dispute?.status !== 'RESOLVED') return { ready: true, refundPercentage: 0 }  // no dispute at all — hold-window readiness is checked by the caller
+
+  const { data: outcome } = await supabase
+    .from('dispute_assignment_outcomes')
+    .select('refund_percentage')
+    .eq('dispute_id', dispute.id)
+    .eq('cleaner_profile_id', cleanerProfileId)
+    .maybeSingle()
+
+  // Resolved but no ruling against this specific cleaner — nothing withheld.
+  return { ready: true, refundPercentage: outcome?.refund_percentage ?? 0 }
+}
+
+async function processOneAssignmentCandidate(
+  supabase: ReturnType<typeof createAdminClient>,
+  row: AssignmentCandidateRow
+): Promise<void> {
+  const booking = one(row.booking)
+  if (!booking || booking.status !== 'COMPLETED') return
+
+  const dispute = one(booking.disputes)
+  const { ready: disputeReady, refundPercentage } = await resolveAssignmentRefundPercentage(supabase, dispute, row.cleaner_profile_id)
+  if (!disputeReady) return
+
+  // No dispute at all — same post-completion hold as the single-cleaner path.
+  if (!dispute) {
+    const completedAt = booking.completed_at ? new Date(booking.completed_at).getTime() : null
+    const holdElapsed = completedAt !== null && Date.now() - completedAt >= PAYOUT_HOLD_MS
+    if (!holdElapsed) return
+  }
+
+  const rateEur = row.tier_rate_eur * booking.duration_hours
+  const finalPayoutEur = row.no_show
+    ? 0
+    : Math.max(0, Math.round(rateEur * (1 - refundPercentage / 100) * 100) / 100)
+
+  if (finalPayoutEur <= 0) {
+    await supabase.from('booking_assignments')
+      .update({ payout_status: 'PAID', cleaner_payout_eur: 0, paid_out_at: new Date().toISOString() })
+      .eq('id', row.id)
+      .eq('payout_status', row.payout_status)
+    return
+  }
+
+  const cleanerProfile = one(row.cleaner_profiles)
+
+  if (!cleanerProfile?.stripe_connect_payouts_enabled || !cleanerProfile.stripe_connect_account_id) {
+    await supabase.from('booking_assignments')
+      .update({ payout_status: 'BLOCKED', cleaner_payout_eur: finalPayoutEur })
+      .eq('id', row.id)
+      .eq('payout_status', row.payout_status)
+    return
+  }
+
+  try {
+    const stripe = getStripe()
+    const transfer = await stripe.transfers.create({
+      amount:          Math.round(finalPayoutEur * 100),
+      currency:        'eur',
+      destination:     cleanerProfile.stripe_connect_account_id,
+      // Shared across every assigned cleaner's transfer on this booking —
+      // transfer_group is meant to link multiple transfers back to the one
+      // originating charge, which is exactly the multi-cleaner case.
+      transfer_group:  `booking_${booking.id}`,
+    }, {
+      // Scoped to this specific assignment, not just the booking — a
+      // multi-cleaner booking fires N transfers off one charge, so the key
+      // must include which cleaner to avoid only ever paying the first one.
+      idempotencyKey: `payout-${booking.id}-${row.cleaner_profile_id}`,
+    })
+
+    await supabase.from('booking_assignments')
+      .update({
+        payout_status:       'PAID',
+        cleaner_payout_eur:  finalPayoutEur,
+        stripe_transfer_id:  transfer.id,
+        paid_out_at:         new Date().toISOString(),
+      })
+      .eq('id', row.id)
+      .eq('payout_status', row.payout_status)
+  } catch (transferErr) {
+    console.error(`Payout transfer failed (booking ${booking.id}, cleaner ${row.cleaner_profile_id}):`, transferErr)
+    await supabase.from('booking_assignments')
+      .update({ payout_status: 'FAILED', cleaner_payout_eur: finalPayoutEur })
+      .eq('id', row.id)
+      .eq('payout_status', row.payout_status)
+
+    try {
+      await sendAdminAlertEmail({
+        subject:  `Cleaner payout failed — booking ${booking.id}`,
+        heading:  'A cleaner payout transfer failed',
+        bodyHtml: `<p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Multi-cleaner booking <strong>${booking.id}</strong> owed cleaner <strong>${row.cleaner_profile_id}</strong> <strong>€${finalPayoutEur.toFixed(2)}</strong>, but the Stripe transfer errored: ${transferErr instanceof Stripe.errors.StripeError ? transferErr.message : 'Unknown error'}. Needs manual follow-up — check the connected account's status in the Stripe dashboard before retrying.</p>`,
+      })
+    } catch (alertErr) {
+      console.error('Payout-failed admin alert error:', alertErr)
+    }
+  }
+}
+
 // Scans every payment whose payout is still owed and releases whatever is
 // actually ready — called from the cron (src/app/api/cron/release-payouts)
 // and lazily wherever a cleaner or admin might be looking at payout state,
@@ -161,7 +317,23 @@ export async function releaseDuePayouts(supabase: ReturnType<typeof createAdminC
   for (const row of candidates) {
     await processOneCandidate(supabase, row)
   }
-  return candidates.length
+
+  const { data: assignmentData, error: assignmentError } = await supabase
+    .from('booking_assignments')
+    .select(ASSIGNMENT_CANDIDATE_SELECT)
+    .in('payout_status', ['PENDING', 'BLOCKED'])
+
+  if (assignmentError) {
+    console.error('releaseDuePayouts (booking_assignments) fetch error:', assignmentError)
+    return candidates.length
+  }
+
+  const assignmentCandidates = (assignmentData ?? []) as unknown as AssignmentCandidateRow[]
+  for (const row of assignmentCandidates) {
+    await processOneAssignmentCandidate(supabase, row)
+  }
+
+  return candidates.length + assignmentCandidates.length
 }
 
 // Scoped to one cleaner — called from the account.updated webhook the
@@ -177,22 +349,45 @@ export async function releaseBlockedPayoutsForCleaner(
     .eq('cleaner_profile_id', cleanerProfileId)
 
   const ids = ((bookingIds ?? []) as { id: string }[]).map(b => b.id)
-  if (ids.length === 0) return 0
 
-  const { data, error } = await supabase
-    .from('payments')
-    .select(CANDIDATE_SELECT)
+  let releasedCount = 0
+
+  if (ids.length > 0) {
+    const { data, error } = await supabase
+      .from('payments')
+      .select(CANDIDATE_SELECT)
+      .eq('payout_status', 'BLOCKED')
+      .in('booking_id', ids)
+
+    if (error) {
+      console.error('releaseBlockedPayoutsForCleaner fetch error:', error)
+    } else {
+      const candidates = (data ?? []) as unknown as PayoutCandidateRow[]
+      for (const row of candidates) {
+        await processOneCandidate(supabase, row)
+      }
+      releasedCount += candidates.length
+    }
+  }
+
+  // This cleaner's share of any multi-cleaner bookings they're assigned to
+  // — found via booking_assignments directly, not the bookings query above
+  // (bookings.cleaner_profile_id is null for those).
+  const { data: assignmentData, error: assignmentError } = await supabase
+    .from('booking_assignments')
+    .select(ASSIGNMENT_CANDIDATE_SELECT)
+    .eq('cleaner_profile_id', cleanerProfileId)
     .eq('payout_status', 'BLOCKED')
-    .in('booking_id', ids)
 
-  if (error) {
-    console.error('releaseBlockedPayoutsForCleaner fetch error:', error)
-    return 0
+  if (assignmentError) {
+    console.error('releaseBlockedPayoutsForCleaner (booking_assignments) fetch error:', assignmentError)
+    return releasedCount
   }
 
-  const candidates = (data ?? []) as unknown as PayoutCandidateRow[]
-  for (const row of candidates) {
-    await processOneCandidate(supabase, row)
+  const assignmentCandidates = (assignmentData ?? []) as unknown as AssignmentCandidateRow[]
+  for (const row of assignmentCandidates) {
+    await processOneAssignmentCandidate(supabase, row)
   }
-  return candidates.length
+
+  return releasedCount + assignmentCandidates.length
 }
