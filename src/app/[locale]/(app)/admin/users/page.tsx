@@ -183,7 +183,7 @@ export default function AdminUsersPage() {
                 )}
 
                 {u.cleaner_profile && (
-                  <div className="flex items-center gap-3 mt-3">
+                  <div className="flex items-center gap-3 mt-3 flex-wrap">
                     {u.cleaner_profile.status !== 'ACTIVE' && (
                       <button
                         className="btn-secondary !px-3 !py-1.5 text-body"

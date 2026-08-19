@@ -120,11 +120,11 @@ export default function AdminTeamBookingsPage() {
                   {(b.booking_assignments ?? []).map(a => {
                     const locked = !['PENDING', 'BLOCKED'].includes(a.payout_status)
                     return (
-                      <li key={a.id} className="flex items-center justify-between gap-3 bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3">
-                        <span className="text-body text-teal-900 dark:text-[#ECF3F2]">
+                      <li key={a.id} className="flex items-center justify-between gap-3 flex-wrap bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3">
+                        <span className="text-body text-teal-900 dark:text-[#ECF3F2] break-words">
                           {a.cleaner_profiles?.display_name ?? t('unknownUser')} · €{a.tier_rate_eur.toFixed(2)}/hr
                         </span>
-                        <label className="flex items-center gap-2 text-body text-muted dark:text-[#9BB0AE] cursor-pointer">
+                        <label className="flex items-center gap-2 text-body text-muted dark:text-[#9BB0AE] cursor-pointer shrink-0">
                           <input
                             type="checkbox"
                             checked={a.no_show}
