@@ -46,18 +46,47 @@ export async function PATCH(
     return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   }
 
-  const { data: cleanerProfile } = await supabase
-    .from('cleaner_profiles')
-    .select('user_id, display_name')
-    .eq('id', booking.cleaner_profile_id)
-    .single()
+  // A multi-cleaner booking has cleaner_profile_id/introduction_id null —
+  // its cleaners live in booking_assignments instead (see schema.sql). Every
+  // single-cleaner booking (the only kind that exists in the app today)
+  // takes the branch below unchanged.
+  interface Assignment {
+    id: string
+    cleaner_profile_id: string
+    introduction_id: string
+    cleaner_profiles: { user_id: string; display_name: string } | null
+  }
+  let assignments: Assignment[] | null = null
+  if (!booking.cleaner_profile_id) {
+    const { data } = await supabase
+      .from('booking_assignments')
+      .select('id, cleaner_profile_id, introduction_id, cleaner_profiles ( user_id, display_name )')
+      .eq('booking_id', booking.id)
+    assignments = data as unknown as Assignment[] | null
+  }
+
+  const { data: cleanerProfile } = booking.cleaner_profile_id
+    ? await supabase
+        .from('cleaner_profiles')
+        .select('user_id, display_name')
+        .eq('id', booking.cleaner_profile_id)
+        .single()
+    : { data: null }
+
+  const myAssignment = assignments?.find(a => a.cleaner_profiles?.user_id === session.user.id) ?? null
 
   const isCustomer = booking.customer_id === session.user.id
-  const isCleaner  = cleanerProfile?.user_id === session.user.id
+  const isCleaner  = cleanerProfile?.user_id === session.user.id || !!myAssignment
 
   if (!isCustomer && !isCleaner) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  // Single display name for single-cleaner bookings, a joined list for
+  // multi-cleaner ones — used everywhere a notification names "the cleaner".
+  const cleanerDisplayName = cleanerProfile?.display_name
+    ?? (assignments ?? []).map(a => a.cleaner_profiles?.display_name).filter(Boolean).join(', ')
+    ?? ''
 
   const isOverdue = booking.status === 'REQUESTED'
     && Date.now() - new Date(booking.created_at).getTime() > RESPONSE_WINDOW_MS
@@ -283,12 +312,19 @@ export async function PATCH(
       : action === 'DECLINE' ? 'DECLINED'
       : action === 'CANCEL'  ? 'CANCELLED'
       : 'COMPLETED'
-    await supabase.from('messages').insert({
-      introduction_id: booking.introduction_id,
-      sender_id:       session.user.id,
-      booking_id:      booking.id,
-      system_event:    systemEvent,
-    })
+    // Single-cleaner booking: one thread, one message. Multi-cleaner: post
+    // the same event into every assigned cleaner's own 1:1 thread.
+    const introductionIds = booking.introduction_id
+      ? [booking.introduction_id]
+      : (assignments ?? []).map(a => a.introduction_id)
+    await supabase.from('messages').insert(
+      introductionIds.map(introduction_id => ({
+        introduction_id,
+        sender_id:    session.user.id,
+        booking_id:   booking.id,
+        system_event: systemEvent,
+      }))
+    )
   } catch (msgErr) {
     console.error(`System message insert error (booking ${action.toLowerCase()}):`, msgErr)
   }
@@ -314,7 +350,7 @@ export async function PATCH(
             customerEmail:  customerUser.email,
             customerLocale: customerUser.locale,
             customerName:   customerUser.full_name ?? customerUser.email,
-            cleanerName:    cleanerProfile?.display_name ?? '',
+            cleanerName:    cleanerDisplayName,
             date:           booking.date,
             startTime:      booking.start_time,
             durationHours:  data.duration_hours,
@@ -325,7 +361,7 @@ export async function PATCH(
           await sendBookingConfirmedAdminAlertEmail({
             bookingId:    booking.id,
             customerName: customerUser.full_name ?? customerUser.email,
-            cleanerName:  cleanerProfile?.display_name ?? '',
+            cleanerName:  cleanerDisplayName,
             amountEur:    paidPayment?.amount_eur ?? 0,
             date:         booking.date,
             startTime:    booking.start_time,
@@ -336,7 +372,7 @@ export async function PATCH(
             customerEmail:  customerUser.email,
             customerLocale: customerUser.locale,
             customerName:   customerUser.full_name ?? customerUser.email,
-            cleanerName:    cleanerProfile?.display_name ?? '',
+            cleanerName:    cleanerDisplayName,
             dashboardUrl:   `${BASE_URL}/dashboard`,
           })
         }
@@ -360,7 +396,7 @@ export async function PATCH(
           customerEmail:  customerUser.email,
           customerLocale: customerUser.locale,
           customerName:   customerUser.full_name ?? customerUser.email,
-          cleanerName:    cleanerProfile?.display_name ?? '',
+          cleanerName:    cleanerDisplayName,
           date:           booking.date,
           startTime:      booking.start_time,
           dashboardUrl:   `${BASE_URL}/dashboard`,
@@ -374,14 +410,18 @@ export async function PATCH(
   // Notify whichever party didn't act on cancel — non-blocking, errors swallowed
   if (action === 'CANCEL') {
     try {
-      if (isCustomer && cleanerProfile?.user_id) {
-        const { data: cleanerUser } = await supabase
-          .from('users')
-          .select('email, locale, full_name')
-          .eq('id', cleanerProfile.user_id)
-          .single()
+      if (isCustomer) {
+        // Single-cleaner booking → one recipient; multi-cleaner → every assigned cleaner
+        const cleanerUserIds = cleanerProfile?.user_id
+          ? [cleanerProfile.user_id]
+          : (assignments ?? []).map(a => (a.cleaner_profiles as { user_id: string } | null)?.user_id).filter((id): id is string => !!id)
 
-        if (cleanerUser?.email) {
+        const { data: cleanerUsers } = cleanerUserIds.length > 0
+          ? await supabase.from('users').select('email, locale, full_name').in('id', cleanerUserIds)
+          : { data: [] }
+
+        for (const cleanerUser of cleanerUsers ?? []) {
+          if (!cleanerUser.email) continue
           await sendBookingCancelledEmail({
             to:              cleanerUser.email,
             locale:          cleanerUser.locale,

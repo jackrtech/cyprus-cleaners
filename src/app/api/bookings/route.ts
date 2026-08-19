@@ -358,23 +358,41 @@ export async function GET(req: NextRequest) {
       return NextResponse.json([])
     }
 
-    let query = supabase
-      .from('bookings')
-      .select(`
-        *,
-        users!bookings_customer_id_fkey ( full_name ),
-        payments ( amount_eur, platform_fee_eur, cleaner_payout_eur, status, payout_status, payout_release_at )
-      `)
-      .eq('cleaner_profile_id', profile.id)
+    const bookingSelect = `
+      *,
+      users!bookings_customer_id_fkey ( full_name ),
+      payments ( amount_eur, platform_fee_eur, cleaner_payout_eur, status, payout_status, payout_release_at ),
+      booking_assignments ( cleaner_profile_id, tier_rate_eur, platform_fee_eur, payout_status, cleaner_payout_eur, no_show )
+    `
 
-    if (introductionId) query = query.eq('introduction_id', introductionId)
+    // Bookings assigned directly to this cleaner (the ordinary, single-cleaner
+    // case — cleaner_profile_id is set).
+    let singleQuery = supabase.from('bookings').select(bookingSelect).eq('cleaner_profile_id', profile.id)
+    if (introductionId) singleQuery = singleQuery.eq('introduction_id', introductionId)
 
-    const { data, error } = await query.order('created_at', { ascending: false })
+    // Multi-cleaner bookings this cleaner is one of the assignees on —
+    // cleaner_profile_id is null there, so they only show up via
+    // booking_assignments (see schema.sql).
+    let assignmentQuery = supabase.from('booking_assignments').select('booking_id').eq('cleaner_profile_id', profile.id)
+    if (introductionId) assignmentQuery = assignmentQuery.eq('introduction_id', introductionId)
+    const { data: myAssignments } = await assignmentQuery
+    const multiBookingIds = (myAssignments ?? []).map((a: { booking_id: string }) => a.booking_id)
 
-    if (error) {
-      console.error('GET bookings (CLEANER) error:', error)
+    const [singleResult, multiResult] = await Promise.all([
+      singleQuery.order('created_at', { ascending: false }),
+      multiBookingIds.length > 0
+        ? supabase.from('bookings').select(bookingSelect).in('id', multiBookingIds).order('created_at', { ascending: false })
+        : Promise.resolve({ data: [], error: null }),
+    ])
+
+    if (singleResult.error || multiResult.error) {
+      console.error('GET bookings (CLEANER) error:', singleResult.error || multiResult.error)
       return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 })
     }
+
+    const data = [...(singleResult.data ?? []), ...(multiResult.data ?? [])]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
     return NextResponse.json(await processBookingRows(supabase, data))
   }
 

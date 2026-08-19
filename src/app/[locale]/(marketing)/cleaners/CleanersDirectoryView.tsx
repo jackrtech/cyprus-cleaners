@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
-import { Link } from '@/navigation'
+import { Link, useRouter } from '@/navigation'
 import type { MockCleaner } from '@/lib/mockCleaners'
 import CleanerCard from '@/components/cleaners/CleanerCard'
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/cleaners/FilterBar'
@@ -92,11 +92,26 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
 
 export default function CleanersPage() {
   const t = useTranslations('directory')
+  const router = useRouter()
   const { data: session } = useSession()
   const isCustomer = (session?.user as { role?: string } | undefined)?.role === 'CUSTOMER'
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
   const [sort, setSort] = useState<SortKey>('top-rated')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
+  // Multi-cleaner "team booking" selection mode, added 2026-08-19 — a
+  // customer-only toggle that turns each card into a checkbox instead of a
+  // profile link. Selected slugs feed the new /cleaners/book-team page.
+  const [teamMode, setTeamMode] = useState(false)
+  const [selectedSlugs, setSelectedSlugs] = useState<string[]>([])
+
+  function toggleTeamMode() {
+    setTeamMode(v => !v)
+    setSelectedSlugs([])
+  }
+
+  function toggleSelected(slug: string) {
+    setSelectedSlugs(prev => prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug])
+  }
 
   const [cleaners, setCleaners] = useState<MockCleaner[]>([])
   const [loading,  setLoading]  = useState(true)
@@ -166,6 +181,19 @@ export default function CleanersPage() {
                 {t('favoritesOnly')}
               </button>
             )}
+            {isCustomer && (
+              <button
+                type="button"
+                onClick={toggleTeamMode}
+                className={`rounded-full border px-3 py-1 text-[12px] font-medium transition-colors ${
+                  teamMode
+                    ? 'bg-[#E8F4F3] dark:bg-[#17302D] border-[#19706A] text-[#19706A]'
+                    : 'bg-white dark:bg-[#16211F] border-[#E0EDEC] dark:border-[#253634] text-[#5B7472] dark:text-[#9BB0AE] hover:border-[#19706A] hover:text-[#19706A]'
+                }`}
+              >
+                {teamMode ? t('teamModeExit') : t('teamModeEnter')}
+              </button>
+            )}
           </div>
           <select
             value={sort}
@@ -202,7 +230,13 @@ export default function CleanersPage() {
         ) : results.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {results.map(cleaner => (
-              <CleanerCard key={cleaner.id} cleaner={cleaner} />
+              <CleanerCard
+                key={cleaner.id}
+                cleaner={cleaner}
+                selectMode={teamMode}
+                selected={selectedSlugs.includes(cleaner.slug)}
+                onToggleSelect={() => toggleSelected(cleaner.slug)}
+              />
             ))}
           </div>
         ) : (
@@ -223,6 +257,21 @@ export default function CleanersPage() {
         )}
       </div>
       </FilterBar>
+
+      {/* Floating CTA for team-booking selection — needs 2+ cleaners picked */}
+      {teamMode && selectedSlugs.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] bg-[#0D1F1E] dark:bg-[#ECF3F2] text-white dark:text-[#0D1F1E] rounded-full shadow-lg pl-5 pr-2 py-2 flex items-center gap-3">
+          <span className="text-[13px]">{t('teamModeCount', { count: selectedSlugs.length })}</span>
+          <button
+            type="button"
+            disabled={selectedSlugs.length < 2}
+            onClick={() => router.push(`/cleaners/book-team?slugs=${selectedSlugs.join(',')}`)}
+            className="btn-primary !px-4 !py-1.5 text-[13px] rounded-full disabled:opacity-50"
+          >
+            {t('teamModeContinue')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

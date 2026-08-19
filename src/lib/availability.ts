@@ -31,6 +31,32 @@ export function isAvailabilitySet(a: WeeklyAvailability | null | undefined): boo
   return !!a && Object.keys(a).length > 0
 }
 
+// Checks a cleaner's stated weekly hours against a specific requested slot —
+// added 2026-08-19 for multi-cleaner bookings, which need to reject
+// unavailable cleaners before a job is created. There is deliberately no
+// equivalent check on the single-cleaner booking flow (POST /api/bookings) —
+// a known, called-out inconsistency rather than an oversight, since no
+// availability enforcement existed anywhere before this.
+export function isCleanerAvailableAt(
+  availability: WeeklyAvailability | null | undefined,
+  date: string,       // YYYY-MM-DD
+  startTime: string,  // HH:MM
+  durationHours: number
+): boolean {
+  if (!availability) return false
+  // Parsed as local midnight (not UTC) so getDay() reads the same calendar
+  // day regardless of the server's timezone offset.
+  const jsDay = new Date(`${date}T00:00:00`).getDay()  // 0=Sun..6=Sat
+  const day = DAYS[(jsDay + 6) % 7]  // DAYS is Mon-first; rotate Sun to the end
+  const hours = availability[day]
+  if (!hours) return false
+
+  const [h, m] = startTime.split(':').map(Number)
+  const startHour = h + m / 60
+  const endHour = startHour + durationHours
+  return hours.start <= startHour && hours.end >= endHour
+}
+
 // Derives the three coarse tags the directory/profile/filter UI already
 // shows and filters on, from the real weekly-hours data — same public shape
 // as before the fix, just actually correct now.

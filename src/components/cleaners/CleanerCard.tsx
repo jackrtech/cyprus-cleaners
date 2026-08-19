@@ -84,15 +84,31 @@ function StarRow({ rating }: { rating: number }) {
   )
 }
 
-export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
+interface Props {
+  cleaner: MockCleaner
+  // Team-booking selection mode (added 2026-08-19) — when set, the whole
+  // card becomes a toggle button instead of a profile link, and shows a
+  // checkbox instead of the favorite heart.
+  selectMode?: boolean
+  selected?: boolean
+  onToggleSelect?: () => void
+}
+
+export default function CleanerCard({ cleaner, selectMode, selected, onToggleSelect }: Props) {
   const t = useTranslations('cleaners')
   const tCommon = useTranslations('common')
   const getCityName = useCity()
-  return (
-    <Link
-      href={`/cleaners/${cleaner.slug}`}
-      className="group block bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(25,112,106,0.14)]"
-    >
+
+  const cardClassName = `group block bg-white dark:bg-[#16211F] border rounded-[16px] p-3.5 transition-all duration-200 ${
+    selectMode
+      ? selected
+        ? 'border-[#19706A] ring-1 ring-[#19706A]'
+        : 'border-[#E0EDEC] dark:border-[#253634] hover:border-[#AACBC8] dark:hover:border-[#3D5652]'
+      : 'border-[#E0EDEC] dark:border-[#253634] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(25,112,106,0.14)]'
+  }`
+
+  const cardContent = (
+    <>
       {/* Header — modest avatar, name + verified badge, rate */}
       <div className="flex items-start gap-3">
         <div className="relative shrink-0">
@@ -121,7 +137,22 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
           <div className="flex justify-between items-start gap-1.5">
             <span className="text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] leading-snug truncate">{cleaner.display_name}</span>
             <span className="flex items-center gap-1 shrink-0">
-              <FavoriteButton cleanerId={cleaner.id} initialFavorited={!!cleaner.is_favorited} />
+              {selectMode ? (
+                <span
+                  role="checkbox"
+                  aria-checked={!!selected}
+                  aria-label={t('selectForTeam', { name: cleaner.display_name })}
+                  className={`w-4 h-4 rounded border-[1.5px] flex items-center justify-center shrink-0 transition-colors ${selected ? 'bg-[#19706A] border-[#19706A]' : 'bg-white dark:bg-[#16211F] border-[#D0DCD9] dark:border-[#2A3A38]'}`}
+                >
+                  {selected && (
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </span>
+              ) : (
+                <FavoriteButton cleanerId={cleaner.id} initialFavorited={!!cleaner.is_favorited} />
+              )}
               <span className="text-right">
                 <span className="text-[12px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">€{cleaner.hourly_rate_eur}</span>
                 <span className="text-[10px] text-[#5B7472] dark:text-[#9BB0AE]">{tCommon('perHour')}</span>
@@ -154,10 +185,28 @@ export default function CleanerCard({ cleaner }: { cleaner: MockCleaner }) {
       </div>
 
       <div className="border-t border-[#F0F5F4] dark:border-[#142220] mt-2.5 pt-2 flex justify-end">
-        <span className="bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A] rounded-full px-2.5 py-1 text-[10px] font-medium group-hover:bg-[#19706A] group-hover:text-white transition-colors">
-          {t('viewProfile')}
+        <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium transition-colors ${
+          selectMode
+            ? selected ? 'bg-[#19706A] text-white' : 'bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A]'
+            : 'bg-[#E8F4F3] dark:bg-[#17302D] text-[#19706A] group-hover:bg-[#19706A] group-hover:text-white'
+        }`}>
+          {selectMode ? (selected ? t('selected') : t('select')) : t('viewProfile')}
         </span>
       </div>
+    </>
+  )
+
+  if (selectMode) {
+    return (
+      <button type="button" onClick={onToggleSelect} className={`text-left w-full ${cardClassName}`}>
+        {cardContent}
+      </button>
+    )
+  }
+
+  return (
+    <Link href={`/cleaners/${cleaner.slug}`} className={cardClassName}>
+      {cardContent}
     </Link>
   )
 }

@@ -278,10 +278,28 @@
     "sortMostReviews": "Most reviews",
     "sortMostJobs": "Most jobs",
     "favoritesOnly": "My favorites",
+    "teamModeEnter": "Book multiple cleaners",
+    "teamModeExit": "Cancel selection",
+    "teamModeCount": "{count, plural, one {# cleaner selected} other {# cleaners selected}}",
+    "teamModeContinue": "Continue",
     "viewProfile": "View profile",
     "noResults": "No cleaners found",
     "noResultsSub": "Try adjusting your filters",
     "emptyAction": "Clear all filters"
+  },
+  "bookTeam": {
+    "heading": "Book multiple cleaners",
+    "subheading": "One job, {count} cleaners — each is paid their own rate in full.",
+    "needTwoCleaners": "Select at least 2 cleaners",
+    "needTwoCleanersSub": "Go back to the directory and pick 2 or more cleaners to book together.",
+    "backToDirectory": "← Back to directory",
+    "notAvailable": "Not available at this time",
+    "tierIntersectionHint": "Only tiers every selected cleaner offers are shown.",
+    "unavailableWarning": "{count, plural, one {# selected cleaner isn't available at this time} other {# selected cleaners aren't available at this time}} — pick a different time or remove them.",
+    "cleanersRateLine": "Cleaners' rates",
+    "bookingFeesLine": "Booking fees ({count})",
+    "submit": "Send request to {count} cleaners",
+    "submitError": "Failed to send booking request. Please try again."
   },
   "profile": {
     "breadcrumbHome": "Home",
@@ -460,7 +478,10 @@
     "memberForYears": "Member for {count, plural, one {# year} other {# years}}",
     "newToThePlatform": "New to the platform",
     "favorite": "Favorite this cleaner",
-    "unfavorite": "Remove from favorites"
+    "unfavorite": "Remove from favorites",
+    "select": "Select",
+    "selected": "Selected",
+    "selectForTeam": "Select {name} for a multi-cleaner booking"
   },
   "disputes": {
     "title": "Disputes",
