@@ -202,9 +202,9 @@ create index idx_favorites_cleaner  on favorites (cleaner_profile_id);
 
 create table bookings (
   id                  uuid primary key default gen_random_uuid(),
-  introduction_id     uuid not null references introductions(id) on delete restrict,
+  introduction_id     uuid references introductions(id) on delete restrict,  -- null only for a multi-cleaner booking (see booking_assignments below), where each assigned cleaner has their own introduction_id instead of one shared thread. Null-ness here is the multi-cleaner discriminator, together with cleaner_profile_id below. Applying to an existing database: `alter table bookings alter column introduction_id drop not null;`
   customer_id         uuid not null references users(id) on delete cascade,
-  cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
+  cleaner_profile_id  uuid references cleaner_profiles(id) on delete cascade,  -- null only for a multi-cleaner booking — see booking_assignments below, which holds one row per assigned cleaner instead. Every existing single-cleaner code path is unaffected; this column keeps meaning exactly what it always has whenever it's set. Applying to an existing database: `alter table bookings alter column cleaner_profile_id drop not null;`
   service_type        service_type not null,
   bedrooms            int,
   bathrooms           int,
@@ -302,6 +302,52 @@ create table payments (
 
 create index idx_payments_status on payments (status);
 create index idx_payments_payout_status on payments (payout_status) where payout_status in ('PENDING', 'BLOCKED');  -- backs the payout-release job's due/blocked lookup
+
+-- ─── BOOKING ASSIGNMENTS ─────────────────────────────────────
+-- One row per (booking, assigned cleaner) — exists ONLY for a multi-cleaner
+-- booking (bookings.cleaner_profile_id is null there). A single-cleaner
+-- booking has zero rows here; everything about it still lives on
+-- bookings.cleaner_profile_id + payments above, completely unchanged. Added
+-- 2026-08-19 as schema-only groundwork for multi-cleaner bookings — see
+-- FLOWS.md §11 "Multi-cleaner bookings — schema groundwork only" — no
+-- application code reads or writes this table yet.
+--
+-- Each cleaner on a multi-cleaner job is paid their own full rate (no
+-- cross-subsidy) plus their own flat booking fee (charged per cleaner, not
+-- once per booking) — mirrors payments' rate/fee/payout columns above, just
+-- scoped to one assignment instead of one booking.
+
+create table booking_assignments (
+  id                  uuid primary key default gen_random_uuid(),
+  booking_id          uuid not null references bookings(id) on delete cascade,
+  cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
+  introduction_id     uuid not null references introductions(id) on delete restrict,  -- this cleaner's own 1:1 chat thread with the customer — no group chat, chat stays exactly as it works today, just N threads instead of 1
+  tier_rate_eur       numeric(6,2) not null,   -- this cleaner's own resolved rate for the booking's cleaning_type (via cleaner_service_offerings, or hourly_rate_eur for STANDARD), snapshotted same as payments.tier_rate_eur
+  platform_fee_eur    numeric(6,2) not null,   -- this cleaner's own BOOKING_FEE_EUR slice
+  cleaner_payout_eur  numeric(10,2),           -- null until the payout-release job resolves it, same lifecycle as payments.cleaner_payout_eur
+  payout_status       payout_status not null default 'PENDING',
+  payout_release_at   timestamptz,
+  stripe_transfer_id  text,
+  paid_out_at         timestamptz,
+  no_show             boolean not null default false,  -- per-assignment completion tracking (2026-08-19 decision) — a no-show cleaner's payout is withheld/zeroed without a new whole-booking status; the booking itself still just becomes COMPLETED once the job happens
+  created_at          timestamptz not null default now(),
+  unique (booking_id, cleaner_profile_id)
+);
+
+create index idx_assignments_booking       on booking_assignments (booking_id);
+create index idx_assignments_cleaner       on booking_assignments (cleaner_profile_id);
+create index idx_assignments_payout_status on booking_assignments (payout_status) where payout_status in ('PENDING', 'BLOCKED');
+
+alter table booking_assignments enable row level security;
+-- No policies — same as payments/disputes: only ever touched via the
+-- service-role admin client from API routes, RLS just needs to deny by
+-- default here.
+-- Applying to an existing database:
+-- `create table booking_assignments (id uuid primary key default gen_random_uuid(), booking_id uuid not null references bookings(id) on delete cascade, cleaner_profile_id uuid not null references cleaner_profiles(id) on delete cascade, introduction_id uuid not null references introductions(id) on delete restrict, tier_rate_eur numeric(6,2) not null, platform_fee_eur numeric(6,2) not null, cleaner_payout_eur numeric(10,2), payout_status payout_status not null default 'PENDING', payout_release_at timestamptz, stripe_transfer_id text, paid_out_at timestamptz, no_show boolean not null default false, created_at timestamptz not null default now(), unique (booking_id, cleaner_profile_id));
+--  create index idx_assignments_booking on booking_assignments (booking_id);
+--  create index idx_assignments_cleaner on booking_assignments (cleaner_profile_id);
+--  create index idx_assignments_payout_status on booking_assignments (payout_status) where payout_status in ('PENDING', 'BLOCKED');
+--  alter table booking_assignments enable row level security;`
 
 -- ─── ADDRESSES ───────────────────────────────────────────────
 -- A customer's saved addresses, offered as a picker on the booking form.
@@ -420,7 +466,7 @@ create table disputes (
   id                  uuid primary key default gen_random_uuid(),
   booking_id          uuid not null unique references bookings(id) on delete cascade,  -- one dispute per booking; applying to an existing database: `alter table disputes add constraint disputes_booking_id_key unique (booking_id);`
   customer_id         uuid not null references users(id) on delete cascade,
-  cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
+  cleaner_profile_id  uuid references cleaner_profiles(id) on delete cascade,  -- null only for a dispute against a multi-cleaner booking (bookings.cleaner_profile_id is null there too) — the claim is filed against the whole job, not a single cleaner; see dispute_assignment_outcomes below for how an admin then rules per assigned cleaner. Always set for an ordinary single-cleaner booking's dispute, exactly as before. Applying to an existing database: `alter table disputes alter column cleaner_profile_id drop not null;`
   claim               text not null,
   cleaner_response    text,
   status              dispute_status not null default 'OPEN',
@@ -434,6 +480,35 @@ create table disputes (
 );
 -- Applying refund_percentage/resolve_by/auto_resolved to an existing database:
 -- `alter table disputes add column refund_percentage int not null default 0 check (refund_percentage >= 0 and refund_percentage <= 100), add column resolve_by timestamptz, add column auto_resolved boolean not null default false;`
+
+-- ─── DISPUTE ASSIGNMENT OUTCOMES ─────────────────────────────
+-- An admin's per-cleaner ruling when resolving a dispute filed against a
+-- multi-cleaner booking (disputes.cleaner_profile_id is null there — the
+-- claim itself is always whole-job, per the 2026-08-19 decision; this table
+-- is where the per-cleaner split happens, at resolution time, not filing
+-- time). Only populated for multi-cleaner bookings' disputes — an ordinary
+-- single-cleaner dispute keeps using disputes.resolution/refund_percentage
+-- directly, exactly as before, with zero rows here. Added 2026-08-19 as
+-- schema-only groundwork alongside booking_assignments — see FLOWS.md §11
+-- "Multi-cleaner bookings — schema groundwork only" — no application code
+-- reads or writes this table yet.
+
+create table dispute_assignment_outcomes (
+  id                  uuid primary key default gen_random_uuid(),
+  dispute_id          uuid not null references disputes(id) on delete cascade,
+  cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
+  resolution          dispute_resolution not null,
+  refund_percentage   int not null default 0 check (refund_percentage >= 0 and refund_percentage <= 100),
+  created_at          timestamptz not null default now(),
+  unique (dispute_id, cleaner_profile_id)
+);
+
+alter table dispute_assignment_outcomes enable row level security;
+-- No policies — same deny-by-default shape as disputes/payments/
+-- booking_assignments: only ever touched via the admin client.
+-- Applying to an existing database:
+-- `create table dispute_assignment_outcomes (id uuid primary key default gen_random_uuid(), dispute_id uuid not null references disputes(id) on delete cascade, cleaner_profile_id uuid not null references cleaner_profiles(id) on delete cascade, resolution dispute_resolution not null, refund_percentage int not null default 0 check (refund_percentage >= 0 and refund_percentage <= 100), created_at timestamptz not null default now(), unique (dispute_id, cleaner_profile_id));
+--  alter table dispute_assignment_outcomes enable row level security;`
 
 -- ─── CONTACT SUBMISSIONS ─────────────────────────────────────
 -- General-inquiry contact form — separate from disputes (a specific claim
@@ -542,7 +617,9 @@ alter table support_threads      enable row level security;
 -- No policies beyond enabling it on payments/disputes/verification_tokens/
 -- contact_submissions — all four are only ever read/written via the
 -- service-role admin client (API routes), never the anon-key browser
--- client, so RLS just needs to deny by default here.
+-- client, so RLS just needs to deny by default here. booking_assignments
+-- and dispute_assignment_outcomes are the same deny-by-default shape —
+-- their RLS enable lives inline in their own blocks above.
 
 -- Users: can only see and edit own record
 create policy "users_select_own" on users for select using (auth.uid()::text = id::text);
