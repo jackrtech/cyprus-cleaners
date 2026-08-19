@@ -213,7 +213,7 @@ export default function CleanersPage() {
             {error}
           </p>
         ) : loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="bg-white dark:bg-[#16211F] border border-[#E0EDEC] dark:border-[#253634] rounded-[16px] p-3.5 animate-pulse">
                 <div className="flex items-start gap-3">
@@ -228,7 +228,7 @@ export default function CleanersPage() {
             ))}
           </div>
         ) : results.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
             {results.map(cleaner => (
               <CleanerCard
                 key={cleaner.id}
