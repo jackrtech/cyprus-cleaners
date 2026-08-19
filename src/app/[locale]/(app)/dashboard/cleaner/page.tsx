@@ -591,7 +591,7 @@ export default function CleanerDashboardPage() {
 
         {/* Open disputes banner */}
         {openDisputeCount > 0 && (
-          <div className="flex items-center gap-3 bg-red-50 border-l-4 border-red-400 rounded-lg p-4 mb-4 flex-wrap">
+          <div className="flex items-center gap-3 bg-red-50 dark:bg-[#3D1414] border-l-4 border-red-400 rounded-lg p-4 mb-4 flex-wrap">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
               <path d="M9 1.5L1.5 15h15L9 1.5z" />
               <path d="M9 7.5v3" />
@@ -645,7 +645,7 @@ export default function CleanerDashboardPage() {
         )}
 
         {!loading && !profile?.verified && (profile?.verification_status === 'REJECTED' || !profile?.verification_status) && (
-          <div className={`rounded-lg px-5 py-4 border-l-4 ${profile?.verification_status === 'REJECTED' ? 'bg-red-50 border-red-400' : 'bg-[#F7FAF9] dark:bg-[#0F1817] border-[#E0EDEC] dark:border-[#253634]'}`}>
+          <div className={`rounded-lg px-5 py-4 border-l-4 ${profile?.verification_status === 'REJECTED' ? 'bg-red-50 dark:bg-[#3D1414] border-red-400' : 'bg-[#F7FAF9] dark:bg-[#0F1817] border-[#E0EDEC] dark:border-[#253634]'}`}>
             <div className="flex items-center gap-3 flex-wrap">
               <p className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] flex-1">
                 {profile?.verification_status === 'REJECTED'

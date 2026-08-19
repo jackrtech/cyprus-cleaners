@@ -139,7 +139,7 @@ export default function AdminCancellationsPage() {
               return (
                 <li
                   key={c.id}
-                  className={`card p-5 ${isRefundFailed ? 'border-red-300 bg-red-50/40' : ''}`}
+                  className={`card p-5 ${isRefundFailed ? 'border-red-300 dark:border-red-800 bg-red-50/40 dark:bg-[#3D1414]/60' : ''}`}
                 >
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="space-y-1">
