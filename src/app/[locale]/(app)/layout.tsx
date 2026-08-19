@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { usePathname, useRouter } from '@/navigation'
 import Navbar from '@/components/Navbar'
-import BottomTabBar from '@/components/layout/BottomTabBar'
 import type { UserRole } from '@/types'
 
 // middleware.ts already enforces the real security boundary (ADMIN-only on
@@ -54,7 +53,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main id="main-content">
         {blocked ? <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]" /> : children}
       </main>
-      <BottomTabBar />
     </>
   )
 }

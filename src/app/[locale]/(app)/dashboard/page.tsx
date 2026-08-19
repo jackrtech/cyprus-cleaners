@@ -392,7 +392,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] px-4 sm:px-10 py-8 pb-tabbar md:pb-8">
+    <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] px-4 sm:px-10 py-8">
       <div className="max-w-[720px] mx-auto">
 
         {/* Email verification banner */}

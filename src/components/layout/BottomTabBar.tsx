@@ -73,26 +73,32 @@ function BottomTabBarInner() {
   const tabParam = searchParams.get('tab')
   const onDashboardRoot = pathname === dashboardRoot
 
+  // Home and Bookings both land on the dashboard root — it already shows
+  // the bookings list by default (see dashboard/page.tsx's activeTab logic)
+  // — so there's no separate "overview" screen to send Home to. They're
+  // told apart by URL only: Home always navigates to the bare root (no
+  // ?tab), Bookings always sets ?tab=bookings explicitly, and each tab only
+  // lights up for the query shape its own link produces.
   const tabs = [
     {
       key: 'home',
       label: t('homeTab'),
-      href: '/',
-      active: pathname === '/',
+      href: dashboardRoot,
+      active: onDashboardRoot && tabParam === null,
       Icon: HomeIcon,
     },
     {
       key: 'search',
       label: t('searchTab'),
-      href: '/cleaners',
-      active: pathname.startsWith('/cleaners'),
+      href: '/dashboard/search',
+      active: pathname.startsWith('/dashboard/search'),
       Icon: SearchIcon,
     },
     {
       key: 'bookings',
       label: t('bookingsTab'),
       href: `${dashboardRoot}?tab=bookings`,
-      active: onDashboardRoot && tabParam !== 'messages',
+      active: onDashboardRoot && tabParam === 'bookings',
       Icon: BookingsIcon,
     },
     {
@@ -112,24 +118,33 @@ function BottomTabBarInner() {
   ] as const
 
   return (
-    <nav
-      aria-label={t('primaryNavigation')}
-      className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white dark:bg-[#16211F] border-t border-[#E0EDEC] dark:border-[#253634] flex"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-    >
-      {tabs.map(({ key, label, href, active, Icon }) => (
-        <Link
-          key={key}
-          href={href}
-          aria-current={active ? 'page' : undefined}
-          className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5"
-        >
-          <Icon active={active} />
-          <span className={`text-[11px] leading-none ${active ? 'text-[#19706A] font-medium' : 'text-[#5B7472] dark:text-[#9BB0AE]'}`}>
-            {label}
-          </span>
-        </Link>
-      ))}
-    </nav>
+    <>
+      <nav
+        aria-label={t('primaryNavigation')}
+        className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white dark:bg-[#16211F] border-t border-[#E0EDEC] dark:border-[#253634] flex"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        {tabs.map(({ key, label, href, active, Icon }) => (
+          <Link
+            key={key}
+            href={href}
+            aria-current={active ? 'page' : undefined}
+            className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5"
+          >
+            <Icon active={active} />
+            <span className={`text-[11px] leading-none ${active ? 'text-[#19706A] font-medium' : 'text-[#5B7472] dark:text-[#9BB0AE]'}`}>
+              {label}
+            </span>
+          </Link>
+        ))}
+      </nav>
+      {/* The nav above is `fixed`, so it reserves no space of its own. This
+          is the very last element in <body> (rendered globally, see
+          [locale]/layout.tsx) purely to occupy that space in normal flow —
+          it pushes the true bottom of every page down by the bar's height so
+          nothing (a footer link, a form's submit button) ends up hidden
+          under it, on every route, without every page opting in individually. */}
+      <div className="md:hidden" style={{ height: 'calc(64px + env(safe-area-inset-bottom))' }} />
+    </>
   )
 }

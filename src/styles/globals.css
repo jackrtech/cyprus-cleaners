@@ -126,12 +126,6 @@ body {
     color: var(--color-gold);
   }
 
-  /* Bottom clearance for pages that can sit behind the fixed mobile tab bar
-     (BottomTabBar is 64px tall) — pair with md:pb-0 since the bar never
-     shows at desktop widths. */
-  .pb-tabbar {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom));
-  }
 }
 
 /* ── Component layer ── */

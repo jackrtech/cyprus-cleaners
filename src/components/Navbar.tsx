@@ -9,13 +9,12 @@ import ThemeToggle from '@/components/ui/ThemeToggle'
 
 interface NavbarProps {
   // Only meaningful when true: hides the whole header on mobile for a
-  // logged-in visitor. Safe ONLY where something else provides mobile nav
-  // instead — today that's BottomTabBar, which (app)/layout.tsx renders
-  // alongside this. (marketing)/layout.tsx does NOT render BottomTabBar, so
-  // it must leave this false, or a logged-in mobile visitor browsing
-  // marketing pages gets no nav at all (regression fixed 2026-08-18: this
-  // prop didn't exist, the hide was unconditional, and it silently relied
-  // on BottomTabBar having been global before the route-group split).
+  // logged-in visitor. Safe wherever BottomTabBar covers mobile nav instead
+  // — since 2026-08-19 that's everywhere (BottomTabBar renders globally in
+  // [locale]/layout.tsx, self-gating on session role), so every layout that
+  // renders this Navbar passes it. Kept as an opt-in prop rather than
+  // Navbar checking session role itself, so a future route group that
+  // doesn't want BottomTabBar-as-mobile-nav can still opt out.
   hideOnMobileWhenLoggedIn?: boolean
 }
 

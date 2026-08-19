@@ -4,6 +4,7 @@ import { getMessages, getTranslations } from 'next-intl/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
 import Providers from '@/components/layout/Providers'
+import BottomTabBar from '@/components/layout/BottomTabBar'
 import '@/styles/globals.css'
 
 const dmSans = DM_Sans({
@@ -63,12 +64,17 @@ export default async function RootLayout({
         >
           {tCommon('skipToContent')}
         </a>
-        {/* Each route group ((marketing), (auth), (app)) owns its own chrome
-            (nav/footer/bottom tab bar) and its own #main-content landmark —
-            this root layout only provides the providers, skip link, and
-            no-flash theme script that every group shares. */}
+        {/* Each route group ((marketing), (auth), (app)) owns its own top
+            chrome (nav/footer) and its own #main-content landmark. BottomTabBar
+            is the one exception — it's rendered here, globally, rather than
+            per route group (2026-08-19): it self-gates on session role, so it
+            shows for a logged-in customer/cleaner on ANY route, not just
+            inside the (app) shell — tapping it while browsing a marketing
+            page (or landing on one via a shared link) no longer routes a
+            logged-in user out of their own app chrome (see FLOWS.md). */}
         <Providers session={session} messages={messages} locale={locale}>
           {children}
+          <BottomTabBar />
         </Providers>
       </body>
     </html>
