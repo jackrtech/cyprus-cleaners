@@ -16,7 +16,8 @@ export async function GET(req: Request, { params }: { params: { slug: string } }
       hourly_rate_eur, services, languages, cleaner_type,
       gender, verified, avg_rating, review_count,
       unique_customer_count, total_jobs_count, availability,
-      is_mock, is_company, user_id, has_transport, created_at
+      is_mock, is_company, user_id, has_transport, created_at,
+      cleaner_service_offerings ( code, price_eur )
     `)
     .eq('slug', params.slug)
     .eq('status', 'ACTIVE')

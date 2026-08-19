@@ -76,6 +76,7 @@ interface ChatPanelProps {
   // CUSTOMER, to render a live price breakdown in BookingFormModal.
   hourlyRateEur?:    number | null
   bookingFeeEur?:    number | null
+  offerings?:        { code: string; price_eur: number }[] | null
   onClose?:          () => void
   onMessageSent?:    (message: Message) => void
   // When true, renders without its own header/border/rounded box — for
@@ -93,7 +94,7 @@ function getInitials(name: string): string {
 
 export default function ChatPanel({
   introductionId, currentUserId, currentUserRole, otherPartyName, otherPartyAvatar,
-  hourlyRateEur, bookingFeeEur,
+  hourlyRateEur, bookingFeeEur, offerings,
   onClose, onMessageSent, embedded = false, initialShowBookingForm = false,
 }: ChatPanelProps) {
   const t        = useTranslations('chat')
@@ -542,6 +543,7 @@ export default function ChatPanel({
         cleanerName={otherPartyName}
         hourlyRateEur={hourlyRateEur}
         bookingFeeEur={bookingFeeEur}
+        offerings={offerings}
         onBookingCreated={newBooking => {
           setBookings(prev => [newBooking, ...(prev ?? [])])
         }}

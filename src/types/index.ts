@@ -12,7 +12,7 @@ export type DisputeStatus = 'OPEN' | 'RESOLVED'
 export type VerificationStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type DisputeResolution = 'CUSTOMER' | 'CLEANER' | 'UNRESOLVABLE'
 
-export type CleaningType = 'STANDARD' | 'DEEP'
+export type CleaningType = 'STANDARD' | 'DEEP' | 'MOVE_IN_OUT'
 
 export type Locale = 'en' | 'el'
 
@@ -90,6 +90,7 @@ export interface Booking {
   address_lat: number | null
   address_lng: number | null
   finding_us_notes: string | null
+  addon_codes: string[]
   status: BookingStatus
   review_prompted_at: string | null
   completed_at: string | null
@@ -124,6 +125,8 @@ export interface Payment {
   provider_payment_method_id: string | null
   paid_at: string | null
   refunded_at: string | null
+  tier_rate_eur: number | null
+  addon_total_eur: number
   created_at: string
 }
 

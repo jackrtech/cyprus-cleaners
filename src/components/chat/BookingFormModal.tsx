@@ -8,6 +8,60 @@ import FullScreenModal from '@/components/ui/FullScreenModal'
 import AddressFormModal, { type SavedAddress } from '@/components/addresses/AddressFormModal'
 import BookingPaymentElement, { type BookingPaymentHandle } from '@/components/chat/BookingPaymentElement'
 import type { BookingStatus, CleaningType } from '@/types'
+import { isTierCode, isAddonCode } from '@/lib/serviceOfferings'
+
+// Same accessible checkbox/radio-pill pattern as FilterBar's Checkbox/Radio
+// (src/components/cleaners/FilterBar.tsx) — duplicated locally rather than
+// shared, since it's two small stateless indicator components with no state
+// of their own.
+function toggleKeyHandler(onChange: () => void) {
+  return (e: React.KeyboardEvent) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault()
+      onChange()
+    }
+  }
+}
+
+function CheckIcon() {
+  return (
+    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+      <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function Radio({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
+  return (
+    <span
+      role="radio"
+      aria-checked={checked}
+      aria-label={label}
+      tabIndex={0}
+      className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center shrink-0 cursor-pointer transition-colors ${checked ? 'border-[#19706A]' : 'border-[#D0DCD9] dark:border-[#2A3A38]'}`}
+      onMouseDown={e => { e.preventDefault(); onChange() }}
+      onKeyDown={toggleKeyHandler(onChange)}
+    >
+      {checked && <span className="w-2 h-2 rounded-full bg-[#19706A] block" />}
+    </span>
+  )
+}
+
+function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
+  return (
+    <span
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
+      tabIndex={0}
+      className={`w-4 h-4 rounded border-[1.5px] flex items-center justify-center shrink-0 cursor-pointer transition-colors ${checked ? 'bg-[#19706A] border-[#19706A]' : 'bg-white dark:bg-[#16211F] border-[#D0DCD9] dark:border-[#2A3A38]'}`}
+      onMouseDown={e => { e.preventDefault(); onChange() }}
+      onKeyDown={toggleKeyHandler(onChange)}
+    >
+      {checked && <CheckIcon />}
+    </span>
+  )
+}
 
 interface Booking {
   id:              string
@@ -46,11 +100,15 @@ interface Props {
   cleanerName:       string
   // Optional — only meaningful for a CUSTOMER-opened form. When both are
   // present, a live price breakdown renders above the payment section.
-  // This is a display-only estimate: the actual charge is always computed
-  // server-side at CONFIRM time from the cleaner's rate as it stands then,
-  // never from anything submitted by the client.
+  // This is a display-only estimate: the actual charge is computed
+  // server-side by POST /api/bookings at submission (this REQUEST step, not
+  // CONFIRM — the cleaner's later CONFIRM charges whatever was locked in
+  // here, unchanged) and is never trusted from anything the client sends.
   hourlyRateEur?:    number | null
   bookingFeeEur?:    number | null
+  // The cleaner's opt-in tiers (DEEP/MOVE_IN_OUT) and add-ons (CARPET/OVEN)
+  // — STANDARD is always available via hourlyRateEur and never appears here.
+  offerings?:        { code: string; price_eur: number }[] | null
   onBookingCreated:  (booking: Booking) => void
 }
 
@@ -58,7 +116,7 @@ interface Props {
 // form has enough fields (room count, duration, date/time, address+map,
 // payment) that sharing space with the chat header made it feel cramped
 // and secondary. Opened from ChatPanel's "Book"/"Book again" CTA.
-export default function BookingFormModal({ isOpen, onClose, introductionId, cleanerName, hourlyRateEur, bookingFeeEur, onBookingCreated }: Props) {
+export default function BookingFormModal({ isOpen, onClose, introductionId, cleanerName, hourlyRateEur, bookingFeeEur, offerings, onBookingCreated }: Props) {
   const tBooking = useTranslations('booking')
   const tAddr    = useTranslations('address')
 
@@ -68,6 +126,7 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
   const [bedrooms,        setBedrooms]        = useState('1')
   const [bathrooms,       setBathrooms]       = useState('1')
   const [cleaningType,    setCleaningType]    = useState<CleaningType>('STANDARD')
+  const [addonCodes,      setAddonCodes]      = useState<string[]>([])
   const [bookingDate,     setBookingDate]     = useState('')
   const [startTime,       setStartTime]       = useState('')
   const [durationHours,   setDurationHours]   = useState(String(estimateCleaningHours(1, 1, 'STANDARD')))
@@ -84,6 +143,26 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
 
   const selectedAddress = savedAddresses.find(a => a.id === selectedAddressId) ?? null
   const todayStr = new Date().toISOString().slice(0, 10)
+
+  const tierOfferings  = (offerings ?? []).filter(o => isTierCode(o.code))
+  const addonOfferings = (offerings ?? []).filter(o => isAddonCode(o.code))
+
+  function tierLabel(code: string): string {
+    if (code === 'DEEP') return tBooking('deepClean')
+    if (code === 'MOVE_IN_OUT') return tBooking('moveInOutClean')
+    return tBooking('standardClean')
+  }
+  function addonLabel(code: string): string {
+    if (code === 'CARPET') return tBooking('addonCarpet')
+    if (code === 'OVEN') return tBooking('addonOven')
+    return code
+  }
+  // The rate that will actually be charged for the currently-selected tier —
+  // hourlyRateEur for STANDARD, otherwise the matching offering's price.
+  // Mirrors what POST /api/bookings resolves server-side.
+  const selectedTierRateEur = cleaningType === 'STANDARD'
+    ? hourlyRateEur ?? null
+    : tierOfferings.find(o => o.code === cleaningType)?.price_eur ?? null
 
   // Pre-fill the duration estimate as room count/type change, but stop
   // overwriting it once the customer has edited it themselves
@@ -129,6 +208,7 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
     setBedrooms('1')
     setBathrooms('1')
     setCleaningType('STANDARD')
+    setAddonCodes([])
     setBookingDate('')
     setStartTime('')
     setDurationTouched(false)
@@ -159,6 +239,7 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
           bedrooms:         Number(bedrooms),
           bathrooms:        Number(bathrooms),
           cleaning_type:    cleaningType,
+          addon_codes:      addonCodes,
           date:             bookingDate,
           start_time:       startTime,
           duration_hours:   Number(durationHours),
@@ -200,35 +281,56 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
       <form id="booking-form" onSubmit={handleBookingSubmit} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
         {bookingError && <p className="text-[12px] text-red-600">{bookingError}</p>}
 
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label htmlFor="booking-cleaning-type" className="block text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mb-1">{tBooking('cleaningType')}</label>
-            <select
-              id="booking-cleaning-type"
-              value={cleaningType}
-              onChange={e => setCleaningType(e.target.value as CleaningType)}
-              className="input !py-2 text-[13px]"
-            >
-              <option value="STANDARD">{tBooking('standardClean')}</option>
-              <option value="DEEP">{tBooking('deepClean')}</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="booking-duration" className="block text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mb-1">{tBooking('duration')}</label>
-            <input
-              id="booking-duration"
-              type="number"
-              min={1}
-              max={12}
-              step={0.5}
-              value={durationHours}
-              onChange={e => { setDurationHours(e.target.value); setDurationTouched(true) }}
-              className="input !py-2 text-[13px]"
-              required
-            />
+        <div>
+          <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mb-1">{tBooking('cleaningType')}</p>
+          <div role="radiogroup" aria-label={tBooking('cleaningType')} className="space-y-1.5">
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <Radio checked={cleaningType === 'STANDARD'} onChange={() => setCleaningType('STANDARD')} label={tBooking('standardClean')} />
+              <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] flex-1">{tBooking('standardClean')}</span>
+              {hourlyRateEur != null && <span className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">€{hourlyRateEur.toFixed(2)}/hr</span>}
+            </label>
+            {tierOfferings.map(o => (
+              <label key={o.code} className="flex items-center gap-2.5 cursor-pointer">
+                <Radio checked={cleaningType === o.code} onChange={() => setCleaningType(o.code as CleaningType)} label={tierLabel(o.code)} />
+                <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] flex-1">{tierLabel(o.code)}</span>
+                <span className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">€{o.price_eur.toFixed(2)}/hr</span>
+              </label>
+            ))}
           </div>
         </div>
-        <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] -mt-1">{tBooking('durationEstimateHint')}</p>
+        {addonOfferings.length > 0 && (
+          <div>
+            <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mb-1">{tBooking('addonsLabel')}</p>
+            <div className="space-y-1.5">
+              {addonOfferings.map(o => {
+                const checked = addonCodes.includes(o.code)
+                const toggle = () => setAddonCodes(prev => checked ? prev.filter(c => c !== o.code) : [...prev, o.code])
+                return (
+                  <label key={o.code} className="flex items-center gap-2.5 cursor-pointer">
+                    <Checkbox checked={checked} onChange={toggle} label={addonLabel(o.code)} />
+                    <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] flex-1">{addonLabel(o.code)}</span>
+                    <span className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">+€{o.price_eur.toFixed(2)}</span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        )}
+        <div>
+          <label htmlFor="booking-duration" className="block text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mb-1">{tBooking('duration')}</label>
+          <input
+            id="booking-duration"
+            type="number"
+            min={1}
+            max={12}
+            step={0.5}
+            value={durationHours}
+            onChange={e => { setDurationHours(e.target.value); setDurationTouched(true) }}
+            className="input !py-2 text-[13px]"
+            required
+          />
+          <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mt-1">{tBooking('durationEstimateHint')}</p>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label htmlFor="booking-bedrooms" className="block text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mb-1">{tBooking('bedrooms')}</label>
@@ -326,16 +428,25 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
             className="input !py-2 text-[13px] resize-none w-full"
           />
         </div>
-        {hourlyRateEur != null && bookingFeeEur != null && (() => {
-          const hours  = Number(durationHours) || 0
-          const rate   = Math.round(hourlyRateEur * hours * 100) / 100
-          const total  = Math.round((rate + bookingFeeEur) * 100) / 100
+        {selectedTierRateEur != null && bookingFeeEur != null && (() => {
+          const hours      = Number(durationHours) || 0
+          const rate       = Math.round(selectedTierRateEur * hours * 100) / 100
+          const addonTotal = Math.round(
+            addonCodes.reduce((sum, code) => sum + (addonOfferings.find(o => o.code === code)?.price_eur ?? 0), 0) * 100
+          ) / 100
+          const total = Math.round((rate + addonTotal + bookingFeeEur) * 100) / 100
           return (
             <div className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3 space-y-1">
               <div className="flex justify-between text-[#5B7472] dark:text-[#9BB0AE]">
                 <span>{tBooking('cleanerRateLine')}</span>
                 <span>€{rate.toFixed(2)}</span>
               </div>
+              {addonTotal > 0 && (
+                <div className="flex justify-between text-[#5B7472] dark:text-[#9BB0AE]">
+                  <span>{tBooking('addonsLine')}</span>
+                  <span>€{addonTotal.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-[#5B7472] dark:text-[#9BB0AE]">
                 <span>{tBooking('bookingFeeLine')}</span>
                 <span>€{bookingFeeEur.toFixed(2)}</span>

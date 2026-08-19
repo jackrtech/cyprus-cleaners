@@ -40,6 +40,7 @@ interface DbCleanerRow {
   created_at:            string
   booking_fee_eur:       number
   is_favorited:          boolean
+  cleaner_service_offerings: { code: string; price_eur: number }[] | null
 }
 
 interface DbReviewRow {
@@ -113,6 +114,7 @@ function mapCleaner(row: DbCleanerRow): MockCleaner {
     created_at:             row.created_at,
     booking_fee_eur:        row.booking_fee_eur,
     is_favorited:           row.is_favorited,
+    offerings:              row.cleaner_service_offerings ?? [],
   }
 }
 
@@ -630,6 +632,7 @@ export default function CleanerProfilePage({ params }: { params: { slug: string 
           otherPartyAvatar={cleaner.photo_url ?? null}
           hourlyRateEur={cleaner.hourly_rate_eur}
           bookingFeeEur={cleaner.booking_fee_eur ?? null}
+          offerings={cleaner.offerings ?? null}
           initialShowBookingForm={wantsBookingForm}
         />
       )}

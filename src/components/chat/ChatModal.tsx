@@ -13,12 +13,13 @@ interface Props {
   otherPartyAvatar:  string | null
   hourlyRateEur?:    number | null
   bookingFeeEur?:    number | null
+  offerings?:        { code: string; price_eur: number }[] | null
   initialShowBookingForm?: boolean
 }
 
 export default function ChatModal({
   isOpen, onClose, introductionId, currentUserId, currentUserRole, otherPartyName, otherPartyAvatar,
-  hourlyRateEur, bookingFeeEur, initialShowBookingForm,
+  hourlyRateEur, bookingFeeEur, offerings, initialShowBookingForm,
 }: Props) {
   return (
     <FullScreenModal isOpen={isOpen} onClose={onClose}>
@@ -30,6 +31,7 @@ export default function ChatModal({
         otherPartyAvatar={otherPartyAvatar}
         hourlyRateEur={hourlyRateEur}
         bookingFeeEur={bookingFeeEur}
+        offerings={offerings}
         onClose={onClose}
         initialShowBookingForm={initialShowBookingForm}
       />

@@ -21,6 +21,7 @@ interface CleanerProfile {
   phone?:           string | null
   email?:           string | null
   hourly_rate_eur?: number
+  cleaner_service_offerings?: { code: string; price_eur: number }[] | null
 }
 
 interface LastMessage {
@@ -608,6 +609,7 @@ export default function DashboardPage() {
                               otherPartyAvatar={cp?.photo_url ?? null}
                               hourlyRateEur={cp?.hourly_rate_eur ?? null}
                               bookingFeeEur={intro.booking_fee_eur}
+                              offerings={cp?.cleaner_service_offerings ?? null}
                               onClose={() => setOpenChatId(null)}
                             />
                           </div>

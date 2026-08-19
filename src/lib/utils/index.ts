@@ -87,10 +87,12 @@ export function truncate(str: string, maxLength: number = 120): string {
 export function estimateCleaningHours(
   bedrooms: number,
   bathrooms: number,
-  cleaningType: 'STANDARD' | 'DEEP'
+  cleaningType: 'STANDARD' | 'DEEP' | 'MOVE_IN_OUT'
 ): number {
   const baseMinutes = 45 + bedrooms * 25 + bathrooms * 35
-  const minutes = baseMinutes * (cleaningType === 'DEEP' ? 1.6 : 1)
+  // MOVE_IN_OUT reuses the DEEP multiplier — v1 deliberately has no separate
+  // per-tier duration model beyond what already existed for DEEP.
+  const minutes = baseMinutes * (cleaningType === 'DEEP' || cleaningType === 'MOVE_IN_OUT' ? 1.6 : 1)
   const hours = Math.round((minutes / 60) * 2) / 2
   return Math.min(12, Math.max(1, hours))
 }

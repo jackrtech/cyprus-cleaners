@@ -132,7 +132,7 @@ export async function GET() {
       .from('introductions')
       .select(`
         id, created_at,
-        cleaner_profiles ( id, display_name, photo_url, cities, hourly_rate_eur )
+        cleaner_profiles ( id, display_name, photo_url, cities, hourly_rate_eur, cleaner_service_offerings ( code, price_eur ) )
       `)
       .eq('customer_id', userId)
       .order('created_at', { ascending: false })

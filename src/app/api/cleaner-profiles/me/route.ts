@@ -12,7 +12,7 @@ export async function GET() {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('cleaner_profiles')
-    .select('*')
+    .select('*, cleaner_service_offerings ( code, price_eur )')
     .eq('user_id', session.user.id)
     .single()
 

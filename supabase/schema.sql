@@ -12,7 +12,10 @@ create type user_role as enum ('CUSTOMER', 'CLEANER', 'ADMIN');
 create type cleaner_status as enum ('ACTIVE', 'PAUSED', 'SUSPENDED');
 create type service_type as enum ('HOUSE', 'APARTMENT');
 create type booking_status as enum ('REQUESTED', 'CONFIRMED', 'COMPLETED', 'CANCELLED');
-create type cleaning_type as enum ('STANDARD', 'DEEP');
+create type cleaning_type as enum ('STANDARD', 'DEEP', 'MOVE_IN_OUT');
+-- MOVE_IN_OUT added 2026-08-19 as part of service tiers v1 (see
+-- cleaner_service_offerings below). Applying to an existing database (this
+-- file is bootstrap-only, not re-run): `alter type cleaning_type add value 'MOVE_IN_OUT';`
 create type locale_type as enum ('en', 'el');
 
 -- ─── USERS ───────────────────────────────────────────────────
@@ -116,6 +119,49 @@ create index idx_cleaner_rating   on cleaner_profiles (avg_rating desc);
 create index idx_cleaner_services on cleaner_profiles using gin (services);
 create index idx_cleaner_connect_account on cleaner_profiles (stripe_connect_account_id);  -- backs the account.updated webhook's lookup
 
+-- ─── CLEANER SERVICE OFFERINGS ───────────────────────────────
+-- Per-cleaner opt-in menu of paid tiers/add-ons beyond the baseline STANDARD
+-- tier (STANDARD's rate is cleaner_profiles.hourly_rate_eur — always
+-- available, never a row here). One row = "this cleaner offers `code` at
+-- `price_eur`"; absence of a row = not offered. `code`'s fixed v1 set spans
+-- both opt-in tiers (DEEP, MOVE_IN_OUT — priced €/hr, same unit as
+-- hourly_rate_eur) and add-ons (CARPET, OVEN — priced flat €/booking) in one
+-- table rather than two, since both share an identical shape and every
+-- consumer treats them alike; which codes are tiers vs. add-ons is kept in
+-- src/lib/serviceOfferings.ts (one source of truth), not a DB column.
+
+create table cleaner_service_offerings (
+  id                  uuid primary key default gen_random_uuid(),
+  cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
+  code                text not null check (code in ('DEEP', 'MOVE_IN_OUT', 'CARPET', 'OVEN')),
+  price_eur           numeric(6,2) not null check (price_eur > 0),
+  created_at          timestamptz not null default now(),
+  unique (cleaner_profile_id, code)
+);
+
+create index idx_offerings_cleaner on cleaner_service_offerings (cleaner_profile_id);
+
+alter table cleaner_service_offerings enable row level security;
+
+-- Same shape as cleaner_profiles' own two select policies, joined through it
+-- since ownership here is cleaner_profiles.user_id, not a direct column. No
+-- insert/update/delete policies, same as cleaner_profiles itself — all
+-- writes go through the admin client in /api/cleaner-profiles/me/offerings.
+create policy "cleaner_offerings_public_read" on cleaner_service_offerings
+  for select using (
+    exists (select 1 from cleaner_profiles cp where cp.id = cleaner_profile_id and cp.status = 'ACTIVE')
+  );
+create policy "cleaner_offerings_select_own" on cleaner_service_offerings
+  for select using (
+    auth.uid()::text = (select user_id::text from cleaner_profiles where id = cleaner_profile_id)
+  );
+-- Applying to an existing database:
+-- `create table cleaner_service_offerings (id uuid primary key default gen_random_uuid(), cleaner_profile_id uuid not null references cleaner_profiles(id) on delete cascade, code text not null check (code in ('DEEP','MOVE_IN_OUT','CARPET','OVEN')), price_eur numeric(6,2) not null check (price_eur > 0), created_at timestamptz not null default now(), unique (cleaner_profile_id, code));
+--  create index idx_offerings_cleaner on cleaner_service_offerings (cleaner_profile_id);
+--  alter table cleaner_service_offerings enable row level security;
+--  create policy "cleaner_offerings_public_read" on cleaner_service_offerings for select using (exists (select 1 from cleaner_profiles cp where cp.id = cleaner_profile_id and cp.status = 'ACTIVE'));
+--  create policy "cleaner_offerings_select_own" on cleaner_service_offerings for select using (auth.uid()::text = (select user_id::text from cleaner_profiles where id = cleaner_profile_id));`
+
 -- ─── INTRODUCTIONS ───────────────────────────────────────────
 -- One messaging thread per customer/cleaner pair — no approval gate,
 -- messages and bookings hang off this record's id.
@@ -172,6 +218,7 @@ create table bookings (
   address_lng         numeric(9,6),
   finding_us_notes    text,  -- Snapshot of the selected address's finding-us notes at request time. Applying address_lat/address_lng/finding_us_notes to an existing database: `alter table bookings add column address_lat numeric(9,6), add column address_lng numeric(9,6), add column finding_us_notes text;`
   photo_paths         text[] not null default '{}',  -- Private storage paths in 'booking-photos' bucket; signed URLs generated at read time
+  addon_codes         text[] not null default '{}',  -- Which CARPET/OVEN add-ons (see cleaner_service_offerings below) were selected on this booking, snapshotted as codes — same array-column shape as photo_paths. Validated against the canonical list server-side (src/lib/serviceOfferings.ts) at request time, not DB-constrained, to avoid keeping the fixed code list in two places. Applying to an existing database: `alter table bookings add column addon_codes text[] not null default '{}';`
   status              booking_status not null default 'REQUESTED',
   review_prompted_at  timestamptz,  -- Set when status → COMPLETED; triggers review prompt
   completed_at        timestamptz,  -- Set when status → COMPLETED; anchors the 24h customer dispute-filing window (src/app/api/disputes/route.ts) and the cleaner payout hold (src/lib/payouts.ts). Applying to an existing database: `alter table bookings add column completed_at timestamptz;`
@@ -235,6 +282,8 @@ create table payments (
   refunded_at                 timestamptz,
   -- Cleaner payout (see the block comment above this table)
   platform_fee_eur            numeric(6,2),   -- the flat fee portion of amount_eur, stored per-payment (not read from the constant later) so a future fee change never rewrites history
+  tier_rate_eur                numeric(6,2),   -- the €/hr tier rate actually used (STANDARD's cleaner_profiles.hourly_rate_eur, or the cleaner's DEEP/MOVE_IN_OUT rate from cleaner_service_offerings) at REQUEST time — snapshotted per-payment for the same reason as platform_fee_eur: a cleaner's later rate change must never rewrite a past booking's breakdown.
+  addon_total_eur              numeric(6,2) not null default 0,  -- sum of the flat add-on prices selected (bookings.addon_codes), snapshotted at the same time, same reason.
   cleaner_payout_eur          numeric(10,2),  -- null until the payout-release job decides the final figure; only then is it the cleaner's rate, or less if a dispute ruling reduced it
   payout_status                payout_status not null default 'PENDING',
   payout_release_at           timestamptz,    -- informational "held until" for the cleaner-facing UI; the release job re-derives eligibility live rather than trusting this as authoritative
@@ -248,6 +297,8 @@ create table payments (
 -- Then backfill existing rows — under the pre-Connect model the whole
 -- charged amount was the cleaner's earning, no fee taken:
 -- `update payments set platform_fee_eur = 0, cleaner_payout_eur = amount_eur where platform_fee_eur is null;`
+-- Applying tier_rate_eur/addon_total_eur to an existing database:
+-- `alter table payments add column tier_rate_eur numeric(6,2), add column addon_total_eur numeric(6,2) not null default 0;`
 
 create index idx_payments_status on payments (status);
 create index idx_payments_payout_status on payments (payout_status) where payout_status in ('PENDING', 'BLOCKED');  -- backs the payout-release job's due/blocked lookup
@@ -474,6 +525,9 @@ create trigger on_booking_status_change
 
 alter table users               enable row level security;
 alter table cleaner_profiles    enable row level security;
+-- cleaner_service_offerings' RLS enable + policies live inline in its own
+-- block above, next to support_threads' — kept there rather than duplicated
+-- here.
 alter table introductions       enable row level security;
 alter table favorites           enable row level security;
 alter table bookings            enable row level security;

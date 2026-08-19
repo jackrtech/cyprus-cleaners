@@ -4,10 +4,11 @@ import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
 import { sendNewBookingRequestEmail } from '@/lib/email'
 import { BOOKING_FEE_EUR } from '@/lib/stripe'
+import { ADDON_CODES, isAddonCode } from '@/lib/serviceOfferings'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-const CLEANING_TYPES = ['STANDARD', 'DEEP']
+const CLEANING_TYPES = ['STANDARD', 'DEEP', 'MOVE_IN_OUT']
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/
 const RESPONSE_WINDOW_MS = 24 * 60 * 60 * 1000
 const SIGNED_URL_TTL = 60 * 60 // 1 hour
@@ -90,7 +91,15 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { introduction_id, bedrooms, bathrooms, cleaning_type, date, start_time, duration_hours, notes, address, address_lat, address_lng, finding_us_notes, payment_method_id } = body
+  const { introduction_id, bedrooms, bathrooms, cleaning_type, date, start_time, duration_hours, notes, address, address_lat, address_lng, finding_us_notes, payment_method_id, addon_codes: rawAddonCodes } = body
+
+  const addon_codes: string[] = Array.isArray(rawAddonCodes) ? rawAddonCodes : []
+  if (!addon_codes.every((c): c is string => typeof c === 'string' && isAddonCode(c))) {
+    return NextResponse.json({ error: `addon_codes must only contain ${ADDON_CODES.join(', ')}` }, { status: 400 })
+  }
+  if (new Set(addon_codes).size !== addon_codes.length) {
+    return NextResponse.json({ error: 'addon_codes must not contain duplicates' }, { status: 400 })
+  }
 
   if (!introduction_id || typeof introduction_id !== 'string') {
     return NextResponse.json({ error: 'introduction_id is required' }, { status: 400 })
@@ -105,7 +114,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'bathrooms must be an integer between 1 and 10' }, { status: 400 })
   }
   if (!CLEANING_TYPES.includes(cleaning_type)) {
-    return NextResponse.json({ error: 'cleaning_type must be STANDARD or DEEP' }, { status: 400 })
+    return NextResponse.json({ error: `cleaning_type must be one of ${CLEANING_TYPES.join(', ')}` }, { status: 400 })
   }
   if (typeof date !== 'string' || Number.isNaN(Date.parse(date))) {
     return NextResponse.json({ error: 'A valid date is required' }, { status: 400 })
@@ -169,6 +178,43 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'This cleaner has no rate set — cannot create a booking' }, { status: 409 })
   }
 
+  // Resolve pricing against this cleaner's actual opt-in tiers/add-ons — the
+  // booking form already filters to what a cleaner offers, but this is the
+  // real authority (a stale client, or a request bypassing the form
+  // entirely, must never be able to book a tier/add-on the cleaner hasn't
+  // enabled). Only fetch the rows relevant to this booking.
+  const relevantCodes = [...(cleaning_type !== 'STANDARD' ? [cleaning_type] : []), ...addon_codes]
+  let offerings: { code: string; price_eur: number }[] = []
+  if (relevantCodes.length > 0) {
+    const { data: offeringRows } = await supabase
+      .from('cleaner_service_offerings')
+      .select('code, price_eur')
+      .eq('cleaner_profile_id', intro.cleaner_profile_id)
+      .in('code', relevantCodes)
+    offerings = offeringRows ?? []
+  }
+
+  let tierRateEur: number
+  if (cleaning_type === 'STANDARD') {
+    tierRateEur = cleanerProfile.hourly_rate_eur
+  } else {
+    const tierOffering = offerings.find(o => o.code === cleaning_type)
+    if (!tierOffering) {
+      return NextResponse.json({ error: 'This cleaner does not offer that cleaning type' }, { status: 409 })
+    }
+    tierRateEur = tierOffering.price_eur
+  }
+
+  let addonTotalEur = 0
+  for (const code of addon_codes) {
+    const addonOffering = offerings.find(o => o.code === code)
+    if (!addonOffering) {
+      return NextResponse.json({ error: `This cleaner does not offer the ${code} add-on` }, { status: 409 })
+    }
+    addonTotalEur += addonOffering.price_eur
+  }
+  addonTotalEur = Math.round(addonTotalEur * 100) / 100
+
   const { data, error } = await supabase
     .from('bookings')
     .insert({
@@ -179,6 +225,7 @@ export async function POST(req: NextRequest) {
       bedrooms,
       bathrooms,
       cleaning_type,
+      addon_codes,
       date,
       start_time,
       duration_hours,
@@ -200,15 +247,20 @@ export async function POST(req: NextRequest) {
   // Payment isn't charged yet (that happens when the cleaner confirms — see
   // /api/bookings/[id] CONFIRM) — this just records the saved card against
   // the booking so the amount is locked in at the rate (and fee) quoted now.
-  // amount_eur is the TOTAL the customer pays — cleaner's rate plus the flat
-  // platform fee, stored per-payment via platform_fee_eur (see schema.sql's
-  // payments table comment) — cleaner_payout_eur is left null until the
-  // payout-release job determines the final figure (see src/lib/payouts.ts).
-  const cleanerPortionEur = Math.round(cleanerProfile.hourly_rate_eur * duration_hours * 100) / 100
+  // amount_eur is the TOTAL the customer pays — cleaner's tier rate × hours,
+  // plus any add-ons, plus the flat platform fee. tier_rate_eur/
+  // addon_total_eur/platform_fee_eur are all stored per-payment (see
+  // schema.sql's payments table comment) so a cleaner's later price changes
+  // never rewrite a past booking's breakdown — cleaner_payout_eur is left
+  // null until the payout-release job determines the final figure (see
+  // src/lib/payouts.ts).
+  const cleanerPortionEur = Math.round(tierRateEur * duration_hours * 100) / 100
   const { error: paymentError } = await supabase.from('payments').insert({
     booking_id: data.id,
-    amount_eur: Math.round((cleanerPortionEur + BOOKING_FEE_EUR) * 100) / 100,
+    amount_eur: Math.round((cleanerPortionEur + addonTotalEur + BOOKING_FEE_EUR) * 100) / 100,
     platform_fee_eur: BOOKING_FEE_EUR,
+    tier_rate_eur: tierRateEur,
+    addon_total_eur: addonTotalEur,
     status: 'PENDING',
     provider: 'stripe',
     provider_payment_method_id: payment_method_id,

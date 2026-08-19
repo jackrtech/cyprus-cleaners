@@ -7,6 +7,7 @@ import { Link } from '@/navigation'
 import { compressImage } from '@/lib/utils/compressImage'
 import { CITIES } from '@/lib/cities'
 import { DAYS, isAvailabilitySet, type DayKey, type WeeklyAvailability } from '@/lib/availability'
+import { TIER_CODES, ADDON_CODES, isOfferingCode, type OfferingCode } from '@/lib/serviceOfferings'
 
 const MAX_BIO = 500
 const DEFAULT_START = 9
@@ -26,8 +27,9 @@ function getInitials(name: string): string {
 }
 
 export default function EditProfilePage() {
-  const t       = useTranslations('dashboard')
-  const tCities = useTranslations('cities')
+  const t        = useTranslations('dashboard')
+  const tCities  = useTranslations('cities')
+  const tBooking = useTranslations('booking')
   const { data: session, status: sessionStatus } = useSession()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -49,6 +51,10 @@ export default function EditProfilePage() {
   const [languages,    setLanguages]    = useState<string[]>([])
   const [availability, setAvailability] = useState<WeeklyAvailability>({})
   const [hasTransport, setHasTransport] = useState(false)
+  // Enabled cleaning tiers/add-ons + the cleaner's own price for each — code
+  // present (even with an empty/unvalidated price string) means "checked",
+  // absent means not offered. Same convention as `availability` above.
+  const [offerings,    setOfferings]    = useState<Partial<Record<OfferingCode, string>>>({})
 
   // Fetch and populate form via API (uses admin client server-side, bypasses RLS)
   useEffect(() => {
@@ -73,6 +79,12 @@ export default function EditProfilePage() {
             : {}
         )
         setHasTransport(Boolean(data.has_transport))
+        const offeringRows = (data.cleaner_service_offerings as { code: string; price_eur: number }[] | null) ?? []
+        const offeringsMap: Partial<Record<OfferingCode, string>> = {}
+        for (const row of offeringRows) {
+          if (isOfferingCode(row.code)) offeringsMap[row.code] = String(row.price_eur)
+        }
+        setOfferings(offeringsMap)
         if (data.photo_url) setPhotoPreview(data.photo_url as string)
       })
       .catch(() => setFetchError('Failed to load profile. Please refresh.'))
@@ -113,6 +125,21 @@ export default function EditProfilePage() {
     })
   }
 
+  function toggleOffering(code: OfferingCode) {
+    setOfferings(prev => {
+      if (code in prev) {
+        const next = { ...prev }
+        delete next[code]
+        return next
+      }
+      return { ...prev, [code]: '' }
+    })
+  }
+
+  function setOfferingPrice(code: OfferingCode, price: string) {
+    setOfferings(prev => (code in prev ? { ...prev, [code]: price } : prev))
+  }
+
   function handleSetCleanerType(type: 'individual' | 'company') {
     setCleanerType(type)
     if (type === 'company') setGender(null)
@@ -134,6 +161,11 @@ export default function EditProfilePage() {
     if (cities.length === 0) { setFormError(t('atLeastOneCity')); return }
     if (languages.length === 0) { setFormError(t('atLeastOneLanguage')); return }
     if (!isAvailabilitySet(availability)) { setFormError(t('atLeastOneAvailabilityDay')); return }
+    const offeringEntries = Object.entries(offerings) as [OfferingCode, string][]
+    if (offeringEntries.some(([, price]) => !price || Number(price) <= 0)) {
+      setFormError(t('offeringPriceRequired'))
+      return
+    }
 
     setSaving(true)
     try {
@@ -173,6 +205,18 @@ export default function EditProfilePage() {
 
       if (!res.ok) {
         const data = await res.json()
+        throw new Error(data.error ?? 'Save failed')
+      }
+
+      const offeringsRes = await fetch('/api/cleaner-profiles/me/offerings', {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          offerings: offeringEntries.map(([code, price]) => ({ code, price_eur: Number(price) })),
+        }),
+      })
+      if (!offeringsRes.ok) {
+        const data = await offeringsRes.json()
         throw new Error(data.error ?? 'Save failed')
       }
 
@@ -498,6 +542,92 @@ export default function EditProfilePage() {
                 <input id="cleaner-edit-house-cleaning" type="checkbox" checked readOnly disabled className="w-4 h-4 accent-[#19706A]" />
                 <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{t('houseCleaning')}</span>
               </label>
+            </div>
+
+            {/* 9b. Cleaning tiers — opt-in, cleaner-priced (STANDARD above is
+                the always-on baseline, never configured here) */}
+            <div>
+              <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1">
+                {t('serviceTiers')}
+              </label>
+              <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mb-2">{t('serviceTiersHint')}</p>
+              <div className="space-y-2">
+                {TIER_CODES.map(code => {
+                  const price = offerings[code]
+                  const tierLabel = code === 'DEEP' ? tBooking('deepClean') : tBooking('moveInOutClean')
+                  return (
+                    <div key={code} className="flex items-center gap-2.5 flex-wrap">
+                      <label htmlFor={`cleaner-edit-tier-${code}`} className="flex items-center gap-2.5 cursor-pointer w-40 shrink-0">
+                        <input
+                          id={`cleaner-edit-tier-${code}`}
+                          type="checkbox"
+                          checked={price !== undefined}
+                          onChange={() => toggleOffering(code)}
+                          className="w-4 h-4 accent-[#19706A]"
+                        />
+                        <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{tierLabel}</span>
+                      </label>
+                      {price !== undefined && (
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5B7472] dark:text-[#9BB0AE] text-[13px] pointer-events-none">€</span>
+                          <input
+                            type="number"
+                            aria-label={t('offeringPriceLabel')}
+                            value={price}
+                            onChange={e => setOfferingPrice(code, e.target.value)}
+                            min={1}
+                            step={1}
+                            className="input !py-1.5 pl-6 pr-2 text-[13px] w-24"
+                          />
+                          <span className="ml-1.5 text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">/hr</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* 9c. Add-ons — opt-in, cleaner-priced flat extras */}
+            <div>
+              <label className="block text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-1">
+                {t('addons')}
+              </label>
+              <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mb-2">{t('addonsHint')}</p>
+              <div className="space-y-2">
+                {ADDON_CODES.map(code => {
+                  const price = offerings[code]
+                  const addonLabel = code === 'CARPET' ? tBooking('addonCarpet') : tBooking('addonOven')
+                  return (
+                    <div key={code} className="flex items-center gap-2.5 flex-wrap">
+                      <label htmlFor={`cleaner-edit-addon-${code}`} className="flex items-center gap-2.5 cursor-pointer w-40 shrink-0">
+                        <input
+                          id={`cleaner-edit-addon-${code}`}
+                          type="checkbox"
+                          checked={price !== undefined}
+                          onChange={() => toggleOffering(code)}
+                          className="w-4 h-4 accent-[#19706A]"
+                        />
+                        <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{addonLabel}</span>
+                      </label>
+                      {price !== undefined && (
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5B7472] dark:text-[#9BB0AE] text-[13px] pointer-events-none">€</span>
+                          <input
+                            type="number"
+                            aria-label={t('offeringPriceLabel')}
+                            value={price}
+                            onChange={e => setOfferingPrice(code, e.target.value)}
+                            min={1}
+                            step={1}
+                            className="input !py-1.5 pl-6 pr-2 text-[13px] w-24"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
 
             <button

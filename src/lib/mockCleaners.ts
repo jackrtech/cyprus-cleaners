@@ -24,6 +24,7 @@ export type MockCleaner = {
   created_at?: string
   booking_fee_eur?: number
   is_favorited?: boolean
+  offerings?: { code: string; price_eur: number }[]
 }
 
 export const MOCK_CLEANERS: MockCleaner[] = [
