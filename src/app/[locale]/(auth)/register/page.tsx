@@ -122,7 +122,7 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowPass(v => !v)}
                   aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 flex items-center justify-center text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
                 >
                   {showPassword ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -157,7 +157,7 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowConfirm(v => !v)}
                   aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 flex items-center justify-center text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
                 >
                   {showConfirm ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

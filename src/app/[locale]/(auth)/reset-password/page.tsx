@@ -146,7 +146,7 @@ export default function ResetPasswordPage() {
                     type="button"
                     onClick={() => setShowPassword(v => !v)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 flex items-center justify-center text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
                   >
                     <EyeIcon open={showPassword} />
                   </button>
@@ -171,7 +171,7 @@ export default function ResetPasswordPage() {
                     type="button"
                     onClick={() => setShowConfirm(v => !v)}
                     aria-label={showConfirm ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 flex items-center justify-center text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
                   >
                     <EyeIcon open={showConfirm} />
                   </button>
