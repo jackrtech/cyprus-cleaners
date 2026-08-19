@@ -189,7 +189,8 @@ export default function AdminDisputesPage() {
             <h1 className="text-h2 font-display text-teal-900 dark:text-[#ECF3F2]">{t('disputesTitle')}</h1>
             <p className="text-muted dark:text-[#9BB0AE] mt-1">{t('disputesSubtitle')}</p>
           </div>
-          <button className="btn-ghost shrink-0" onClick={() => signOut({ callbackUrl: '/login' })}>
+          {/* md:hidden — mobile-only sign-out; see admin/users/page.tsx for why */}
+          <button className="btn-ghost shrink-0 md:hidden" onClick={() => signOut({ callbackUrl: '/login' })}>
             {t('signOut')}
           </button>
         </div>
