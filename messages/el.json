@@ -466,6 +466,8 @@
     "resolvedUnresolvable": "Επιλύθηκε — διαμοιρασμένη απόφαση",
     "resolvedUnresolvableNamed": "Κρίθηκε άλυτη — εκδόθηκε επιστροφή {percentage}% ως δίκαιη λύση.",
     "resolveUnresolvable": "Άλυτη — διαμοιρασμένη απόφαση",
+    "teamOfCleaners": "{count} καθαριστές",
+    "submitResolution": "Υποβολή απόφασης",
     "splitRefundLabel": "Επιστροφή αν κριθεί άλυτη:",
     "slaHoursLeft": "{hours, plural, one {Απομένει # ώρα για επίλυση} other {Απομένουν # ώρες για επίλυση}}",
     "slaOverdue": "Εκτός προθεσμίας 24 ωρών",

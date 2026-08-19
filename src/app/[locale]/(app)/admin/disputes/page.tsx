@@ -19,6 +19,19 @@ interface DisputeCleaner {
   user_id: string | null
 }
 
+interface DisputeAssignment {
+  cleaner_profile_id: string
+  tier_rate_eur: number
+  platform_fee_eur: number | null
+  cleaner_profiles: { id: string; display_name: string; user_id: string | null } | null
+}
+
+interface DisputeAssignmentOutcome {
+  cleaner_profile_id: string
+  resolution: 'CUSTOMER' | 'CLEANER' | 'UNRESOLVABLE'
+  refund_percentage: number
+}
+
 interface DisputeBooking {
   id: string
   date: string
@@ -31,6 +44,7 @@ interface DisputeBooking {
   notes: string | null
   photo_urls: string[]
   payment: { status: string; amount_eur: number } | null
+  booking_assignments: DisputeAssignment[] | null
 }
 
 type DisputeResolution = 'CUSTOMER' | 'CLEANER' | 'UNRESOLVABLE'
@@ -49,6 +63,7 @@ interface Dispute {
   resolved_at: string | null
   customer: DisputeCustomer | null
   cleaner_profiles: DisputeCleaner | null
+  dispute_assignment_outcomes: DisputeAssignmentOutcome[] | null
   booking: DisputeBooking | null
 }
 
@@ -66,6 +81,10 @@ export default function AdminDisputesPage() {
   const [pendingId,    setPendingId]   = useState<string | null>(null)
   const [actionError,  setActionError] = useState<string | null>(null)
   const [splitPercentage, setSplitPercentage] = useState(50)
+  // Multi-cleaner disputes: one resolution + percentage per assigned
+  // cleaner, keyed by cleaner_profile_id. Reset whenever a new dispute is
+  // opened (see the onClick handlers below).
+  const [assignmentDecisions, setAssignmentDecisions] = useState<Record<string, { resolution: DisputeResolution; refundPercentage: number }>>({})
 
 
   useEffect(() => {
@@ -89,6 +108,38 @@ export default function AdminDisputesPage() {
           resolution,
           note: noteText.trim() || undefined,
           refund_percentage: resolution === 'UNRESOLVABLE' ? splitPercentage : undefined,
+        }),
+      })
+      if (!res.ok) throw new Error(await extractErrorMessage(res, t('actionError')))
+      const updated: Dispute = await res.json()
+      setDisputes(prev => prev.map(d => d.id === updated.id ? { ...d, ...updated } : d))
+      setViewingId(null)
+      setNoteText('')
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : t('actionError'))
+    } finally {
+      setPendingId(null)
+    }
+  }
+
+  async function handleResolveMulti(id: string, assignments: DisputeAssignment[]) {
+    if (pendingId) return
+    setPendingId(id)
+    setActionError(null)
+    try {
+      const res = await fetch(`/api/admin/disputes/${id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          note: noteText.trim() || undefined,
+          assignments: assignments.map(a => {
+            const decision = assignmentDecisions[a.cleaner_profile_id] ?? { resolution: 'CLEANER' as DisputeResolution, refundPercentage: 0 }
+            return {
+              cleaner_profile_id: a.cleaner_profile_id,
+              resolution: decision.resolution,
+              refund_percentage: decision.resolution === 'UNRESOLVABLE' ? decision.refundPercentage : undefined,
+            }
+          }),
         }),
       })
       if (!res.ok) throw new Error(await extractErrorMessage(res, t('actionError')))
@@ -179,7 +230,7 @@ export default function AdminDisputesPage() {
                 <li key={d.id}>
                   <button
                     type="button"
-                    onClick={() => { setViewingId(d.id); setNoteText('') }}
+                    onClick={() => { setViewingId(d.id); setNoteText(''); setAssignmentDecisions({}) }}
                     className="card p-5 w-full text-left hover:border-teal-300 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -190,7 +241,12 @@ export default function AdminDisputesPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="badge badge-gold">{t('cleanerLabel')}</span>
-                          <p className="font-medium text-teal-900 dark:text-[#ECF3F2]">{d.cleaner_profiles?.display_name ?? t('unknownUser')}</p>
+                          <p className="font-medium text-teal-900 dark:text-[#ECF3F2]">
+                            {d.cleaner_profiles?.display_name
+                              ?? (d.booking?.booking_assignments?.length
+                                    ? t('teamOfCleaners', { count: d.booking.booking_assignments.length })
+                                    : t('unknownUser'))}
+                          </p>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
@@ -218,8 +274,11 @@ export default function AdminDisputesPage() {
       <FullScreenModal isOpen={!!viewing} onClose={() => setViewingId(null)}>
         {viewing && (() => {
           const b = viewing.booking
+          const assignments = b?.booking_assignments ?? null
+          const isMulti = !viewing.cleaner_profiles && !!assignments?.length
           const customerName = viewing.customer?.full_name ?? t('unknownUser')
-          const cleanerName  = viewing.cleaner_profiles?.display_name ?? t('unknownUser')
+          const cleanerName  = viewing.cleaner_profiles?.display_name
+            ?? (isMulti ? t('teamOfCleaners', { count: assignments!.length }) : t('unknownUser'))
           return (
             <>
               <div className="flex items-center gap-3 px-4 py-3 border-b border-[#E0EDEC] dark:border-[#253634] shrink-0">
@@ -241,10 +300,24 @@ export default function AdminDisputesPage() {
                   <span className="badge badge-teal">{t('customerLabel')}</span>
                   <p className="font-medium text-teal-900 dark:text-[#ECF3F2]">{customerName}</p>
                 </div>
-                <div className="flex items-center gap-2 -mt-2">
-                  <span className="badge badge-gold">{t('cleanerLabel')}</span>
-                  <p className="font-medium text-teal-900 dark:text-[#ECF3F2]">{cleanerName}</p>
-                </div>
+                {isMulti ? (
+                  <div className="-mt-2 space-y-1">
+                    <span className="badge badge-gold">{t('cleanerLabel')}</span>
+                    <ul className="text-body text-teal-900 dark:text-[#ECF3F2] pl-1">
+                      {assignments!.map(a => (
+                        <li key={a.cleaner_profile_id}>
+                          {a.cleaner_profiles?.display_name ?? t('unknownUser')}
+                          {' — €'}{(a.tier_rate_eur * (b?.duration_hours ?? 0) + (a.platform_fee_eur ?? 0)).toFixed(2)}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 -mt-2">
+                    <span className="badge badge-gold">{t('cleanerLabel')}</span>
+                    <p className="font-medium text-teal-900 dark:text-[#ECF3F2]">{cleanerName}</p>
+                  </div>
+                )}
 
                 {b && (
                   <div>
@@ -301,6 +374,22 @@ export default function AdminDisputesPage() {
                 {viewing.status === 'RESOLVED' ? (
                   <div>
                     <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">{t('resolutionLabel')}</p>
+                    {isMulti ? (
+                      <ul className="text-body text-teal-900 dark:text-[#ECF3F2] space-y-1">
+                        {assignments!.map(a => {
+                          const outcome = viewing.dispute_assignment_outcomes?.find(o => o.cleaner_profile_id === a.cleaner_profile_id)
+                          const name = a.cleaner_profiles?.display_name ?? t('unknownUser')
+                          return (
+                            <li key={a.cleaner_profile_id}>
+                              {!outcome ? name
+                                : outcome.resolution === 'CUSTOMER' ? t('resolvedForCustomerNamed', { name: customerName }) + ` (${name})`
+                                : outcome.resolution === 'UNRESOLVABLE' ? t('resolvedUnresolvableNamed', { percentage: outcome.refund_percentage }) + ` (${name})`
+                                : t('resolvedForCleanerNamed', { name })}
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    ) : (
                     <p className="text-body text-teal-900 dark:text-[#ECF3F2]">
                       {viewing.resolution === 'CUSTOMER' && viewing.auto_resolved
                         ? t('resolvedAutoTimeoutNamed', { name: customerName })
@@ -310,6 +399,7 @@ export default function AdminDisputesPage() {
                         ? t('resolvedUnresolvableNamed', { percentage: viewing.refund_percentage })
                         : t('resolvedForCleanerNamed', { name: cleanerName })}
                     </p>
+                    )}
                     {viewing.admin_note && (
                       <p className="text-body text-teal-900 dark:text-[#ECF3F2] bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3 mt-2">{viewing.admin_note}</p>
                     )}
@@ -346,7 +436,71 @@ export default function AdminDisputesPage() {
                 )}
               </div>
 
-              {viewing.status === 'OPEN' && (
+              {viewing.status === 'OPEN' && isMulti && (
+                <div className="px-4 py-3 border-t border-[#E0EDEC] dark:border-[#253634] shrink-0 space-y-3">
+                  {assignments!.map(a => {
+                    const name = a.cleaner_profiles?.display_name ?? t('unknownUser')
+                    const decision = assignmentDecisions[a.cleaner_profile_id] ?? { resolution: 'CLEANER' as DisputeResolution, refundPercentage: 0 }
+                    function setDecision(patch: Partial<{ resolution: DisputeResolution; refundPercentage: number }>) {
+                      setAssignmentDecisions(prev => ({
+                        ...prev,
+                        [a.cleaner_profile_id]: { ...decision, ...patch },
+                      }))
+                    }
+                    return (
+                      <div key={a.cleaner_profile_id} className="space-y-1.5">
+                        <p className="text-body font-medium text-teal-900 dark:text-[#ECF3F2]">{name}</p>
+                        <div className="flex gap-1.5 flex-wrap items-center">
+                          <button
+                            type="button"
+                            className={decision.resolution === 'CLEANER' ? 'btn-primary !py-1.5 text-body' : 'btn-ghost !py-1.5 text-body'}
+                            onClick={() => setDecision({ resolution: 'CLEANER' })}
+                          >
+                            {t('resolveForCleaner', { name })}
+                          </button>
+                          <button
+                            type="button"
+                            className={decision.resolution === 'UNRESOLVABLE' ? 'btn-primary !py-1.5 text-body' : 'btn-ghost !py-1.5 text-body'}
+                            onClick={() => setDecision({ resolution: 'UNRESOLVABLE' })}
+                          >
+                            {t('resolveUnresolvable')}
+                          </button>
+                          <button
+                            type="button"
+                            className={decision.resolution === 'CUSTOMER' ? 'btn-primary !py-1.5 text-body' : 'btn-ghost !py-1.5 text-body'}
+                            onClick={() => setDecision({ resolution: 'CUSTOMER' })}
+                          >
+                            {t('resolveForCustomer', { name: customerName })}
+                          </button>
+                          {decision.resolution === 'UNRESOLVABLE' && (
+                            <span className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                step={5}
+                                value={decision.refundPercentage}
+                                onChange={e => setDecision({ refundPercentage: Math.min(100, Math.max(0, Number(e.target.value))) })}
+                                className="input !py-1.5 !w-16 text-body"
+                              />
+                              <span className="text-body text-muted dark:text-[#9BB0AE]">%</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                  <button
+                    className="btn-primary w-full"
+                    disabled={pendingId === viewing.id}
+                    onClick={() => handleResolveMulti(viewing.id, assignments!)}
+                  >
+                    {t('submitResolution')}
+                  </button>
+                </div>
+              )}
+
+              {viewing.status === 'OPEN' && !isMulti && (
                 <div className="px-4 py-3 border-t border-[#E0EDEC] dark:border-[#253634] shrink-0 space-y-2">
                   <div className="flex items-center gap-2">
                     <label htmlFor="dispute-split-percentage" className="text-body text-muted dark:text-[#9BB0AE] shrink-0">{t('splitRefundLabel')}</label>

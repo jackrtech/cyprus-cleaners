@@ -456,6 +456,8 @@
     "resolvedUnresolvable": "Resolved — split decision",
     "resolvedUnresolvableNamed": "Ruled unresolvable — a {percentage}% refund was issued as a fair resolution.",
     "resolveUnresolvable": "Unresolvable — split decision",
+    "teamOfCleaners": "{count} cleaners",
+    "submitResolution": "Submit resolution",
     "splitRefundLabel": "Split refund if unresolvable:",
     "slaHoursLeft": "{hours, plural, one {# hour left to resolve} other {# hours left to resolve}}",
     "slaOverdue": "Past 24h SLA",
