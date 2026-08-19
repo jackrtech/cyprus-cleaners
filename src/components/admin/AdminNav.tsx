@@ -9,6 +9,7 @@ const TABS = [
   { href: '/admin/messages', labelKey: 'navMessages' },
   { href: '/admin/disputes', labelKey: 'navDisputes' },
   { href: '/admin/cancellations', labelKey: 'navCancellations' },
+  { href: '/admin/team-bookings', labelKey: 'navTeamBookings' },
   { href: '/admin/users', labelKey: 'navUsers' },
 ] as const
 
