@@ -20,6 +20,19 @@ interface DisputeBooking {
   payments: { status: string; amount_eur: number } | { status: string; amount_eur: number }[] | null
 }
 
+interface DisputeAssignment {
+  cleaner_profile_id: string
+  tier_rate_eur: number
+  platform_fee_eur: number | null
+  cleaner_profiles: { id: string; display_name: string; user_id: string | null } | { id: string; display_name: string; user_id: string | null }[] | null
+}
+
+interface DisputeAssignmentOutcome {
+  cleaner_profile_id: string
+  resolution: string
+  refund_percentage: number
+}
+
 interface DisputeRow {
   id: string
   claim: string
@@ -34,7 +47,8 @@ interface DisputeRow {
   resolved_at: string | null
   customer: { id: string; full_name: string; email: string } | null
   cleaner_profiles: { id: string; display_name: string; user_id: string | null } | null
-  booking: DisputeBooking | null
+  dispute_assignment_outcomes: DisputeAssignmentOutcome[] | null
+  booking: (DisputeBooking & { booking_assignments: DisputeAssignment[] | null }) | null
 }
 
 export async function GET() {
@@ -62,7 +76,8 @@ export async function GET() {
       id, claim, cleaner_response, status, resolution, refund_percentage, resolve_by, auto_resolved, admin_note, created_at, resolved_at,
       customer:users!disputes_customer_id_fkey ( id, full_name, email ),
       cleaner_profiles ( id, display_name, user_id ),
-      booking:bookings ( id, date, start_time, duration_hours, bedrooms, bathrooms, cleaning_type, address, notes, photo_paths, payments ( status, amount_eur ) )
+      dispute_assignment_outcomes ( cleaner_profile_id, resolution, refund_percentage ),
+      booking:bookings ( id, date, start_time, duration_hours, bedrooms, bathrooms, cleaning_type, address, notes, photo_paths, payments ( status, amount_eur ), booking_assignments ( cleaner_profile_id, tier_rate_eur, platform_fee_eur, cleaner_profiles ( id, display_name, user_id ) ) )
     `)
     .order('created_at', { ascending: true })
 
