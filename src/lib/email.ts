@@ -717,3 +717,193 @@ export async function sendAccountDeletedEmail({
        <p style="color:#5B7472;font-size:13px;line-height:1.6;margin:0;">If this wasn't you, or you have any questions, just reply to this email.</p>`)
   return sendEmail({ to, subject, html })
 }
+
+// ─── No-show flags (multi-cleaner) ───────────────────────────────────────────
+// Added 2026-08-20 — the full customer-flag → corroborate → contest → admin
+// review workflow that replaced the original admin-only no_show toggle. See
+// FLOWS.md §11.
+
+export async function sendNoShowFlaggedAdminAlertEmail({
+  bookingId, customerName, cleanerName, claim, adminUrl,
+}: {
+  bookingId:    string
+  customerName: string
+  cleanerName:  string
+  claim:        string
+  adminUrl:     string
+}) {
+  const bodyHtml =
+    `<p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0 0 12px;">A customer has flagged a no-show on a multi-cleaner booking — it needs review once the other assignee(s) and the flagged cleaner have had a chance to respond.</p>
+     <table style="width:100%;font-size:13px;color:#0D1F1E;border-collapse:collapse;margin-top:8px;">
+       <tr><td style="padding:4px 0;color:#5B7472;">Booking</td><td style="padding:4px 0;">${escapeHtml(bookingId)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Customer</td><td style="padding:4px 0;">${escapeHtml(customerName)}</td></tr>
+       <tr><td style="padding:4px 0;color:#5B7472;">Flagged cleaner</td><td style="padding:4px 0;">${escapeHtml(cleanerName)}</td></tr>
+     </table>
+     <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Claim:</p>
+     <blockquote style="border-left:3px solid #B5541F;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${escapeHtml(claim)}</blockquote>
+     ${cta('Open no-show queue', adminUrl)}`
+
+  return sendAdminAlertEmail({
+    subject:  `🚨 No-show flagged — booking ${bookingId}`,
+    heading:  'No-show flagged',
+    bodyHtml,
+  })
+}
+
+export async function sendNoShowFlaggedConfirmationEmail({
+  to, locale, name, bookingDate, dashboardUrl,
+}: {
+  to:           string
+  locale:       string | null
+  name:         string
+  bookingDate:  string
+  dashboardUrl: string
+}) {
+  const isEl = locale === 'el'
+  const safeName = escapeHtml(name)
+  const formattedDate = new Intl.DateTimeFormat(isEl ? 'el-GR' : 'en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  }).format(new Date(`${bookingDate}T00:00:00`))
+
+  const subject = isEl ? 'Λάβαμε την αναφορά σου για μη προσέλευση' : 'We received your no-show report'
+
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Λάβαμε την αναφορά σου</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Γεια σου ${safeName}, λάβαμε την αναφορά σου ότι ένας καθαριστής δεν εμφανίστηκε στην κράτηση στις ${formattedDate}. Θα ζητήσουμε από τους υπόλοιπους καθαριστές της ομάδας και από τον ίδιο να απαντήσουν, και η διαχείριση θα εξετάσει τα πάντα εντός 24 ωρών. Θα σε ενημερώσουμε με email μόλις ληφθεί απόφαση.</p>
+       ${cta('Μετάβαση στον πίνακα ελέγχου', dashboardUrl)}`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">We received your report</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Hi ${safeName}, we received your report that a cleaner didn't show up for the booking on ${formattedDate}. We'll ask the other cleaner(s) on that job and the flagged cleaner to respond, and our team will review everything within 24 hours. You'll get an email as soon as a decision has been made.</p>
+       ${cta('Go to dashboard', dashboardUrl)}`)
+
+  return sendEmail({ to, subject, html })
+}
+
+export async function sendNoShowCorroborationRequestEmail({
+  to, locale, name, bookingDate, flaggedCleanerName, dashboardUrl,
+}: {
+  to:                 string
+  locale:              string | null
+  name:                string
+  bookingDate:         string
+  flaggedCleanerName:  string
+  dashboardUrl:        string
+}) {
+  const isEl = locale === 'el'
+  const safeName = escapeHtml(name)
+  const safeFlagged = escapeHtml(flaggedCleanerName)
+  const formattedDate = new Intl.DateTimeFormat(isEl ? 'el-GR' : 'en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  }).format(new Date(`${bookingDate}T00:00:00`))
+
+  const subject = isEl ? 'Χρειαζόμαστε την άποψή σου για μια κράτηση' : 'We need your input on a booking'
+
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">Χρειαζόμαστε την άποψή σου</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Γεια σου ${safeName}, ο πελάτης στην κράτηση ομάδας στις ${formattedDate} ανέφερε ότι ο/η <strong>${safeFlagged}</strong> δεν εμφανίστηκε. Ήσουν κι εσύ στη δουλειά — μπορείς να μας πεις αν συμφωνείς ή διαφωνείς; Η άποψή σου βοηθά τη διαχείριση να αποφασίσει δίκαια.</p>
+       ${cta('Απάντησε στον πίνακα ελέγχου', dashboardUrl)}`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">We need your input</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Hi ${safeName}, the customer on the team booking from ${formattedDate} reported that <strong>${safeFlagged}</strong> didn't show up. You were on that job too — can you tell us whether you agree or disagree? Your input helps admin make a fair call.</p>
+       ${cta('Respond in dashboard', dashboardUrl)}`)
+
+  return sendEmail({ to, subject, html })
+}
+
+export async function sendNoShowContestPromptEmail({
+  to, locale, name, bookingDate, claim, dashboardUrl,
+}: {
+  to:           string
+  locale:       string | null
+  name:         string
+  bookingDate:  string
+  claim:        string
+  dashboardUrl: string
+}) {
+  const isEl = locale === 'el'
+  const safeName = escapeHtml(name)
+  const safeClaim = escapeHtml(claim)
+  const formattedDate = new Intl.DateTimeFormat(isEl ? 'el-GR' : 'en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  }).format(new Date(`${bookingDate}T00:00:00`))
+
+  const subject = isEl ? 'Έχεις σημανθεί ως απών/ούσα σε μια κράτηση' : "You've been flagged as a no-show on a booking"
+
+  const html = layout(isEl
+    ? `<h2 style="color:#B5541F;font-size:20px;font-weight:600;margin:0 0 16px;">Σημάνθηκες ως απών/ούσα</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Γεια σου ${safeName}, ο πελάτης στην κράτηση ομάδας στις ${formattedDate} ανέφερε ότι δεν εμφανίστηκες:</p>
+       <blockquote style="border-left:3px solid #B5541F;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeClaim}</blockquote>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Έχεις 24 ώρες για να απαντήσεις πριν εξετάσει η διαχείριση την υπόθεση.</p>
+       ${cta('Απάντησε στον πίνακα ελέγχου', dashboardUrl)}`
+    : `<h2 style="color:#B5541F;font-size:20px;font-weight:600;margin:0 0 16px;">You've been flagged as a no-show</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Hi ${safeName}, the customer on the team booking from ${formattedDate} reported that you didn't show up:</p>
+       <blockquote style="border-left:3px solid #B5541F;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeClaim}</blockquote>
+       <p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">You have 24 hours to respond before admin reviews this.</p>
+       ${cta('Respond in dashboard', dashboardUrl)}`)
+
+  return sendEmail({ to, subject, html })
+}
+
+export async function sendNoShowResolvedEmail({
+  to, locale, name, bookingDate, confirmed, recipientRole, amountEur, note, dashboardUrl,
+}: {
+  to:            string
+  locale:        string | null
+  name:          string
+  bookingDate:   string
+  confirmed:     boolean  // true = admin confirmed the no-show, false = rejected the report
+  recipientRole: 'CUSTOMER' | 'FLAGGED_CLEANER' | 'REDIRECT_CLEANER'
+  // Refund actually issued (CUSTOMER) or bonus transfer actually made
+  // (REDIRECT_CLEANER) — omitted for FLAGGED_CLEANER, whose payout is simply
+  // zero either way (see booking_assignments.no_show).
+  amountEur?:    number
+  note:          string | null
+  dashboardUrl:  string
+}) {
+  const isEl = locale === 'el'
+  const safeName = escapeHtml(name)
+  const safeNote = note ? escapeHtml(note) : null
+  const formattedDate = new Intl.DateTimeFormat(isEl ? 'el-GR' : 'en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  }).format(new Date(`${bookingDate}T00:00:00`))
+
+  const subject = isEl ? 'Ενημέρωση για την αναφορά μη προσέλευσης' : 'Update on your no-show report'
+
+  const bodyLineEl =
+    recipientRole === 'CUSTOMER'
+      ? (confirmed
+          ? `Μετά από έλεγχο, επιβεβαιώσαμε τη μη προσέλευση για την κράτηση στις ${formattedDate}.${amountEur != null ? ` Έγινε επιστροφή €${amountEur.toFixed(2)} στον αρχικό τρόπο πληρωμής σου.` : ''}`
+          : `Μετά από έλεγχο, δεν επιβεβαιώσαμε τη μη προσέλευση για την κράτηση στις ${formattedDate}.`)
+      : recipientRole === 'FLAGGED_CLEANER'
+      ? (confirmed
+          ? `Μετά από έλεγχο, επιβεβαιώσαμε ότι δεν εμφανίστηκες στην κράτηση στις ${formattedDate}. Δεν θα λάβεις πληρωμή για αυτή την ανάθεση.`
+          : `Μετά από έλεγχο, δεν επιβεβαιώσαμε την αναφορά μη προσέλευσης για την κράτηση στις ${formattedDate} — δεν επηρεάζει την πληρωμή σου.`)
+      : `Επιβεβαιώθηκε μη προσέλευση συναδέλφου στην κράτηση στις ${formattedDate}. Ως αναγνώριση που κάλυψες τη δουλειά, μεταφέρθηκαν €${(amountEur ?? 0).toFixed(2)} στο λογαριασμό σου.`
+
+  const bodyLineEn =
+    recipientRole === 'CUSTOMER'
+      ? (confirmed
+          ? `After review, we confirmed the no-show for the booking on ${formattedDate}.${amountEur != null ? ` A refund of €${amountEur.toFixed(2)} has been issued to your original payment method.` : ''}`
+          : `After review, we weren't able to confirm the no-show report for the booking on ${formattedDate}.`)
+      : recipientRole === 'FLAGGED_CLEANER'
+      ? (confirmed
+          ? `After review, we confirmed you didn't show up for the booking on ${formattedDate}. You won't be paid for that assignment.`
+          : `After review, we weren't able to confirm the no-show report for the booking on ${formattedDate} — this doesn't affect your payout.`)
+      : `A colleague's no-show was confirmed on the booking from ${formattedDate}. As thanks for covering the job, €${(amountEur ?? 0).toFixed(2)} has been transferred to your account.`
+
+  const heading = confirmed
+    ? (isEl ? 'Η αναφορά επιβεβαιώθηκε' : 'Report confirmed')
+    : (isEl ? 'Η αναφορά εξετάστηκε' : 'Report reviewed')
+
+  const html = layout(isEl
+    ? `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">${heading}</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Γεια σου ${safeName}, ${bodyLineEl}</p>
+       ${safeNote ? `<p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Σημείωση από τη διαχείριση:</p>
+       <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
+       ${cta('Μετάβαση στον πίνακα ελέγχου', dashboardUrl)}`
+    : `<h2 style="color:#19706A;font-size:20px;font-weight:600;margin:0 0 16px;">${heading}</h2>
+       <p style="color:#0D1F1E;font-size:14px;line-height:1.6;margin:0;">Hi ${safeName}, ${bodyLineEn}</p>
+       ${safeNote ? `<p style="color:#5B7472;font-size:13px;line-height:1.5;margin:12px 0 0;">Note from admin:</p>
+       <blockquote style="border-left:3px solid #19706A;margin:8px 0 0;padding:12px 16px;background:#F7FAF9;color:#0D1F1E;font-size:14px;line-height:1.6;">${safeNote}</blockquote>` : ''}
+       ${cta('Go to dashboard', dashboardUrl)}`)
+
+  return sendEmail({ to, subject, html })
+}

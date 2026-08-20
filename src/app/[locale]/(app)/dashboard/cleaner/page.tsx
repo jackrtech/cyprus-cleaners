@@ -76,7 +76,19 @@ interface Booking {
   // Present (and containing every assignee, including this cleaner) only on
   // multi-cleaner bookings -- used to show "also working with" context, see
   // renderBookingCard.
-  booking_assignments: { cleaner_profile_id: string; cleaner_profiles: { id: string; display_name: string } | null }[] | null
+  booking_assignments: {
+    id:                 string
+    cleaner_profile_id: string
+    cleaner_profiles:   { id: string; display_name: string } | null
+    no_show_flags: {
+      id:                 string
+      status:             string
+      claim:              string
+      cleaner_response:   string | null
+      resolve_by:         string
+      no_show_corroborations: { cleaner_profile_id: string; response: string }[] | null
+    }[] | null
+  }[] | null
 }
 
 const MIN_COMPLETION_PHOTOS = 4
@@ -183,6 +195,10 @@ export default function CleanerDashboardPage() {
   const [bookingActionError,     setBookingActionError]     = useState<string | null>(null)
   const [decliningId, setDecliningId] = useState<string | null>(null)
   const [declineReasonText, setDeclineReasonText] = useState('')
+  const [contestingFlagId, setContestingFlagId] = useState<string | null>(null)
+  const [contestResponseText, setContestResponseText] = useState('')
+  const [corroboratingFlagId, setCorroboratingFlagId] = useState<string | null>(null)
+  const [corroborateNoteText, setCorroborateNoteText] = useState('')
 
   const [photoUploadingId, setPhotoUploadingId] = useState<string | null>(null)
   const [photoUploadError, setPhotoUploadError] = useState<string | null>(null)
@@ -311,6 +327,67 @@ export default function CleanerDashboardPage() {
       setBookings(prev => prev.map(b => b.id === updated.id ? { ...b, ...updated } : b))
       setDecliningId(null)
       setDeclineReasonText('')
+    } catch (err) {
+      setBookingActionError(err instanceof Error ? err.message : tBooking('actionError'))
+    } finally {
+      setBookingActionPendingId(null)
+    }
+  }
+
+  async function handleContestNoShow(bookingId: string, flagId: string, response: string) {
+    if (bookingActionPendingId) return
+    setBookingActionPendingId(bookingId)
+    setBookingActionError(null)
+    try {
+      const res = await fetch(`/api/no-show-flags/${flagId}/contest`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ response }),
+      })
+      if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('actionError')))
+      const updated: { cleaner_response: string; contested_at: string } = await res.json()
+      setBookings(prev => prev.map(b => b.id !== bookingId ? b : {
+        ...b,
+        booking_assignments: (b.booking_assignments ?? []).map(a => ({
+          ...a,
+          no_show_flags: (a.no_show_flags ?? []).map(f => f.id === flagId ? { ...f, ...updated } : f),
+        })),
+      }))
+      setContestingFlagId(null)
+      setContestResponseText('')
+    } catch (err) {
+      setBookingActionError(err instanceof Error ? err.message : tBooking('actionError'))
+    } finally {
+      setBookingActionPendingId(null)
+    }
+  }
+
+  async function handleCorroborateNoShow(bookingId: string, flagId: string, response: 'CORROBORATES' | 'DISPUTES', note: string, myCleanerProfileId: string) {
+    if (bookingActionPendingId) return
+    setBookingActionPendingId(bookingId)
+    setBookingActionError(null)
+    try {
+      const res = await fetch(`/api/no-show-flags/${flagId}/corroborate`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ response, note: note.trim() || undefined }),
+      })
+      if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('actionError')))
+      setBookings(prev => prev.map(b => b.id !== bookingId ? b : {
+        ...b,
+        booking_assignments: (b.booking_assignments ?? []).map(a => ({
+          ...a,
+          no_show_flags: (a.no_show_flags ?? []).map(f => f.id !== flagId ? f : {
+            ...f,
+            no_show_corroborations: [
+              ...(f.no_show_corroborations ?? []).filter(c => c.cleaner_profile_id !== myCleanerProfileId),
+              { cleaner_profile_id: myCleanerProfileId, response },
+            ],
+          }),
+        })),
+      }))
+      setCorroboratingFlagId(null)
+      setCorroborateNoteText('')
     } catch (err) {
       setBookingActionError(err instanceof Error ? err.message : tBooking('actionError'))
     } finally {
@@ -505,6 +582,118 @@ export default function CleanerDashboardPage() {
             {tBooking('alsoAssigned', { names: otherAssignees.join(', ') })}
           </p>
         )}
+        {booking.status === 'COMPLETED' && (() => {
+          const myAssignment = (booking.booking_assignments ?? []).find(a => a.cleaner_profile_id === profile?.id)
+          const myFlag = (myAssignment?.no_show_flags ?? [])[0] ?? null
+
+          const otherFlags = (booking.booking_assignments ?? [])
+            .filter(a => a.cleaner_profile_id !== profile?.id)
+            .flatMap(a => (a.no_show_flags ?? []).map(f => ({ flag: f, cleanerName: a.cleaner_profiles?.display_name ?? tBooking('unknownCleaner') })))
+            .filter(({ flag }) => flag.status === 'PENDING')
+
+          return (
+            <div className="space-y-2 mb-1" onClick={e => e.stopPropagation()}>
+              {myFlag && (
+                myFlag.status !== 'PENDING' ? (
+                  <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">
+                    {myFlag.status === 'CONFIRMED' ? tBooking('noShowConfirmedAgainstYou') : tBooking('noShowRejectedInYourFavor')}
+                  </p>
+                ) : myFlag.cleaner_response ? (
+                  <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">{tBooking('noShowResponseSubmitted')}</p>
+                ) : (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
+                    <p className="text-[12px] font-medium text-red-700">{tBooking('noShowFlaggedAgainstYou')}</p>
+                    <p className="text-[12px] text-[#0D1F1E]">{myFlag.claim}</p>
+                    {contestingFlagId === myFlag.id ? (
+                      <>
+                        <textarea
+                          value={contestResponseText}
+                          onChange={e => setContestResponseText(e.target.value)}
+                          placeholder={tBooking('contestPlaceholder')}
+                          rows={2}
+                          maxLength={2000}
+                          className="input text-[13px]"
+                        />
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => handleContestNoShow(booking.id, myFlag.id, contestResponseText)}
+                            disabled={bookingActionPendingId === booking.id || !contestResponseText.trim()}
+                            className="text-[12px] font-medium text-[#19706A] hover:text-teal-700 transition-colors disabled:opacity-50"
+                          >
+                            {tBooking('submitContest')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setContestingFlagId(null); setContestResponseText('') }}
+                            className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] transition-colors"
+                          >
+                            {tBooking('neverMind')}
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => { setContestingFlagId(myFlag.id); setContestResponseText('') }}
+                        className="text-[12px] font-medium text-red-700 hover:text-red-800 transition-colors"
+                      >
+                        {tBooking('contestNoShow')}
+                      </button>
+                    )}
+                  </div>
+                )
+              )}
+              {otherFlags.map(({ flag, cleanerName }) => {
+                const already = (flag.no_show_corroborations ?? []).find(c => c.cleaner_profile_id === profile?.id)
+                if (already) {
+                  return (
+                    <p key={flag.id} className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">
+                      {tBooking('corroborationSubmitted', { name: cleanerName })}
+                    </p>
+                  )
+                }
+                return (
+                  <div key={flag.id} className="rounded-lg border border-gold-200 bg-gold-50 dark:bg-[#332B0F] p-3 space-y-2">
+                    <p className="text-[12px] font-medium text-gold-700 dark:text-gold-300">{tBooking('corroborationRequested', { name: cleanerName })}</p>
+                    {corroboratingFlagId === flag.id && (
+                      <textarea
+                        value={corroborateNoteText}
+                        onChange={e => setCorroborateNoteText(e.target.value)}
+                        placeholder={tBooking('corroborationNotePlaceholder')}
+                        rows={2}
+                        maxLength={1000}
+                        className="input text-[13px]"
+                      />
+                    )}
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => corroboratingFlagId === flag.id
+                          ? handleCorroborateNoShow(booking.id, flag.id, 'CORROBORATES', corroborateNoteText, profile!.id)
+                          : setCorroboratingFlagId(flag.id)}
+                        disabled={bookingActionPendingId === booking.id}
+                        className="text-[12px] font-medium text-[#19706A] hover:text-teal-700 transition-colors disabled:opacity-50"
+                      >
+                        {tBooking('confirmNoShow')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => corroboratingFlagId === flag.id
+                          ? handleCorroborateNoShow(booking.id, flag.id, 'DISPUTES', corroborateNoteText, profile!.id)
+                          : setCorroboratingFlagId(flag.id)}
+                        disabled={bookingActionPendingId === booking.id}
+                        className="text-[12px] font-medium text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
+                      >
+                        {tBooking('disagreeNoShow')}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })()}
         {decliningId === booking.id && (
           <div className="mb-2 space-y-2" onClick={e => e.stopPropagation()}>
             <textarea

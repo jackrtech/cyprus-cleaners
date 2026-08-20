@@ -68,7 +68,7 @@ interface Booking {
   // Null on both cleaner_profiles and cleaner_profile_id together is the
   // multi-cleaner discriminator (see FLOWS.md §11) -- booking_assignments is
   // where the assigned cleaners actually live for that case.
-  booking_assignments: { cleaner_profile_id: string; cleaner_profiles: { id: string; slug: string; display_name: string; photo_url: string | null } | null }[] | null
+  booking_assignments: { id: string; cleaner_profile_id: string; cleaner_profiles: { id: string; slug: string; display_name: string; photo_url: string | null } | null; no_show_flags: { id: string; status: string }[] | null }[] | null
   reviews:            { id: string }[] | null
   disputes:           { id: string; status: string }[] | null
   photo_urls:         string[]
@@ -121,6 +121,8 @@ export default function DashboardPage() {
   const [cancelReasonText, setCancelReasonText] = useState('')
   const [disputingId, setDisputingId] = useState<string | null>(null)
   const [disputeClaimText, setDisputeClaimText] = useState('')
+  const [flaggingAssignmentId, setFlaggingAssignmentId] = useState<string | null>(null)
+  const [noShowClaimText, setNoShowClaimText] = useState('')
 
   // Fetch introductions once confirmed CUSTOMER
   useEffect(() => {
@@ -216,6 +218,33 @@ export default function DashboardPage() {
       ))
       setDisputingId(null)
       setDisputeClaimText('')
+    } catch (err) {
+      setBookingActionError(err instanceof Error ? err.message : tBooking('actionError'))
+    } finally {
+      setBookingActionPendingId(null)
+    }
+  }
+
+  async function handleFileNoShow(bookingId: string, assignmentId: string, claim: string) {
+    if (bookingActionPendingId) return
+    setBookingActionPendingId(bookingId)
+    setBookingActionError(null)
+    try {
+      const res = await fetch('/api/no-show-flags', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ assignment_id: assignmentId, claim }),
+      })
+      if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('actionError')))
+      const flag: { id: string; status: string } = await res.json()
+      setBookings(prev => prev.map(b => b.id === bookingId ? {
+        ...b,
+        booking_assignments: (b.booking_assignments ?? []).map(a =>
+          a.id === assignmentId ? { ...a, no_show_flags: [...(a.no_show_flags ?? []), flag] } : a
+        ),
+      } : b))
+      setFlaggingAssignmentId(null)
+      setNoShowClaimText('')
     } catch (err) {
       setBookingActionError(err instanceof Error ? err.message : tBooking('actionError'))
     } finally {
@@ -378,6 +407,69 @@ export default function DashboardPage() {
                         {tBooking('disputeHoursLeft', { hours: hoursLeft })}
                       </span>
                     )}
+                  </div>
+                )
+              })()}
+              {booking.status === 'COMPLETED' && (booking.booking_assignments?.length ?? 0) > 0 && (() => {
+                const hoursLeft = booking.completed_at
+                  ? 24 - Math.floor((Date.now() - new Date(booking.completed_at).getTime()) / 3600000)
+                  : null
+                const windowExpired = hoursLeft !== null && hoursLeft <= 0
+                return (
+                  <div className="mt-2 space-y-1.5" onClick={e => e.stopPropagation()}>
+                    {booking.booking_assignments!.map(a => {
+                      const name = a.cleaner_profiles?.display_name ?? tBooking('unknownCleaner')
+                      const flag = (a.no_show_flags ?? [])[0] ?? null
+                      if (flag) {
+                        return (
+                          <p key={a.id} className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">
+                            {tBooking('noShowFlagged', { name })}
+                          </p>
+                        )
+                      }
+                      if (windowExpired) return null
+                      if (flaggingAssignmentId === a.id) {
+                        return (
+                          <div key={a.id} className="space-y-2">
+                            <textarea
+                              value={noShowClaimText}
+                              onChange={e => setNoShowClaimText(e.target.value)}
+                              placeholder={tBooking('noShowClaimPlaceholder', { name })}
+                              rows={2}
+                              maxLength={2000}
+                              className="input text-[13px]"
+                            />
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => handleFileNoShow(booking.id, a.id, noShowClaimText)}
+                                disabled={bookingActionPendingId === booking.id || !noShowClaimText.trim()}
+                                className="text-[12px] font-medium text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
+                              >
+                                {tBooking('submitNoShow')}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => { setFlaggingAssignmentId(null); setNoShowClaimText('') }}
+                                className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors"
+                              >
+                                {tBooking('neverMind')}
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      }
+                      return (
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={e => { e.stopPropagation(); setFlaggingAssignmentId(a.id); setNoShowClaimText('') }}
+                          className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] hover:text-red-600 transition-colors disabled:opacity-50"
+                        >
+                          {tBooking('reportNoShow', { name })}
+                        </button>
+                      )
+                    })}
                   </div>
                 )
               })()}

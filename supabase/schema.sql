@@ -381,7 +381,7 @@ create table booking_assignments (
   payout_release_at   timestamptz,
   stripe_transfer_id  text,
   paid_out_at         timestamptz,
-  no_show             boolean not null default false,  -- per-assignment completion tracking (2026-08-19 decision) — a no-show cleaner's payout is withheld/zeroed without a new whole-booking status; the booking itself still just becomes COMPLETED once the job happens
+  no_show             boolean not null default false,  -- per-assignment completion tracking (2026-08-19 decision) — a no-show cleaner's payout is withheld/zeroed without a new whole-booking status; the booking itself still just becomes COMPLETED once the job happens. Set true only by an admin's CONFIRMED ruling on the no_show_flags workflow below (added 2026-08-20) — never toggled directly
   created_at          timestamptz not null default now(),
   unique (booking_id, cleaner_profile_id)
 );
@@ -541,9 +541,8 @@ create table disputes (
 -- time). Only populated for multi-cleaner bookings' disputes — an ordinary
 -- single-cleaner dispute keeps using disputes.resolution/refund_percentage
 -- directly, exactly as before, with zero rows here. Added 2026-08-19 as
--- schema-only groundwork alongside booking_assignments — see FLOWS.md §11
--- "Multi-cleaner bookings — schema groundwork only" — no application code
--- reads or writes this table yet.
+-- schema-only groundwork alongside booking_assignments; read/written from
+-- stage 4 onward by PATCH /api/admin/disputes/[id] — see FLOWS.md §11.
 
 create table dispute_assignment_outcomes (
   id                  uuid primary key default gen_random_uuid(),
@@ -561,6 +560,82 @@ alter table dispute_assignment_outcomes enable row level security;
 -- Applying to an existing database:
 -- `create table dispute_assignment_outcomes (id uuid primary key default gen_random_uuid(), dispute_id uuid not null references disputes(id) on delete cascade, cleaner_profile_id uuid not null references cleaner_profiles(id) on delete cascade, resolution dispute_resolution not null, refund_percentage int not null default 0 check (refund_percentage >= 0 and refund_percentage <= 100), created_at timestamptz not null default now(), unique (dispute_id, cleaner_profile_id));
 --  alter table dispute_assignment_outcomes enable row level security;`
+
+-- ─── NO-SHOW FLAGS (multi-cleaner) ────────────────────────────
+-- Replaces the original 2026-08-19 admin-only `booking_assignments.no_show`
+-- toggle (see that column's own comment) with the full workflow decided
+-- 2026-08-19 evening: customer-initiated → other assignee(s) corroborate/
+-- dispute → the flagged cleaner can contest → admin reviews everything and
+-- rules. `booking_assignments.no_show` stays the single boolean the payout
+-- job (src/lib/payouts.ts) reads to zero a cleaner's payout — it's now only
+-- ever set true by an admin's CONFIRMED ruling here, never toggled directly.
+-- One flag per assignment (unique constraint) — a customer can't file twice
+-- against the same cleaner on the same job, mirrors disputes' one-per-booking
+-- shape at the assignment grain instead of the booking grain.
+
+create type no_show_status as enum ('PENDING', 'CONFIRMED', 'REJECTED');
+
+create table no_show_flags (
+  id                            uuid primary key default gen_random_uuid(),
+  booking_id                    uuid not null references bookings(id) on delete cascade,
+  assignment_id                 uuid not null unique references booking_assignments(id) on delete cascade,
+  flagged_by                    uuid not null references users(id) on delete cascade,  -- the customer
+  claim                         text not null,
+  status                        no_show_status not null default 'PENDING',
+  cleaner_response              text,       -- the flagged cleaner's own contest, if they respond
+  contested_at                  timestamptz,
+  resolve_by                    timestamptz not null,  -- created_at + 24h, same SLA shape as disputes.resolve_by
+  -- Set only on a CONFIRMED resolution — decides where the flagged cleaner's
+  -- forfeited share goes. Their own payout is already zero either way (see
+  -- booking_assignments.no_show); this is purely about the customer's money.
+  resolution                    text check (resolution in ('REFUND_CUSTOMER', 'REDIRECT_TO_CLEANER', 'SPLIT')),
+  redirect_cleaner_profile_id   uuid references cleaner_profiles(id),  -- set for REDIRECT_TO_CLEANER, and optionally for the non-customer remainder of a SPLIT
+  split_percentage              int check (split_percentage >= 0 and split_percentage <= 100),  -- SPLIT only: this % of the forfeited share refunds the customer, the rest goes to redirect_cleaner_profile_id if set, otherwise stays with the platform
+  refund_amount_eur             numeric(6,2),   -- actually-moved amounts, stamped at resolution time for the admin audit trail
+  redirect_amount_eur           numeric(6,2),
+  admin_note                    text,
+  resolved_at                   timestamptz,
+  created_at                    timestamptz not null default now()
+);
+
+create index idx_no_show_flags_booking on no_show_flags (booking_id);
+create index idx_no_show_flags_pending on no_show_flags (assignment_id) where status = 'PENDING';  -- backs the payout job's per-assignment readiness check
+
+alter table no_show_flags enable row level security;
+-- No policies — same deny-by-default shape as disputes/booking_assignments:
+-- only ever touched via the service-role admin client from API routes, which
+-- do their own session-based authorization.
+-- Applying to an existing database:
+-- `create type no_show_status as enum ('PENDING', 'CONFIRMED', 'REJECTED');
+--  create table no_show_flags (id uuid primary key default gen_random_uuid(), booking_id uuid not null references bookings(id) on delete cascade, assignment_id uuid not null unique references booking_assignments(id) on delete cascade, flagged_by uuid not null references users(id) on delete cascade, claim text not null, status no_show_status not null default 'PENDING', cleaner_response text, contested_at timestamptz, resolve_by timestamptz not null, resolution text check (resolution in ('REFUND_CUSTOMER', 'REDIRECT_TO_CLEANER', 'SPLIT')), redirect_cleaner_profile_id uuid references cleaner_profiles(id), split_percentage int check (split_percentage >= 0 and split_percentage <= 100), refund_amount_eur numeric(6,2), redirect_amount_eur numeric(6,2), admin_note text, resolved_at timestamptz, created_at timestamptz not null default now());
+--  create index idx_no_show_flags_booking on no_show_flags (booking_id);
+--  create index idx_no_show_flags_pending on no_show_flags (assignment_id) where status = 'PENDING';
+--  alter table no_show_flags enable row level security;`
+
+-- One row per OTHER assigned cleaner who has weighed in on a flag — the
+-- flagged cleaner's own input lives on no_show_flags.cleaner_response above,
+-- not here. Absence of a row for a given assignee just means they haven't
+-- responded yet; the UI diffs against the booking's other assignments to
+-- show who's still pending.
+
+create type corroboration_response as enum ('CORROBORATES', 'DISPUTES');
+
+create table no_show_corroborations (
+  id                  uuid primary key default gen_random_uuid(),
+  no_show_flag_id     uuid not null references no_show_flags(id) on delete cascade,
+  cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
+  response            corroboration_response not null,
+  note                text,
+  created_at          timestamptz not null default now(),
+  unique (no_show_flag_id, cleaner_profile_id)
+);
+
+alter table no_show_corroborations enable row level security;
+-- No policies — same deny-by-default shape as above.
+-- Applying to an existing database:
+-- `create type corroboration_response as enum ('CORROBORATES', 'DISPUTES');
+--  create table no_show_corroborations (id uuid primary key default gen_random_uuid(), no_show_flag_id uuid not null references no_show_flags(id) on delete cascade, cleaner_profile_id uuid not null references cleaner_profiles(id) on delete cascade, response corroboration_response not null, note text, created_at timestamptz not null default now(), unique (no_show_flag_id, cleaner_profile_id));
+--  alter table no_show_corroborations enable row level security;`
 
 -- ─── CONTACT SUBMISSIONS ─────────────────────────────────────
 -- General-inquiry contact form — separate from disputes (a specific claim
