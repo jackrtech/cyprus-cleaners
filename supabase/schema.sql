@@ -332,6 +332,7 @@ create table payments (
   provider_payment_method_id  text,  -- saved off-session, at booking request time
   paid_at                     timestamptz,
   refunded_at                 timestamptz,
+  refunded_amount_eur         numeric(10,2) not null default 0,  -- running total of everything ever refunded against this payment — a payment can accumulate more than one PARTIAL refund over its lifetime (e.g. an UNRESOLVABLE dispute split, then separately a no-show flag). status flipping to REFUNDED only means "at least one refund happened," never "the full amount was returned" — added 2026-08-20 after GET /api/admin/analytics revenue was found silently excluding a partially-refunded payment's ENTIRE platform_fee_eur instead of just the refunded share
   -- Cleaner payout (see the block comment above this table)
   platform_fee_eur            numeric(6,2),   -- the flat fee portion of amount_eur, stored per-payment (not read from the constant later) so a future fee change never rewrites history
   tier_rate_eur                numeric(6,2),   -- the €/hr tier rate actually used (STANDARD's cleaner_profiles.hourly_rate_eur, or the cleaner's DEEP/MOVE_IN_OUT rate from cleaner_service_offerings) at REQUEST time — snapshotted per-payment for the same reason as platform_fee_eur: a cleaner's later rate change must never rewrite a past booking's breakdown.
@@ -351,6 +352,13 @@ create table payments (
 -- `update payments set platform_fee_eur = 0, cleaner_payout_eur = amount_eur where platform_fee_eur is null;`
 -- Applying tier_rate_eur/addon_total_eur to an existing database:
 -- `alter table payments add column tier_rate_eur numeric(6,2), add column addon_total_eur numeric(6,2) not null default 0;`
+-- Applying refunded_amount_eur to an existing database:
+-- `alter table payments add column refunded_amount_eur numeric(10,2) not null default 0;`
+-- Then backfill existing REFUNDED rows — can't know the exact historical
+-- split, so treat every past refund as if it were the full amount (matches
+-- the old all-or-nothing assumption exactly; only genuinely improves going
+-- forward for new partial refunds):
+-- `update payments set refunded_amount_eur = amount_eur where status = 'REFUNDED' and refunded_amount_eur = 0;`
 
 create index idx_payments_status on payments (status);
 create index idx_payments_payout_status on payments (payout_status) where payout_status in ('PENDING', 'BLOCKED');  -- backs the payout-release job's due/blocked lookup

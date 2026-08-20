@@ -93,21 +93,30 @@ export async function PATCH(
         const stripe = getStripe()
         const { data: payment } = await supabase
           .from('payments')
-          .select('id, status, amount_eur, provider_payment_intent_id')
+          .select('id, status, amount_eur, refunded_amount_eur, provider_payment_intent_id')
           .eq('booking_id', dispute.booking_id)
           .single()
 
         if (payment?.status === 'PAID' && payment.provider_payment_intent_id) {
+          const refundAmountEur = Math.round(payment.amount_eur * (refundPercentage / 100) * 100) / 100
           try {
             await stripe.refunds.create({
               payment_intent: payment.provider_payment_intent_id,
-              amount: Math.round(payment.amount_eur * (refundPercentage / 100) * 100),
+              amount: Math.round(refundAmountEur * 100),
             }, {
               idempotencyKey: `dispute-split-refund-${dispute.booking_id}`,
             })
             await supabase.from('payments').update({
               status: 'REFUNDED',
               refunded_at: new Date().toISOString(),
+              // Running total, not a flat overwrite — a payment can accumulate
+              // more than one partial refund over its lifetime (e.g. this
+              // dispute plus a separate no-show flag on the same booking).
+              // Revenue reporting reads this instead of assuming REFUNDED
+              // means the whole platform fee was given back (see
+              // GET /api/admin/analytics) — a status flip alone doesn't say
+              // how much actually moved.
+              refunded_amount_eur: (payment.refunded_amount_eur ?? 0) + refundAmountEur,
             }).eq('id', payment.id)
           } catch (refundErr) {
             console.error('Dispute UNRESOLVABLE refund failed:', refundErr)
@@ -123,7 +132,7 @@ export async function PATCH(
                 bookingId:     dispute.booking_id,
                 customerName:  customerUser.full_name,
                 customerEmail: customerUser.email,
-                amountEur:     Math.round(payment.amount_eur * (refundPercentage / 100) * 100) / 100,
+                amountEur:     refundAmountEur,
                 stripeError:   refundErr instanceof Stripe.errors.StripeError ? refundErr.message : 'Unknown error',
                 adminUrl:      `${BASE_URL}/admin/disputes`,
               })
@@ -287,7 +296,7 @@ export async function PATCH(
   const totalRefundEur = Math.round(resolved.reduce((sum, r) => sum + r.shareEur * (r.refund_percentage / 100), 0) * 100) / 100
   const { data: payment } = await supabase
     .from('payments')
-    .select('id, status, amount_eur, provider_payment_intent_id')
+    .select('id, status, amount_eur, refunded_amount_eur, provider_payment_intent_id')
     .eq('booking_id', dispute.booking_id)
     .single()
 
@@ -303,6 +312,9 @@ export async function PATCH(
       await supabase.from('payments').update({
         status: 'REFUNDED',
         refunded_at: new Date().toISOString(),
+        // Running total — see the UNRESOLVABLE branch above for why this
+        // isn't a flat overwrite.
+        refunded_amount_eur: (payment.refunded_amount_eur ?? 0) + totalRefundEur,
       }).eq('id', payment.id)
     } catch (refundErr) {
       console.error('Dispute multi-cleaner refund failed:', refundErr)

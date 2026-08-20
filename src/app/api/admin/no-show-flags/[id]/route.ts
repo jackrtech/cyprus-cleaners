@@ -185,7 +185,7 @@ export async function PATCH(
   if (refundAmountEur > 0) {
     const { data: payment } = await supabase
       .from('payments')
-      .select('id, status, provider_payment_intent_id')
+      .select('id, status, refunded_amount_eur, provider_payment_intent_id')
       .eq('booking_id', flag.booking_id)
       .single()
 
@@ -197,7 +197,15 @@ export async function PATCH(
         }, {
           idempotencyKey: `noshow-refund-${flag.id}`,
         })
-        await supabase.from('payments').update({ status: 'REFUNDED', refunded_at: new Date().toISOString() }).eq('id', payment.id)
+        // Running total, not a flat overwrite — this is very likely a
+        // partial refund (just one cleaner's share of a multi-cleaner
+        // booking), so revenue reporting needs the actual amount, not just
+        // the REFUNDED status (see GET /api/admin/analytics).
+        await supabase.from('payments').update({
+          status: 'REFUNDED',
+          refunded_at: new Date().toISOString(),
+          refunded_amount_eur: (payment.refunded_amount_eur ?? 0) + refundAmountEur,
+        }).eq('id', payment.id)
       } catch (refundErr) {
         console.error('No-show refund failed:', refundErr)
         await supabase.from('payments').update({ status: 'REFUND_FAILED' }).eq('id', payment.id)

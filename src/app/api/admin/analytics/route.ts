@@ -12,10 +12,12 @@ interface BookingRow {
   created_at:  string
 }
 interface PaymentRow {
-  booking_id:       string
-  platform_fee_eur: number | null
-  status:           string
-  created_at:       string
+  booking_id:          string
+  amount_eur:          number
+  platform_fee_eur:    number | null
+  refunded_amount_eur: number | null
+  status:              string
+  created_at:          string
 }
 interface DisputeRow {
   status:             string
@@ -55,7 +57,7 @@ export async function GET() {
 
   const [bookingsRes, paymentsRes, disputesRes, cleanersRes, customerCountRes] = await Promise.all([
     supabase.from('bookings').select('id, customer_id, status, created_at'),
-    supabase.from('payments').select('booking_id, platform_fee_eur, status, created_at'),
+    supabase.from('payments').select('booking_id, amount_eur, platform_fee_eur, refunded_amount_eur, status, created_at'),
     supabase.from('disputes').select('status, auto_resolved, customer_id, cleaner_profile_id'),
     supabase.from('cleaner_profiles').select('id, status, avg_rating, review_count, total_jobs_count'),
     supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'CUSTOMER'),
@@ -74,12 +76,24 @@ export async function GET() {
   const completedBookings = bookings.filter(b => b.status === 'COMPLETED')
   const cancelledBookings = bookings.filter(b => b.status === 'CANCELLED')
 
-  // Revenue = the platform's own cut, recognized when the charge succeeds
-  // (payments.status === 'PAID') — not gross booking value, and excluding
-  // anything since refunded (a refund flips status away from PAID).
-  const revenueEur = payments
-    .filter(p => p.status === 'PAID')
-    .reduce((sum, p) => sum + (p.platform_fee_eur ?? 0), 0)
+  // Revenue = the platform's own cut, recognized when the charge succeeds,
+  // net of whatever fraction of the charge has actually been refunded —
+  // NOT gated on status === 'PAID' alone. A payment that's had a PARTIAL
+  // refund (an UNRESOLVABLE dispute split, a no-show redirect/split, etc.)
+  // still has status 'REFUNDED' the moment any refund lands, so gating on
+  // status alone excluded the entire platform_fee_eur for a booking that
+  // only gave a fraction of it back — fixed 2026-08-20, see
+  // payments.refunded_amount_eur. A payment that's never been charged
+  // (PENDING/FAILED) contributes nothing; REFUND_FAILED still counts in
+  // full since the refund attempt never actually moved the money.
+  function netPlatformFeeEur(p: PaymentRow): number {
+    if (!['PAID', 'REFUNDED', 'REFUND_FAILED'].includes(p.status)) return 0
+    const fee = p.platform_fee_eur ?? 0
+    if (fee <= 0 || p.amount_eur <= 0) return fee
+    const refundedFraction = Math.min(1, (p.refunded_amount_eur ?? 0) / p.amount_eur)
+    return Math.max(0, fee * (1 - refundedFraction))
+  }
+  const revenueEur = payments.reduce((sum, p) => sum + netPlatformFeeEur(p), 0)
 
   const activeCleaners = cleaners.filter(c => c.status === 'ACTIVE').length
 
@@ -121,11 +135,10 @@ export async function GET() {
     if (bucket) bucket.bookings += 1
   }
   for (const p of payments) {
-    if (p.status !== 'PAID') continue
     const key = weekStartKey(p.created_at)
     if (key < earliestWeek) continue
     const bucket = weekly.get(key)
-    if (bucket) bucket.revenueEur += p.platform_fee_eur ?? 0
+    if (bucket) bucket.revenueEur += netPlatformFeeEur(p)
   }
 
   // ─── Customer segmentation ──────────────────────────────────────────────
