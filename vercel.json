@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/release-payouts",
       "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/cron/recompute-response-times",
+      "schedule": "45 3 * * *"
     }
   ]
 }

@@ -102,6 +102,17 @@ create table cleaner_profiles (
   review_count          int not null default 0,
   unique_customer_count int not null default 0,
   total_jobs_count      int not null default 0,
+  -- "Typically responds in..." (added 2026-08-20) -- a live descriptive
+  -- stat, NOT part of the badge system (see src/lib/responseTime.ts). Not
+  -- trigger-maintained like the stats above: recomputed once daily by
+  -- GET /api/cron/recompute-response-times, not on every message send, to
+  -- avoid adding latency to chat (the task's own steer: "likely a periodic
+  -- batch job... avoid computing this on every profile page load"). null
+  -- until response_sample_size reaches the minimum threshold (see
+  -- MIN_RESPONSE_SAMPLE) -- never show a stat built off 1-2 data points.
+  -- Applying to an existing database: `alter table cleaner_profiles add column typical_response_minutes numeric, add column response_sample_size int not null default 0;`
+  typical_response_minutes numeric,
+  response_sample_size     int not null default 0,
   -- Weekly recurring availability, whole hours (24h clock). A day key is
   -- present only when the cleaner is available that day; absent = not
   -- available. Mandatory (nudged via the profile-completion banner, folded

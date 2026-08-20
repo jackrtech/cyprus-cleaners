@@ -14,6 +14,7 @@ import { deriveAvailabilityTags } from '@/lib/availability'
 import type { CleanerDetailRow, CleanerReviewRow } from '@/lib/cleaners'
 import { displayBadges, type EarnedBadge } from '@/lib/badgeConstants'
 import BadgeRow from '@/components/cleaners/BadgeRow'
+import { responseBucketFor, MIN_RESPONSE_SAMPLE } from '@/lib/responseTimeConstants'
 
 interface DbCleanerRow extends CleanerDetailRow {
   booking_fee_eur: number
@@ -274,6 +275,16 @@ export default function CleanerProfileView({
     .map(a => tFilters(a as 'weekdays' | 'weekends' | 'evenings'))
     .join(', ')
 
+  // "Typically responds in..." -- a live descriptive stat, not part of the
+  // badge system. null below MIN_RESPONSE_SAMPLE (not enough data yet) or
+  // when the median is too slow to be a flattering label (responseBucketFor
+  // returns null either way) -- the row just doesn't render rather than
+  // showing a discouraging number.
+  const responseBucket = initialCleaner.response_sample_size >= MIN_RESPONSE_SAMPLE
+    ? responseBucketFor(initialCleaner.typical_response_minutes)
+    : null
+  const responseLabel = responseBucket ? t(`responds_${responseBucket}`) : null
+
   return (
     <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817]">
       {/* Page header */}
@@ -475,6 +486,7 @@ export default function CleanerProfileView({
                 { label: t('type'), value: cleanerTypeLabel },
                 { label: t('availability'), value: availabilityLabel },
                 ...(cleaner.has_transport ? [{ label: t('transport'), value: t('hasOwnTransport') }] : []),
+                ...(responseLabel ? [{ label: t('respondsLabel'), value: responseLabel }] : []),
               ].map(row => (
                 <div key={row.label} className="flex justify-between text-[13px]">
                   <span className="text-[#5B7472] dark:text-[#9BB0AE]">{row.label}</span>

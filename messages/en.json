@@ -348,7 +348,11 @@
     "badgeCleansMilestone": "{count} cleans",
     "badgeTenure1Month": "1 month member",
     "badgeTenure6Months": "6 months member",
-    "badgeTenure1Year": "1 year member"
+    "badgeTenure1Year": "1 year member",
+    "respondsLabel": "Response time",
+    "responds_within_1_hour": "Typically within 1 hour",
+    "responds_within_3_hours": "Typically within 3 hours",
+    "responds_within_a_day": "Typically within a day"
   },
   "admin": {
     "navAnalytics": "Analytics",
@@ -543,7 +547,8 @@
     "resolvedAutoTimeout": "Auto-resolved — SLA timeout",
     "resolvedAutoTimeoutNamed": "Refunded to {name} automatically — no admin response within the 24-hour SLA.",
     "disputeHistory": "{total, plural, one {# dispute} other {# disputes}} filed — {autoResolved} auto-resolved, {adminResolved} admin-resolved",
-    "failedPayoutCount": "{count, plural, one {# payout} other {# payouts}} failed — needs manual retry in the Stripe dashboard"
+    "failedPayoutCount": "{count, plural, one {# payout} other {# payouts}} failed — needs manual retry in the Stripe dashboard",
+    "referredBy": "Referred by {name}"
   },
   "cleaners": {
     "topRated": "Top rated",

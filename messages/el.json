@@ -358,7 +358,11 @@
     "badgeCleansMilestone": "{count} καθαρισμοί",
     "badgeTenure1Month": "Μέλος για 1 μήνα",
     "badgeTenure6Months": "Μέλος για 6 μήνες",
-    "badgeTenure1Year": "Μέλος για 1 χρόνο"
+    "badgeTenure1Year": "Μέλος για 1 χρόνο",
+    "respondsLabel": "Χρόνος απόκρισης",
+    "responds_within_1_hour": "Συνήθως εντός 1 ώρας",
+    "responds_within_3_hours": "Συνήθως εντός 3 ωρών",
+    "responds_within_a_day": "Συνήθως εντός μίας ημέρας"
   },
   "admin": {
     "navAnalytics": "Στατιστικά",
@@ -553,7 +557,8 @@
     "resolvedAutoTimeout": "Αυτόματη επίλυση — εκπρόθεσμη προθεσμία",
     "resolvedAutoTimeoutNamed": "Έγινε αυτόματη επιστροφή χρημάτων στον/στην {name} — δεν υπήρξε απάντηση διαχειριστή εντός της προθεσμίας 24 ωρών.",
     "disputeHistory": "{total, plural, one {# διαφορά} other {# διαφορές}} — {autoResolved} αυτόματες, {adminResolved} από διαχειριστή",
-    "failedPayoutCount": "{count, plural, one {# αποτυχημένη πληρωμή} other {# αποτυχημένες πληρωμές}} — απαιτείται χειροκίνητη επανάληψη στο Stripe"
+    "failedPayoutCount": "{count, plural, one {# αποτυχημένη πληρωμή} other {# αποτυχημένες πληρωμές}} — απαιτείται χειροκίνητη επανάληψη στο Stripe",
+    "referredBy": "Σύσταση από {name}"
   },
   "cleaners": {
     "topRated": "Κορυφαίοι",

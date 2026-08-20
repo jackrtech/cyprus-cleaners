@@ -30,6 +30,7 @@ interface AdminUser {
   cleaner_profile:     CleanerProfileSummary | null
   dispute_history:     DisputeHistory | null
   failed_payout_count: number
+  referred_by_display_name: string | null
 }
 
 const CLEANER_STATUS_BADGE: Record<CleanerStatus, string> = {
@@ -179,6 +180,12 @@ export default function AdminUsersPage() {
                 {u.failed_payout_count > 0 && (
                   <p className="text-body text-red-600 mt-2">
                     {t('failedPayoutCount', { count: u.failed_payout_count })}
+                  </p>
+                )}
+
+                {u.referred_by_display_name && (
+                  <p className="text-body text-muted dark:text-[#9BB0AE] mt-2">
+                    {t('referredBy', { name: u.referred_by_display_name })}
                   </p>
                 )}
 

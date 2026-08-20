@@ -20,7 +20,7 @@ export async function GET() {
   // also make sure no payout is sitting stale past its release point.
   await releaseDuePayouts(supabase)
 
-  interface CleanerProfileRow { id: string; status: string; verified: boolean }
+  interface CleanerProfileRow { id: string; status: string; verified: boolean; referred_by_cleaner_profile_id: string | null }
   interface UserRow {
     id: string; email: string; full_name: string; role: string
     email_verified: boolean; created_at: string
@@ -32,7 +32,7 @@ export async function GET() {
       .from('users')
       .select(`
         id, email, full_name, role, email_verified, created_at,
-        cleaner_profiles ( id, status, verified )
+        cleaner_profiles ( id, status, verified, referred_by_cleaner_profile_id )
       `)
       .order('created_at', { ascending: false }),
     // Per-customer dispute/refund pattern — surfaced inline on each
@@ -76,6 +76,20 @@ export async function GET() {
 
   // cleaner_profiles is a one-to-one embed (one profile per user) but
   // PostgREST returns it as an array — normalise to a single object or null.
+  const cleanerProfiles = ((data ?? []) as unknown as UserRow[])
+    .map(u => Array.isArray(u.cleaner_profiles) ? u.cleaner_profiles[0] ?? null : u.cleaner_profiles)
+    .filter((cp): cp is CleanerProfileRow => !!cp)
+
+  // Referral-chain visibility (added 2026-08-20) — one extra lookup to name
+  // whichever cleaner referred each row, rather than just showing an opaque
+  // id. Batched into a single query rather than one per referred cleaner.
+  const referrerIds = [...new Set(cleanerProfiles.map(cp => cp.referred_by_cleaner_profile_id).filter((id): id is string => !!id))]
+  const referrerNameById = new Map<string, string>()
+  if (referrerIds.length > 0) {
+    const { data: referrers } = await supabase.from('cleaner_profiles').select('id, display_name').in('id', referrerIds)
+    for (const r of (referrers ?? []) as { id: string; display_name: string }[]) referrerNameById.set(r.id, r.display_name)
+  }
+
   const rows = ((data ?? []) as unknown as UserRow[]).map(u => {
     const cleanerProfile = Array.isArray(u.cleaner_profiles) ? u.cleaner_profiles[0] ?? null : u.cleaner_profiles
     return {
@@ -84,6 +98,9 @@ export async function GET() {
       cleaner_profile: cleanerProfile,
       dispute_history: disputeStatsByCustomer.get(u.id) ?? null,
       failed_payout_count: cleanerProfile ? (failedPayoutCountByCleanerProfile.get(cleanerProfile.id) ?? 0) : 0,
+      referred_by_display_name: cleanerProfile?.referred_by_cleaner_profile_id
+        ? referrerNameById.get(cleanerProfile.referred_by_cleaner_profile_id) ?? null
+        : null,
     }
   })
 

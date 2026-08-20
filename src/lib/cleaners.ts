@@ -23,6 +23,7 @@ export const CLEANER_DETAIL_SELECT = `
   gender, verified, avg_rating, review_count,
   unique_customer_count, total_jobs_count, availability,
   is_mock, is_company, user_id, has_transport, created_at,
+  typical_response_minutes, response_sample_size,
   cleaner_service_offerings ( code, price_eur )
 `
 
@@ -56,6 +57,8 @@ export interface CleanerDetailRow extends Omit<CleanerListRow, 'is_favorited'> {
   has_transport:  boolean
   is_own_profile: boolean
   is_favorited:   boolean
+  typical_response_minutes: number | null
+  response_sample_size:     number
   cleaner_service_offerings: { code: string; price_eur: number }[] | null
 }
 
