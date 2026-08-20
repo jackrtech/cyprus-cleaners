@@ -68,7 +68,9 @@ interface Booking {
   // Null on both cleaner_profiles and cleaner_profile_id together is the
   // multi-cleaner discriminator (see FLOWS.md §11) -- booking_assignments is
   // where the assigned cleaners actually live for that case.
-  booking_assignments: { id: string; cleaner_profile_id: string; cleaner_profiles: { id: string; slug: string; display_name: string; photo_url: string | null } | null; no_show_flags: { id: string; status: string }[] | null }[] | null
+  // no_show_flags comes back as a single object, not an array — assignment_id
+  // is unique on that table, so Supabase infers a to-one embed.
+  booking_assignments: { id: string; cleaner_profile_id: string; cleaner_profiles: { id: string; slug: string; display_name: string; photo_url: string | null } | null; no_show_flags: { id: string; status: string } | null }[] | null
   reviews:            { id: string }[] | null
   disputes:           { id: string; status: string }[] | null
   photo_urls:         string[]
@@ -240,7 +242,7 @@ export default function DashboardPage() {
       setBookings(prev => prev.map(b => b.id === bookingId ? {
         ...b,
         booking_assignments: (b.booking_assignments ?? []).map(a =>
-          a.id === assignmentId ? { ...a, no_show_flags: [...(a.no_show_flags ?? []), flag] } : a
+          a.id === assignmentId ? { ...a, no_show_flags: flag } : a
         ),
       } : b))
       setFlaggingAssignmentId(null)
@@ -419,7 +421,7 @@ export default function DashboardPage() {
                   <div className="mt-2 space-y-1.5" onClick={e => e.stopPropagation()}>
                     {booking.booking_assignments!.map(a => {
                       const name = a.cleaner_profiles?.display_name ?? tBooking('unknownCleaner')
-                      const flag = (a.no_show_flags ?? [])[0] ?? null
+                      const flag = a.no_show_flags ?? null
                       if (flag) {
                         return (
                           <p key={a.id} className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">

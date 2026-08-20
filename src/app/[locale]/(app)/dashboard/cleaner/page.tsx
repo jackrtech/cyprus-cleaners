@@ -80,6 +80,8 @@ interface Booking {
     id:                 string
     cleaner_profile_id: string
     cleaner_profiles:   { id: string; display_name: string } | null
+    // Single object, not an array — assignment_id is unique on
+    // no_show_flags, so Supabase infers a to-one embed.
     no_show_flags: {
       id:                 string
       status:             string
@@ -87,7 +89,7 @@ interface Booking {
       cleaner_response:   string | null
       resolve_by:         string
       no_show_corroborations: { cleaner_profile_id: string; response: string }[] | null
-    }[] | null
+    } | null
   }[] | null
 }
 
@@ -350,7 +352,7 @@ export default function CleanerDashboardPage() {
         ...b,
         booking_assignments: (b.booking_assignments ?? []).map(a => ({
           ...a,
-          no_show_flags: (a.no_show_flags ?? []).map(f => f.id === flagId ? { ...f, ...updated } : f),
+          no_show_flags: a.no_show_flags?.id === flagId ? { ...a.no_show_flags, ...updated } : a.no_show_flags,
         })),
       }))
       setContestingFlagId(null)
@@ -377,13 +379,13 @@ export default function CleanerDashboardPage() {
         ...b,
         booking_assignments: (b.booking_assignments ?? []).map(a => ({
           ...a,
-          no_show_flags: (a.no_show_flags ?? []).map(f => f.id !== flagId ? f : {
-            ...f,
+          no_show_flags: a.no_show_flags?.id !== flagId ? a.no_show_flags : {
+            ...a.no_show_flags,
             no_show_corroborations: [
-              ...(f.no_show_corroborations ?? []).filter(c => c.cleaner_profile_id !== myCleanerProfileId),
+              ...(a.no_show_flags.no_show_corroborations ?? []).filter(c => c.cleaner_profile_id !== myCleanerProfileId),
               { cleaner_profile_id: myCleanerProfileId, response },
             ],
-          }),
+          },
         })),
       }))
       setCorroboratingFlagId(null)
@@ -584,11 +586,11 @@ export default function CleanerDashboardPage() {
         )}
         {booking.status === 'COMPLETED' && (() => {
           const myAssignment = (booking.booking_assignments ?? []).find(a => a.cleaner_profile_id === profile?.id)
-          const myFlag = (myAssignment?.no_show_flags ?? [])[0] ?? null
+          const myFlag = myAssignment?.no_show_flags ?? null
 
           const otherFlags = (booking.booking_assignments ?? [])
             .filter(a => a.cleaner_profile_id !== profile?.id)
-            .flatMap(a => (a.no_show_flags ?? []).map(f => ({ flag: f, cleanerName: a.cleaner_profiles?.display_name ?? tBooking('unknownCleaner') })))
+            .flatMap(a => a.no_show_flags ? [{ flag: a.no_show_flags, cleanerName: a.cleaner_profiles?.display_name ?? tBooking('unknownCleaner') }] : [])
             .filter(({ flag }) => flag.status === 'PENDING')
 
           return (
