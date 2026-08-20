@@ -10,6 +10,10 @@ export interface BookingDetailData {
   otherPartyName:     string
   otherPartyPhotoUrl?: string | null
   otherPartySlug?:    string | null
+  // >1 means a multi-cleaner booking -- swaps the payment breakdown labels
+  // to their plural form ("Cleaners' rates" / "Booking fees (N)") to match
+  // what the booking form itself shows when creating one of these.
+  cleanerCount?:      number
   status:             BookingStatus
   date:               string
   start_time:         string
@@ -170,13 +174,13 @@ export default function BookingDetailModal({ isOpen, onClose, booking, onBookAga
           <div className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2] bg-[#F7FAF9] dark:bg-[#0F1817] rounded-lg p-3 space-y-1">
             {booking.payment.platformFeeEur != null && (
               <div className="flex justify-between text-[#5B7472] dark:text-[#9BB0AE]">
-                <span>{tBooking('cleanerRateLine')}</span>
+                <span>{(booking.cleanerCount ?? 1) > 1 ? tBooking('cleanersRateLine') : tBooking('cleanerRateLine')}</span>
                 <span>€{(booking.payment.amountEur - booking.payment.platformFeeEur).toFixed(2)}</span>
               </div>
             )}
             {booking.payment.platformFeeEur != null && (
               <div className="flex justify-between text-[#5B7472] dark:text-[#9BB0AE]">
-                <span>{tBooking('bookingFeeLine')}</span>
+                <span>{(booking.cleanerCount ?? 1) > 1 ? tBooking('bookingFeesLine', { count: booking.cleanerCount }) : tBooking('bookingFeeLine')}</span>
                 <span>€{booking.payment.platformFeeEur.toFixed(2)}</span>
               </div>
             )}

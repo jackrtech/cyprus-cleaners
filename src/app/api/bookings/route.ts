@@ -330,6 +330,7 @@ export async function GET(req: NextRequest) {
       .select(`
         *,
         cleaner_profiles ( id, slug, display_name, photo_url, cities ),
+        booking_assignments ( cleaner_profile_id, cleaner_profiles ( id, slug, display_name, photo_url ) ),
         reviews ( id ),
         disputes ( id, status ),
         payments ( amount_eur, platform_fee_eur, status )

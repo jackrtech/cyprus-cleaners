@@ -65,6 +65,10 @@ interface Booking {
   finding_us_notes:   string | null
   created_at:         string
   cleaner_profiles:   CleanerProfile | null
+  // Null on both cleaner_profiles and cleaner_profile_id together is the
+  // multi-cleaner discriminator (see FLOWS.md §11) -- booking_assignments is
+  // where the assigned cleaners actually live for that case.
+  booking_assignments: { cleaner_profile_id: string; cleaner_profiles: { id: string; slug: string; display_name: string; photo_url: string | null } | null }[] | null
   reviews:            { id: string }[] | null
   disputes:           { id: string; status: string }[] | null
   photo_urls:         string[]
@@ -221,6 +225,13 @@ export default function DashboardPage() {
 
   function renderBookingCard(booking: Booking) {
     const cp = booking.cleaner_profiles
+    // Multi-cleaner bookings have no single cleaner_profiles row (see the
+    // Booking interface's note) -- join the assigned cleaners' names instead
+    // of falling back to a blank "-", which is what used to render here.
+    const assignedNames = (booking.booking_assignments ?? [])
+      .map(a => a.cleaner_profiles?.display_name)
+      .filter((n): n is string => !!n)
+    const cleanerDisplayName = cp?.display_name ?? (assignedNames.length > 0 ? assignedNames.join(' & ') : '—')
     const bookingSummary = tBooking(booking.duration_hours == null ? 'summaryNoDuration' : 'summary', {
       cleaningType: tBooking(booking.cleaning_type === 'DEEP' ? 'deepClean' : 'standardClean'),
       bedrooms: booking.bedrooms ?? '—',
@@ -243,7 +254,7 @@ export default function DashboardPage() {
           onKeyDown={e => {
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViewingBookingId(booking.id) }
           }}
-          aria-label={tBooking('with', { name: cp?.display_name ?? '—' })}
+          aria-label={tBooking('with', { name: cleanerDisplayName })}
           className="card p-5 cursor-pointer"
         >
           <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -259,7 +270,7 @@ export default function DashboardPage() {
                   </Link>
                 ) : (
                   <p className="text-[14px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2]">
-                    {tBooking('with', { name: cp?.display_name ?? '—' })}
+                    {tBooking('with', { name: cleanerDisplayName })}
                   </p>
                 )}
                 <span className={`inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full ${BOOKING_STATUS_BADGE[booking.status]}`}>
@@ -631,10 +642,14 @@ export default function DashboardPage() {
         booking={(() => {
           const b = bookings.find(b => b.id === viewingBookingId)
           if (!b) return null
+          const assignedNames = (b.booking_assignments ?? [])
+            .map(a => a.cleaner_profiles?.display_name)
+            .filter((n): n is string => !!n)
           return {
-            otherPartyName:     b.cleaner_profiles?.display_name ?? '—',
+            otherPartyName:     b.cleaner_profiles?.display_name ?? (assignedNames.length > 0 ? assignedNames.join(' & ') : '—'),
             otherPartyPhotoUrl: b.cleaner_profiles?.photo_url ?? null,
             otherPartySlug:     b.cleaner_profiles?.slug ?? null,
+            cleanerCount:       b.cleaner_profiles ? 1 : (b.booking_assignments?.length ?? 1),
             status:             b.status,
             date:               b.date,
             start_time:         b.start_time,
