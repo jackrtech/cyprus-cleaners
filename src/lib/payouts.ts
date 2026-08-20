@@ -173,6 +173,10 @@ interface AssignmentBookingRow {
   disputes:       AssignmentDisputeRow | AssignmentDisputeRow[] | null
 }
 
+interface NoShowFlagGateRow {
+  status: string
+}
+
 interface AssignmentCandidateRow {
   id:                 string
   booking_id:         string
@@ -182,6 +186,7 @@ interface AssignmentCandidateRow {
   no_show:            boolean
   booking:            AssignmentBookingRow | AssignmentBookingRow[] | null
   cleaner_profiles:   CleanerProfileRow | CleanerProfileRow[] | null
+  no_show_flags:      NoShowFlagGateRow | NoShowFlagGateRow[] | null
 }
 
 const ASSIGNMENT_CANDIDATE_SELECT = `
@@ -190,7 +195,8 @@ const ASSIGNMENT_CANDIDATE_SELECT = `
     id, status, completed_at, duration_hours,
     disputes ( id, status )
   ),
-  cleaner_profiles ( id, stripe_connect_account_id, stripe_connect_payouts_enabled )
+  cleaner_profiles ( id, stripe_connect_account_id, stripe_connect_payouts_enabled ),
+  no_show_flags ( status )
 `
 
 async function resolveAssignmentRefundPercentage(
@@ -218,6 +224,14 @@ async function processOneAssignmentCandidate(
 ): Promise<void> {
   const booking = one(row.booking)
   if (!booking || booking.status !== 'COMPLETED') return
+
+  // A PENDING no-show flag on this specific assignment holds its payout the
+  // same way an OPEN dispute does — the flag's own resolution (see PATCH
+  // /api/admin/no-show-flags/[id]) either sets no_show=true (read below,
+  // zeroes the payout) or resolves PENDING away, letting this candidate be
+  // reconsidered on the next sweep either way.
+  const noShowFlag = one(row.no_show_flags)
+  if (noShowFlag?.status === 'PENDING') return
 
   const dispute = one(booking.disputes)
   const { ready: disputeReady, refundPercentage } = await resolveAssignmentRefundPercentage(supabase, dispute, row.cleaner_profile_id)
@@ -305,10 +319,22 @@ async function processOneAssignmentCandidate(
 // (mirrors the existing cancellations retry-refund pattern). Deliberately
 // NOT a rescan of readiness/dispute logic — that already ran once to reach
 // FAILED in the first place; a retry just re-attempts the same transfer for
-// the same already-computed amount, with the same idempotency key as the
-// original attempt (so if that attempt actually succeeded at Stripe but our
-// own DB update failed, this returns the existing transfer instead of
-// creating a second one).
+// the same already-computed amount.
+//
+// Fixed 2026-08-20: originally reused the SAME idempotency key as the
+// original failed attempt ("so a stale success gets returned instead of
+// double-transferring"). That protection backfires the moment the retry is
+// for a genuinely different reason than a lost DB write — e.g. the original
+// attempt failed on `balance_insufficient`, the balance gets topped up, and
+// every subsequent retry with that same key just replays Stripe's *cached*
+// original error for 24h, never actually re-attempting the transfer.
+// Confirmed live: 4 real stuck payouts kept 400ing with balance_insufficient
+// long after the account balance was fixed, traced via the Stripe Dashboard
+// request log showing "Original request" pointing at the very first (pre-fix)
+// retry click. Each manual retry now gets its own fresh key instead — the
+// payout_status !== 'FAILED' guard above is what actually prevents a
+// double-transfer (once one retry succeeds and flips status to PAID, a
+// second click 409s before ever reaching Stripe).
 
 interface RetryPaymentRow {
   id:                 string
@@ -355,7 +381,7 @@ export async function retryFailedPayout(
       destination:     cleanerProfile.stripe_connect_account_id,
       transfer_group:  `booking_${row.booking_id}`,
     }, {
-      idempotencyKey: `payout-${row.booking_id}`,
+      idempotencyKey: `payout-retry-${row.booking_id}-${Date.now()}`,
     })
 
     await supabase.from('payments')
@@ -414,7 +440,7 @@ export async function retryFailedAssignmentPayout(
       destination:     cleanerProfile.stripe_connect_account_id,
       transfer_group:  `booking_${row.booking_id}`,
     }, {
-      idempotencyKey: `payout-${row.booking_id}-${row.cleaner_profile_id}`,
+      idempotencyKey: `payout-retry-${row.booking_id}-${row.cleaner_profile_id}-${Date.now()}`,
     })
 
     await supabase.from('booking_assignments')
