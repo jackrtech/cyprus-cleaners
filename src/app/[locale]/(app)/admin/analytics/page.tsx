@@ -25,6 +25,15 @@ interface Analytics {
   disputeRatePct:        number
   autoResolveRatePct:    number | null
   weekly:                WeekBucket[]
+  customerSegments: {
+    byFrequency:      { oneTime: number; occasional: number; regular: number }
+    byDisputeHistory: { none: number; one: number; twoPlus: number }
+  }
+  cleanerSegments: {
+    byRating:        { noReviewsYet: number; under3: number; threeToUnder4: number; fourToUnder4_5: number; fourPoint5Plus: number }
+    byCompletedJobs: { zero: number; oneTo24: number; twentyFiveTo49: number; fiftyTo99: number; hundredTo249: number; twoFiftyPlus: number }
+    byDisputeRate:   { none: number; low: number; high: number; noCompletedJobs: number }
+  }
 }
 
 // A plain CSS bar chart — no charting library. Data volume here is small
@@ -55,6 +64,30 @@ function BarChart({ data, valueOf, formatValue, barClassName }: {
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// A cohort breakdown — label, count, and a proportion-of-total bar. Used for
+// every segmentation cut below; deliberately not the same component as
+// BarChart above, which is built around a fixed 12-week x-axis rather than
+// an arbitrary list of named buckets.
+function SegmentBreakdown({ rows }: { rows: { label: string; count: number }[] }) {
+  const total = Math.max(1, rows.reduce((sum, r) => sum + r.count, 0))
+  return (
+    <div className="space-y-2">
+      {rows.map(row => (
+        <div key={row.label} className="flex items-center gap-3">
+          <span className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] w-[136px] shrink-0 truncate" title={row.label}>{row.label}</span>
+          <div className="flex-1 h-2 rounded-full bg-[#F0F5F4] dark:bg-[#142220] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-teal-400"
+              style={{ width: `${Math.round((row.count / total) * 100)}%` }}
+            />
+          </div>
+          <span className="text-[12px] font-medium text-teal-900 dark:text-[#ECF3F2] w-6 text-right shrink-0">{row.count}</span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -222,6 +255,75 @@ export default function AdminAnalyticsPage() {
                 </div>
               </div>
             )}
+
+            <h2 className="text-body font-medium text-teal-900 dark:text-[#ECF3F2] mt-8 mb-3">{t('customerSegmentsTitle')}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+              <div className="card p-4">
+                <p className="font-medium text-teal-900 dark:text-[#ECF3F2] text-body mb-3">
+                  {t('byFrequencyTitle')}
+                  <InfoTooltip label={t('byFrequencyInfo')}>{t('byFrequencyDef')}</InfoTooltip>
+                </p>
+                <SegmentBreakdown rows={[
+                  { label: t('freqOneTime'),    count: analytics.customerSegments.byFrequency.oneTime },
+                  { label: t('freqOccasional'), count: analytics.customerSegments.byFrequency.occasional },
+                  { label: t('freqRegular'),    count: analytics.customerSegments.byFrequency.regular },
+                ]} />
+              </div>
+              <div className="card p-4">
+                <p className="font-medium text-teal-900 dark:text-[#ECF3F2] text-body mb-3">
+                  {t('byDisputeHistoryTitle')}
+                  <InfoTooltip label={t('byDisputeHistoryInfo')}>{t('byDisputeHistoryDef')}</InfoTooltip>
+                </p>
+                <SegmentBreakdown rows={[
+                  { label: t('disputeHistNone'),    count: analytics.customerSegments.byDisputeHistory.none },
+                  { label: t('disputeHistOne'),     count: analytics.customerSegments.byDisputeHistory.one },
+                  { label: t('disputeHistTwoPlus'), count: analytics.customerSegments.byDisputeHistory.twoPlus },
+                ]} />
+              </div>
+            </div>
+
+            <h2 className="text-body font-medium text-teal-900 dark:text-[#ECF3F2] mb-3">{t('cleanerSegmentsTitle')}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="card p-4">
+                <p className="font-medium text-teal-900 dark:text-[#ECF3F2] text-body mb-3">
+                  {t('byRatingTitle')}
+                  <InfoTooltip label={t('byRatingInfo')}>{t('byRatingDef')}</InfoTooltip>
+                </p>
+                <SegmentBreakdown rows={[
+                  { label: t('ratingNoReviews'), count: analytics.cleanerSegments.byRating.noReviewsYet },
+                  { label: t('ratingUnder3'),    count: analytics.cleanerSegments.byRating.under3 },
+                  { label: t('rating3to4'),      count: analytics.cleanerSegments.byRating.threeToUnder4 },
+                  { label: t('rating4to4_5'),    count: analytics.cleanerSegments.byRating.fourToUnder4_5 },
+                  { label: t('rating4_5plus'),   count: analytics.cleanerSegments.byRating.fourPoint5Plus },
+                ]} />
+              </div>
+              <div className="card p-4">
+                <p className="font-medium text-teal-900 dark:text-[#ECF3F2] text-body mb-3">
+                  {t('byCompletedJobsTitle')}
+                  <InfoTooltip label={t('byCompletedJobsInfo')}>{t('byCompletedJobsDef')}</InfoTooltip>
+                </p>
+                <SegmentBreakdown rows={[
+                  { label: t('jobsZero'),      count: analytics.cleanerSegments.byCompletedJobs.zero },
+                  { label: t('jobs1to24'),     count: analytics.cleanerSegments.byCompletedJobs.oneTo24 },
+                  { label: t('jobs25to49'),    count: analytics.cleanerSegments.byCompletedJobs.twentyFiveTo49 },
+                  { label: t('jobs50to99'),    count: analytics.cleanerSegments.byCompletedJobs.fiftyTo99 },
+                  { label: t('jobs100to249'),  count: analytics.cleanerSegments.byCompletedJobs.hundredTo249 },
+                  { label: t('jobs250plus'),   count: analytics.cleanerSegments.byCompletedJobs.twoFiftyPlus },
+                ]} />
+              </div>
+              <div className="card p-4">
+                <p className="font-medium text-teal-900 dark:text-[#ECF3F2] text-body mb-3">
+                  {t('byDisputeRateTitle')}
+                  <InfoTooltip label={t('byDisputeRateInfo')}>{t('byDisputeRateDef')}</InfoTooltip>
+                </p>
+                <SegmentBreakdown rows={[
+                  { label: t('disputeRateNone'),   count: analytics.cleanerSegments.byDisputeRate.none },
+                  { label: t('disputeRateLow'),    count: analytics.cleanerSegments.byDisputeRate.low },
+                  { label: t('disputeRateHigh'),   count: analytics.cleanerSegments.byDisputeRate.high },
+                  { label: t('disputeRateNoJobs'), count: analytics.cleanerSegments.byDisputeRate.noCompletedJobs },
+                ]} />
+              </div>
+            </div>
           </>
         )}
       </div>
