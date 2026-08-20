@@ -827,6 +827,7 @@
     "requestedOn": "Αίτημα στις",
     "timeLeftToRespond": "Απομένουν {hours}ω για απάντηση",
     "lessThanHourLeft": "Απομένει λιγότερο από 1ω για απάντηση",
+    "alsoAssigned": "Ομαδική εργασία — επίσης με {names}",
     "waitingConfirm": "Αναμονή επιβεβαίωσης από τον καθαριστή",
     "actionError": "Κάτι πήγε στραβά. Παρακαλώ δοκιμάστε ξανά.",
     "systemRequested": "📅 Ζητήθηκε κράτηση",

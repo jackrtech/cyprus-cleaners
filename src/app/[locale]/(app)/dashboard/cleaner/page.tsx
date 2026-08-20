@@ -15,6 +15,7 @@ import { isAvailabilitySet, type WeeklyAvailability } from '@/lib/availability'
 import type { BookingStatus, CleaningType } from '@/types'
 
 interface CleanerProfile {
+  id:        string
   slug:      string
   bio:       string | null
   photo_url: string | null
@@ -71,6 +72,10 @@ interface Booking {
   photo_paths:    string[]
   photo_urls:     string[]
   cancellation_reason: string | null
+  // Present (and containing every assignee, including this cleaner) only on
+  // multi-cleaner bookings -- used to show "also working with" context, see
+  // renderBookingCard.
+  booking_assignments: { cleaner_profile_id: string; cleaner_profiles: { id: string; display_name: string } | null }[] | null
 }
 
 const MIN_COMPLETION_PHOTOS = 4
@@ -364,7 +369,7 @@ export default function CleanerDashboardPage() {
         .then(({ token }: { token: string }) =>
           createClient(token)
             .from('cleaner_profiles')
-            .select('slug, bio, photo_url, cities, availability, verified, verification_status, verification_note')
+            .select('id, slug, bio, photo_url, cities, availability, verified, verification_status, verification_note')
             .eq('user_id', session.user.id)
             .single()
             .then(({ data }) => data)
@@ -409,6 +414,12 @@ export default function CleanerDashboardPage() {
     const hasEnoughPhotos = booking.photo_urls.length >= MIN_COMPLETION_PHOTOS
     const isPending = bookingActionPendingId === booking.id
     const isUploadingPhoto = photoUploadingId === booking.id
+    // Other cleaners assigned to the same team job -- surfaced so a cleaner
+    // isn't left thinking this is an ordinary solo booking when it isn't.
+    const otherAssignees = (booking.booking_assignments ?? [])
+      .filter(a => a.cleaner_profile_id !== profile?.id)
+      .map(a => a.cleaner_profiles?.display_name)
+      .filter((n): n is string => !!n)
 
     return (
       <div
@@ -487,6 +498,11 @@ export default function CleanerDashboardPage() {
             )
           )}
         </div>
+        {otherAssignees.length > 0 && (
+          <p className="text-[12px] font-medium text-[#19706A] mb-1">
+            {tBooking('alsoAssigned', { names: otherAssignees.join(', ') })}
+          </p>
+        )}
         {decliningId === booking.id && (
           <div className="mb-2 space-y-2" onClick={e => e.stopPropagation()}>
             <textarea

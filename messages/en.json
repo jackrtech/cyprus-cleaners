@@ -817,6 +817,7 @@
     "requestedOn": "Requested",
     "timeLeftToRespond": "{hours}h left to respond",
     "lessThanHourLeft": "Less than 1h left to respond",
+    "alsoAssigned": "Team job — also working with {names}",
     "waitingConfirm": "Waiting for the cleaner to confirm",
     "actionError": "Something went wrong. Please try again.",
     "systemRequested": "📅 Booking requested",
