@@ -4,6 +4,8 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/server'
 import { slugify } from '@/lib/utils'
 import { sendVerificationEmail } from '@/lib/email'
+import { generateReferralCode } from '@/lib/referrals'
+import { awardReferralBadge } from '@/lib/badges'
 import type { UserRole } from '@/types'
 
 const RegisterSchema = z.object({
@@ -16,6 +18,11 @@ const RegisterSchema = z.object({
   hourly_rate_eur: z.number().min(5).optional(),
   cleaner_type:    z.enum(['individual', 'company']).optional(),
   locale:          z.enum(['en', 'el']).optional().default('en'),
+  // Cleaner-referral tracking (see /get-started?ref=<code>) -- the code of
+  // whichever cleaner's link this signup came in through, if any. Purely
+  // additive: an invalid or absent code just means no referral is recorded,
+  // never blocks registration.
+  referred_by_code: z.string().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -30,7 +37,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { email, password, full_name, role, phone, cities, hourly_rate_eur, cleaner_type, locale } = result.data
+    const { email, password, full_name, role, phone, cities, hourly_rate_eur, cleaner_type, locale, referred_by_code } = result.data
     const supabase = createAdminClient()
 
     // Check if email already exists
@@ -75,6 +82,21 @@ export async function POST(req: NextRequest) {
     // If registering as CLEANER, create a stub profile immediately
     if (role === 'CLEANER') {
       const slug = slugify(full_name) + '-' + user.id.slice(0, 6)
+
+      // Referral capture -- look up whichever cleaner's code this signup
+      // came in through, if any. An invalid/unknown code is silently
+      // ignored (never blocks registration), same as if none was provided.
+      let referredByCleanerProfileId: string | null = null
+      if (referred_by_code) {
+        const { data: referrer } = await supabase
+          .from('cleaner_profiles')
+          .select('id')
+          .eq('referral_code', referred_by_code)
+          .eq('status', 'ACTIVE')
+          .maybeSingle()
+        referredByCleanerProfileId = referrer?.id ?? null
+      }
+
       const { error: profileError } = await supabase.from('cleaner_profiles').insert({
         user_id:         user.id,
         slug,
@@ -86,10 +108,14 @@ export async function POST(req: NextRequest) {
         is_company:      cleaner_type === 'company',
         gender:          null,
         status:          'ACTIVE',
+        referral_code:   generateReferralCode(),
+        referred_by_cleaner_profile_id: referredByCleanerProfileId,
       })
 
       if (profileError) {
         console.error('cleaner_profiles insert error:', profileError)
+      } else if (referredByCleanerProfileId) {
+        await awardReferralBadge(supabase, referredByCleanerProfileId)
       }
     }
 

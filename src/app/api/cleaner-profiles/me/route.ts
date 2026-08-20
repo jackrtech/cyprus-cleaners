@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
+import { checkAndAwardProfileCompletionBadge, checkAndAwardTenureMilestones } from '@/lib/badges'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -19,6 +20,13 @@ export async function GET() {
   if (error || !data) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
   }
+
+  // Lazy checks, same pattern as the payout-release/dispute-auto-resolve
+  // backstops elsewhere -- tenure in particular has no triggering event, so
+  // "whenever the cleaner's own profile loads" is the only place it can be
+  // evaluated short of adding a new cron.
+  await checkAndAwardTenureMilestones(supabase, data.id, data.created_at)
+  await checkAndAwardProfileCompletionBadge(supabase, data.id, data)
 
   return NextResponse.json(data)
 }
@@ -69,6 +77,8 @@ export async function PATCH(req: NextRequest) {
     console.error('Profile update error:', error)
     return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
   }
+
+  await checkAndAwardProfileCompletionBadge(supabase, data.id, data)
 
   return NextResponse.json(data)
 }

@@ -12,6 +12,8 @@ import LoadingImage from '@/components/ui/LoadingImage'
 import { getTenure } from '@/lib/utils'
 import { deriveAvailabilityTags } from '@/lib/availability'
 import type { CleanerDetailRow, CleanerReviewRow } from '@/lib/cleaners'
+import { displayBadges, type EarnedBadge } from '@/lib/badgeConstants'
+import BadgeRow from '@/components/cleaners/BadgeRow'
 
 interface DbCleanerRow extends CleanerDetailRow {
   booking_fee_eur: number
@@ -108,10 +110,11 @@ function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
 }
 
 export default function CleanerProfileView({
-  initialCleaner, initialReviews,
+  initialCleaner, initialReviews, initialBadges,
 }: {
   initialCleaner: DbCleanerRow
   initialReviews: DbReviewRow[]
+  initialBadges: { badge_key: string; tier: string }[]
 }) {
   const t = useTranslations('profile')
   const tCommon = useTranslations('common')
@@ -131,6 +134,7 @@ export default function CleanerProfileView({
   const isOwnProfile = initialCleaner.is_own_profile
 
   const [reviews] = useState<ProfileReview[]>(() => initialReviews.map(mapReview))
+  const [badges]  = useState<EarnedBadge[]>(() => displayBadges(initialBadges as EarnedBadge[]))
 
   const [favorited,  setFavorited]  = useState(initialCleaner.is_favorited)
   const [favPending, setFavPending] = useState(false)
@@ -377,6 +381,11 @@ export default function CleanerProfileView({
                 {cleanerTypeLabel}
               </span>
             </div>
+            {badges.length > 0 && (
+              <div className="mt-2">
+                <BadgeRow badges={badges} />
+              </div>
+            )}
           </div>
 
           {/* Rate + CTA — a horizontal bar on mobile (price left, button right), the

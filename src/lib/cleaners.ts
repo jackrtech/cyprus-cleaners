@@ -167,3 +167,31 @@ export async function getCleanerReviewsBySlug(slug: string): Promise<CleanerRevi
 
   return (data ?? []) as unknown as CleanerReviewRow[]
 }
+
+// Earned badges for one cleaner, looked up by slug so this can run in
+// parallel with the profile/reviews fetches too. Returns the raw earned-
+// instance rows -- callers collapse to display form with displayBadges()
+// from src/lib/badgeConstants.ts.
+export async function getCleanerBadgesBySlug(slug: string): Promise<{ badge_key: string; tier: string }[]> {
+  const supabase = createAdminClient()
+
+  const { data: profile } = await supabase
+    .from('cleaner_profiles')
+    .select('id')
+    .eq('slug', slug)
+    .single()
+
+  if (!profile) return []
+
+  const { data, error } = await supabase
+    .from('cleaner_badges')
+    .select('badge_key, tier')
+    .eq('cleaner_profile_id', profile.id)
+
+  if (error) {
+    console.error('getCleanerBadgesBySlug error:', error)
+    throw error
+  }
+
+  return data ?? []
+}

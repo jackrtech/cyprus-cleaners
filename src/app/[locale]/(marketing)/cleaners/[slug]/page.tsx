@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
-import { getCleanerProfileForViewer, getCleanerReviewsBySlug } from '@/lib/cleaners'
+import { getCleanerProfileForViewer, getCleanerReviewsBySlug, getCleanerBadgesBySlug } from '@/lib/cleaners'
 import { BOOKING_FEE_EUR } from '@/lib/stripe'
 import CleanerProfileView from '@/components/cleaners/CleanerProfileView'
 
@@ -12,9 +12,10 @@ export default async function CleanerProfilePage({ params }: { params: { slug: s
   // client-side requests this page used to make on mount, just moved
   // server-side so the first HTML sent already has real content instead of
   // an empty shell that fills in after hydration.
-  const [cleaner, reviews] = await Promise.all([
+  const [cleaner, reviews, badges] = await Promise.all([
     getCleanerProfileForViewer(params.slug, session),
     getCleanerReviewsBySlug(params.slug),
+    getCleanerBadgesBySlug(params.slug),
   ])
 
   if (!cleaner) notFound()
@@ -23,6 +24,7 @@ export default async function CleanerProfilePage({ params }: { params: { slug: s
     <CleanerProfileView
       initialCleaner={{ ...cleaner, booking_fee_eur: BOOKING_FEE_EUR }}
       initialReviews={reviews}
+      initialBadges={badges}
     />
   )
 }

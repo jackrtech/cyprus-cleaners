@@ -109,6 +109,14 @@ create table cleaner_profiles (
   -- See src/lib/availability.ts for the shared type + helpers.
   -- e.g. {"mon": {"start": 9, "end": 17}, "wed": {"start": 9, "end": 17}}
   availability          jsonb,
+  -- Referrals (added 2026-08-20). referral_code is generated at signup
+  -- (slug + short random suffix, see src/lib/referrals.ts) and shared as
+  -- ?ref=<code> on /get-started -- referred_by_cleaner_profile_id records
+  -- which cleaner's link a new signup came in through, captured once at
+  -- registration and never changed after. Applying to an existing database:
+  -- `alter table cleaner_profiles add column referral_code text unique, add column referred_by_cleaner_profile_id uuid references cleaner_profiles(id);`
+  referral_code                    text unique,
+  referred_by_cleaner_profile_id   uuid references cleaner_profiles(id),
   created_at            timestamptz not null default now()
 );
 
@@ -118,6 +126,39 @@ create index idx_cleaner_verified on cleaner_profiles (verified);
 create index idx_cleaner_rating   on cleaner_profiles (avg_rating desc);
 create index idx_cleaner_services on cleaner_profiles using gin (services);
 create index idx_cleaner_connect_account on cleaner_profiles (stripe_connect_account_id);  -- backs the account.updated webhook's lookup
+create index idx_cleaner_referral_code on cleaner_profiles (referral_code);
+
+-- ─── CLEANER BADGES ──────────────────────────────────────────────────────
+-- Added 2026-08-20. Earned-instance log, not a catalog table -- the 5 v1
+-- badge types (referred_friend, completed_profile, cleans_milestone,
+-- verified_id, tenure_milestone) are defined as constants in
+-- src/lib/badges.ts, the same way service tiers are code-defined rather than
+-- DB-driven. Insert-only: a milestone badge (cleans_milestone,
+-- tenure_milestone) gets one row per tier as the cleaner crosses each
+-- threshold, never updated or deleted -- the display layer picks the
+-- highest tier per badge_key rather than this table trying to track "current
+-- tier" itself, which keeps the award logic a pure "insert if not already
+-- earned" with no read-modify-write race. Non-tiered badges (referred_friend,
+-- completed_profile, verified_id) always use tier = null.
+create table cleaner_badges (
+  id                  uuid primary key default gen_random_uuid(),
+  cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
+  badge_key           text not null check (badge_key in ('referred_friend', 'completed_profile', 'cleans_milestone', 'verified_id', 'tenure_milestone')),
+  tier                text not null default '',  -- '' for non-tiered badges; '1'|'25'|'50'|'100'|'250' for cleans_milestone; '1_month'|'6_months'|'1_year' for tenure_milestone. Deliberately '' not null -- Postgres treats every NULL as distinct under the unique constraint below, which would let a non-tiered badge get awarded more than once.
+  earned_at           timestamptz not null default now(),
+  unique (cleaner_profile_id, badge_key, tier)
+);
+
+create index idx_cleaner_badges_cleaner on cleaner_badges (cleaner_profile_id);
+
+alter table cleaner_badges enable row level security;
+-- Public read (badges are shown on public cleaner profiles/cards, same
+-- visibility rule as the profile itself) -- write only ever via the
+-- service-role admin client from award logic, no insert/update/delete policy.
+create policy "cleaner_badges_select_public" on cleaner_badges
+  for select using (
+    exists (select 1 from cleaner_profiles cp where cp.id = cleaner_profile_id and cp.status = 'ACTIVE')
+  );
 
 -- ─── CLEANER SERVICE OFFERINGS ───────────────────────────────
 -- Per-cleaner opt-in menu of paid tiers/add-ons beyond the baseline STANDARD

@@ -6,6 +6,19 @@ import { useTranslations, useLocale } from 'next-intl'
 import { Link, useRouter } from '@/navigation'
 import Spinner from '@/components/ui/Spinner'
 import { CITIES } from '@/lib/cities'
+import { REFERRAL_STORAGE_KEY } from '@/components/ReferralCapture'
+
+// Prefers a ?ref= directly on this page's own URL (someone landed here
+// straight from a link) over the one stashed by ReferralCapture on
+// /get-started, since a param present right now is the more specific
+// signal. Reads window.location directly rather than useSearchParams() to
+// avoid this whole page needing a Suspense boundary just for one optional
+// field.
+function capturedReferralCode(): string | undefined {
+  if (typeof window === 'undefined') return undefined
+  const fromUrl = new URLSearchParams(window.location.search).get('ref')
+  return fromUrl || sessionStorage.getItem(REFERRAL_STORAGE_KEY) || undefined
+}
 
 export default function RegisterCleanerPage() {
   const t       = useTranslations('auth')
@@ -65,6 +78,7 @@ export default function RegisterCleanerPage() {
           hourly_rate_eur: Number(hourlyRate),
           cleaner_type:    cleanerType,
           locale,
+          referred_by_code: capturedReferralCode(),
         }),
       })
       const data = await res.json()
@@ -80,6 +94,7 @@ export default function RegisterCleanerPage() {
         return
       }
 
+      sessionStorage.removeItem(REFERRAL_STORAGE_KEY)
       router.replace('/dashboard/cleaner')
     } finally {
       setLoading(false)

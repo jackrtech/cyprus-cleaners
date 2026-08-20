@@ -17,6 +17,7 @@ import type { BookingStatus, CleaningType } from '@/types'
 interface CleanerProfile {
   id:        string
   slug:      string
+  referral_code: string | null
   bio:       string | null
   photo_url: string | null
   cities:    string[] | null
@@ -189,6 +190,7 @@ export default function CleanerDashboardPage() {
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   const [idVerifyOpen,       setIdVerifyOpen]       = useState(false)
+  const [referralCopied,     setReferralCopied]     = useState(false)
   const [idVerifyFile,       setIdVerifyFile]       = useState<File | null>(null)
   const [selfieVerifyFile,   setSelfieVerifyFile]   = useState<File | null>(null)
   const [idVerifySubmitting, setIdVerifySubmitting] = useState(false)
@@ -369,7 +371,7 @@ export default function CleanerDashboardPage() {
         .then(({ token }: { token: string }) =>
           createClient(token)
             .from('cleaner_profiles')
-            .select('id, slug, bio, photo_url, cities, availability, verified, verification_status, verification_note')
+            .select('id, slug, bio, photo_url, cities, availability, verified, verification_status, verification_note, referral_code')
             .eq('user_id', session.user.id)
             .single()
             .then(({ data }) => data)
@@ -729,6 +731,35 @@ export default function CleanerDashboardPage() {
           <h1 className="text-[24px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-8">
             {t('welcomeBack', { name: session.user.name })}
           </h1>
+        )}
+
+        {/* Referral link — a permanent utility card, not an alert banner:
+            there's nothing to act on urgently, it's just always available. */}
+        {profile?.referral_code && (
+          <div className="card p-4 flex items-center gap-3 flex-wrap mb-6">
+            <div className="flex-1 min-w-[220px]">
+              <p className="text-[13px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-0.5">{t('referralTitle')}</p>
+              <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">{t('referralSubtitle')}</p>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                const link = `${window.location.origin}/get-started?ref=${profile.referral_code}`
+                try {
+                  await navigator.clipboard.writeText(link)
+                  setReferralCopied(true)
+                  setTimeout(() => setReferralCopied(false), 2000)
+                } catch {
+                  // Clipboard API unavailable (e.g. insecure context) -- no
+                  // fallback needed, the link is still visible below to
+                  // select and copy by hand.
+                }
+              }}
+              className="btn-secondary shrink-0 text-[13px] px-4 py-2 rounded-full"
+            >
+              {referralCopied ? t('referralCopied') : t('referralCopyLink')}
+            </button>
+          </div>
         )}
 
         {/* Inline error */}

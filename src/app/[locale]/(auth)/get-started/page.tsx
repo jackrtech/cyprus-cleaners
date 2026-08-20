@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import { pageMetadata } from '@/lib/seo'
+import ReferralCapture from '@/components/ReferralCapture'
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   return pageMetadata({ locale: params.locale, path: '/get-started', titleKey: 'getStartedTitle', descriptionKey: 'getStartedDescription' })
@@ -12,6 +14,9 @@ export default function GetStartedPage() {
 
   return (
     <div className="min-h-screen bg-[#F7FAF9] dark:bg-[#0F1817] flex items-center justify-center px-4 py-12">
+      <Suspense fallback={null}>
+        <ReferralCapture />
+      </Suspense>
       <div className="w-full max-w-[600px]">
         {/* Heading */}
         <div className="text-center mb-8">

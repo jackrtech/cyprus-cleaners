@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
 import { sendVerificationApprovedEmail, sendVerificationRejectedEmail } from '@/lib/email'
+import { awardVerifiedIdBadge } from '@/lib/badges'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
@@ -84,6 +85,10 @@ export async function PATCH(
   if (updateError) {
     console.error('PATCH admin verification error:', updateError)
     return NextResponse.json({ error: 'Failed to update verification status' }, { status: 500 })
+  }
+
+  if (action === 'APPROVE') {
+    await awardVerifiedIdBadge(supabase, profile.id)
   }
 
   // Notify the cleaner of the outcome — non-blocking, errors are swallowed

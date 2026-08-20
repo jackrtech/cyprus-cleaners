@@ -340,7 +340,15 @@
     "memberForYears": "Member for {count, plural, one {# year} other {# years}}",
     "newToThePlatform": "New to the platform",
     "favorite": "Favorite this cleaner",
-    "unfavorite": "Remove from favorites"
+    "unfavorite": "Remove from favorites",
+    "badgeReferredFriend": "Referred a friend",
+    "badgeCompletedProfile": "Complete profile",
+    "badgeVerifiedId": "ID verified",
+    "badgeFirstJob": "First job",
+    "badgeCleansMilestone": "{count} cleans",
+    "badgeTenure1Month": "1 month member",
+    "badgeTenure6Months": "6 months member",
+    "badgeTenure1Year": "1 year member"
   },
   "admin": {
     "navAnalytics": "Analytics",
@@ -613,6 +621,10 @@
   },
   "dashboard": {
     "welcomeBack": "Welcome back, {name}",
+    "referralTitle": "Invite a cleaner, earn a badge",
+    "referralSubtitle": "Share your link — when they join, you get the Referred a friend badge.",
+    "referralCopyLink": "Copy link",
+    "referralCopied": "Copied!",
     "customerSubtitle": "Your dashboard is being set up — more features coming soon.",
     "cleanerSubtitle": "Your cleaner dashboard is being set up — more features coming soon.",
     "findACleaner": "Find a cleaner",

@@ -115,6 +115,20 @@ Also not a page, not a cron — a webhook **receiver**, added 2026-08-19 directl
 3. `COMPLETE` once the scheduled date has arrived and ≥4 photos exist. Cleaner's stats (`avg_rating`, `review_count`, `unique_customer_count`, `total_jobs_count`) update via DB trigger, never from application code.
 4. Disputes: `/dashboard/cleaner/disputes` shows any dispute filed against a completed job, with a red banner counting `OPEN` ones with no response yet. One response allowed, then locked.
 
+**Referrals & badges** (added 2026-08-20)
+1. Every cleaner has a `cleaner_profiles.referral_code` (short random string, generated at signup by `POST /api/auth/register`; backfilled for every pre-existing profile via `src/scripts/backfill-referral-codes.js`, which only ever needs re-running if a reseed reintroduces rows without one). The dashboard's "Invite a cleaner, earn a badge" card (`/dashboard/cleaner`, always visible once a code exists) shares it as `{APP_URL}/get-started?ref=<code>`, with a client-side copy-to-clipboard button.
+2. Landing on `/get-started?ref=<code>` stashes the code in `sessionStorage` (`ReferralCapture`, a tiny client component with no visible UI) so it survives the get-started → for-cleaners → register/cleaner hop through separate page loads. `register/cleaner` reads it back (preferring a `?ref=` directly on its own URL if present) and sends it as `referred_by_code` in the registration POST.
+3. `POST /api/auth/register` looks up the referring cleaner by code (must be `ACTIVE`; an unknown/absent code is silently ignored, never blocks signup), stamps the new profile's `referred_by_cleaner_profile_id`, and awards the referrer the `referred_friend` badge.
+4. **V1 badge system** (`cleaner_badges` table, `src/lib/badges.ts` for the server-only award functions + `src/lib/badgeConstants.ts` for the client-safe types/labels/display-collapsing split — a client component importing the award-function file would otherwise pull `next/headers` into the browser bundle). Insert-only log, never updated/deleted — a milestone badge gets one row per tier crossed, the display layer (`displayBadges()`) picks only the highest tier per category. `tier` is `''` (not `null`) for the three non-tiered badges specifically because Postgres treats every `NULL` as distinct under a unique constraint, which would silently let a non-tiered badge be inserted more than once.
+   - `referred_friend` — awarded per (3) above.
+   - `completed_profile` — same "complete" definition as the profile-completion nudge (bio, photo, cities, availability all set); checked on every profile PATCH and on every profile GET (dashboard load).
+   - `verified_id` — awarded from the admin verification-approve action (`PATCH /api/admin/verifications/[id]`).
+   - `cleans_milestone` (tiers: first job, 25, 50, 100, 250) — checked right after a booking's `COMPLETE` transition, for the single cleaner or every multi-cleaner assignee.
+   - `tenure_milestone` (tiers: 1 month, 6 months, 1 year) — purely time-based, no triggering event, so it's a lazy check on every profile GET rather than a new cron.
+   - Cleaners active before this shipped needed one-time backfills for the three trigger-based badges they'd already have qualified for: `src/scripts/backfill-milestone-badges.js` (cleans + tenure) and `src/scripts/backfill-verified-id-badges.js` (verified). Re-running either is always safe — the unique constraint makes every award idempotent.
+5. Badges render as small gold chips (`BadgeRow`) on the public cleaner profile, fetched server-side alongside the profile/reviews (`getCleanerBadgesBySlug` in `src/lib/cleaners.ts`). Cosmetic/trust-signal only, confirmed no effect on search ranking.
+6. **Not built**: admin visibility into referral chains (who invited whom) — explicitly deferred as a nice-to-have for a future analytics-segmentation pass, not required for v1.
+
 ### Admin
 
 Covered in full in [§7](#7-admin-flows).

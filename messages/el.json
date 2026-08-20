@@ -350,7 +350,15 @@
     "memberForYears": "Μέλος εδώ και {count, plural, one {# χρόνο} other {# χρόνια}}",
     "newToThePlatform": "Νέος/α στην πλατφόρμα",
     "favorite": "Προσθήκη στα αγαπημένα",
-    "unfavorite": "Αφαίρεση από τα αγαπημένα"
+    "unfavorite": "Αφαίρεση από τα αγαπημένα",
+    "badgeReferredFriend": "Σύσταση φίλου",
+    "badgeCompletedProfile": "Πλήρες προφίλ",
+    "badgeVerifiedId": "Επαληθευμένη ταυτότητα",
+    "badgeFirstJob": "Πρώτη εργασία",
+    "badgeCleansMilestone": "{count} καθαρισμοί",
+    "badgeTenure1Month": "Μέλος για 1 μήνα",
+    "badgeTenure6Months": "Μέλος για 6 μήνες",
+    "badgeTenure1Year": "Μέλος για 1 χρόνο"
   },
   "admin": {
     "navAnalytics": "Στατιστικά",
@@ -623,6 +631,10 @@
   },
   "dashboard": {
     "welcomeBack": "Καλώς ήρθατε, {name}",
+    "referralTitle": "Προσκάλεσε έναν καθαριστή, κέρδισε σήμα",
+    "referralSubtitle": "Μοιράσου τον σύνδεσμό σου — όταν εγγραφεί, κερδίζεις το σήμα «Σύσταση φίλου».",
+    "referralCopyLink": "Αντιγραφή συνδέσμου",
+    "referralCopied": "Αντιγράφηκε!",
     "customerSubtitle": "Ο πίνακας ελέγχου σας ετοιμάζεται",
     "cleanerSubtitle": "Ο πίνακας ελέγχου καθαριστή σας ετοιμάζεται",
     "findACleaner": "Βρείτε καθαριστή",

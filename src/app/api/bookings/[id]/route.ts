@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { sendBookingConfirmedEmail, sendBookingCompletedEmail, sendBookingDeclinedEmail, sendBookingCancelledEmail, sendRefundFailedAlertEmail, sendBookingConfirmedAdminAlertEmail } from '@/lib/email'
 import Stripe from 'stripe'
 import { getStripe, PAYOUT_HOLD_MS } from '@/lib/stripe'
+import { checkAndAwardCleansMilestones } from '@/lib/badges'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
@@ -243,6 +244,17 @@ export async function PATCH(
     await supabase.from('payments').update({
       payout_release_at: new Date(Date.now() + PAYOUT_HOLD_MS).toISOString(),
     }).eq('booking_id', booking.id)
+
+    // Cleans-milestone badges -- reads total_jobs_count fresh, so this runs
+    // after the update above so the on_booking_completed DB trigger (which
+    // bumps that count) has already fired. Single-cleaner and every
+    // multi-cleaner assignee, each checked against their own count.
+    const cleanerIdsToCheck = booking.cleaner_profile_id
+      ? [booking.cleaner_profile_id]
+      : (assignments ?? []).map(a => a.cleaner_profile_id)
+    for (const id of cleanerIdsToCheck) {
+      await checkAndAwardCleansMilestones(supabase, id)
+    }
   }
 
   // Refund on cancellation — only relevant for CANCEL (DECLINE only ever
