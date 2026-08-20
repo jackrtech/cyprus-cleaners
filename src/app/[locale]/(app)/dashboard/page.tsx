@@ -418,7 +418,7 @@ export default function DashboardPage() {
                   : null
                 const windowExpired = hoursLeft !== null && hoursLeft <= 0
                 return (
-                  <div className="mt-2 space-y-1.5" onClick={e => e.stopPropagation()}>
+                  <div className="mt-2 flex flex-col items-start gap-1.5" onClick={e => e.stopPropagation()}>
                     {booking.booking_assignments!.map(a => {
                       const name = a.cleaner_profiles?.display_name ?? tBooking('unknownCleaner')
                       const flag = a.no_show_flags ?? null
