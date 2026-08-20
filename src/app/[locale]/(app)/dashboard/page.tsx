@@ -78,6 +78,7 @@ interface Booking {
   review_skipped_at:  string | null
   completed_at:       string | null
   payments:           { amount_eur: number; platform_fee_eur: number | null; status: string } | { amount_eur: number; platform_fee_eur: number | null; status: string }[] | null
+  recurring_series:   { id: string; status: string } | null
 }
 
 const BOOKING_STATUS_BADGE: Record<BookingStatus, string> = {
@@ -125,6 +126,8 @@ export default function DashboardPage() {
   const [disputeClaimText, setDisputeClaimText] = useState('')
   const [flaggingAssignmentId, setFlaggingAssignmentId] = useState<string | null>(null)
   const [noShowClaimText, setNoShowClaimText] = useState('')
+  const [recurringActionPendingId, setRecurringActionPendingId] = useState<string | null>(null)
+  const [skippedSeriesIds, setSkippedSeriesIds] = useState<Set<string>>(new Set())
 
   // Fetch introductions once confirmed CUSTOMER
   useEffect(() => {
@@ -181,6 +184,38 @@ export default function DashboardPage() {
 
   // Cancel used to only be reachable from chat — now it's on the card itself,
   // reaching parity with the cleaner dashboard's own booking actions.
+  async function handleSkipNextOccurrence(seriesId: string) {
+    if (recurringActionPendingId) return
+    setRecurringActionPendingId(seriesId)
+    setBookingActionError(null)
+    try {
+      const res = await fetch(`/api/recurring-series/${seriesId}/skip`, { method: 'POST' })
+      if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('actionError')))
+      setSkippedSeriesIds(prev => new Set(prev).add(seriesId))
+    } catch (err) {
+      setBookingActionError(err instanceof Error ? err.message : tBooking('actionError'))
+    } finally {
+      setRecurringActionPendingId(null)
+    }
+  }
+
+  async function handleCancelSeries(seriesId: string) {
+    if (recurringActionPendingId) return
+    setRecurringActionPendingId(seriesId)
+    setBookingActionError(null)
+    try {
+      const res = await fetch(`/api/recurring-series/${seriesId}`, { method: 'PATCH' })
+      if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('actionError')))
+      setBookings(prev => prev.map(b =>
+        b.recurring_series?.id === seriesId ? { ...b, recurring_series: { id: seriesId, status: 'CANCELLED' } } : b
+      ))
+    } catch (err) {
+      setBookingActionError(err instanceof Error ? err.message : tBooking('actionError'))
+    } finally {
+      setRecurringActionPendingId(null)
+    }
+  }
+
   async function handleCancelBooking(bookingId: string, reason: string) {
     if (bookingActionPendingId) return
     setBookingActionPendingId(bookingId)
@@ -312,6 +347,11 @@ export default function DashboardPage() {
                     : 'statusCancelled'
                   )}
                 </span>
+                {booking.recurring_series?.status === 'ACTIVE' && (
+                  <span className="inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-teal-50 dark:bg-[#17302D] text-teal-600 dark:text-teal-300">
+                    {tBooking('recurringBadge')}
+                  </span>
+                )}
               </div>
               <p className="text-[13px] text-[#5B7472] dark:text-[#9BB0AE]">{bookingSummary}</p>
               {booking.address && (
@@ -357,6 +397,30 @@ export default function DashboardPage() {
                     </button>
                   </div>
                 )
+              )}
+              {booking.recurring_series?.status === 'ACTIVE' && (
+                <div className="flex items-center gap-3 mt-2 flex-wrap" onClick={e => e.stopPropagation()}>
+                  {skippedSeriesIds.has(booking.recurring_series.id) ? (
+                    <p className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE]">{tBooking('nextOccurrenceSkipped')}</p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleSkipNextOccurrence(booking.recurring_series!.id)}
+                      disabled={recurringActionPendingId === booking.recurring_series.id}
+                      className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors disabled:opacity-50"
+                    >
+                      {tBooking('skipNextOccurrence')}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleCancelSeries(booking.recurring_series!.id)}
+                    disabled={recurringActionPendingId === booking.recurring_series.id}
+                    className="text-[12px] font-medium text-[#5B7472] dark:text-[#9BB0AE] hover:text-red-600 transition-colors disabled:opacity-50"
+                  >
+                    {tBooking('cancelSeries')}
+                  </button>
+                </div>
               )}
               {booking.status === 'COMPLETED' && (() => {
                 const hoursLeft = booking.completed_at

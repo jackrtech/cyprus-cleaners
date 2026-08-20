@@ -14,6 +14,7 @@ export type DisputeResolution = 'CUSTOMER' | 'CLEANER' | 'UNRESOLVABLE'
 export type NoShowStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED'
 export type NoShowResolution = 'REFUND_CUSTOMER' | 'REDIRECT_TO_CLEANER' | 'SPLIT'
 export type CorroborationResponse = 'CORROBORATES' | 'DISPUTES'
+export type RecurringSeriesStatus = 'ACTIVE' | 'CANCELLED'
 
 export type CleaningType = 'STANDARD' | 'DEEP' | 'MOVE_IN_OUT'
 

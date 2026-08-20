@@ -132,6 +132,7 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
   const [durationHours,   setDurationHours]   = useState(String(estimateCleaningHours(1, 1, 'STANDARD')))
   const [durationTouched, setDurationTouched] = useState(false)
   const [bookingNotes,    setBookingNotes]    = useState('')
+  const [isRecurring,     setIsRecurring]     = useState(false)
 
   const ADD_NEW_ADDRESS = '__add_new__'
   const [savedAddresses,    setSavedAddresses]    = useState<SavedAddress[]>([])
@@ -213,6 +214,7 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
     setStartTime('')
     setDurationTouched(false)
     setBookingNotes('')
+    setIsRecurring(false)
     setSetupClientSecret(null)
     setBookingError(null)
     onClose()
@@ -231,7 +233,10 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
     try {
       const paymentMethodId = await paymentHandleRef.current.confirmCard()
 
-      const res = await fetch('/api/bookings', {
+      // Recurring goes through its own endpoint (creates the series plus
+      // this first occurrence); everything else about the request body is
+      // identical to a one-off booking — see POST /api/bookings/recurring.
+      const res = await fetch(isRecurring ? '/api/bookings/recurring' : '/api/bookings', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -253,7 +258,8 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
       })
       if (!res.ok) throw new Error(await extractErrorMessage(res, tBooking('submitError')))
 
-      const newBooking: Booking = await res.json()
+      const responseBody = await res.json()
+      const newBooking: Booking = isRecurring ? responseBody.booking : responseBody
       onBookingCreated({ ...newBooking, photo_urls: [] })
       resetAndClose()
     } catch (err) {
@@ -390,6 +396,14 @@ export default function BookingFormModal({ isOpen, onClose, introductionId, clea
             </select>
           </div>
         </div>
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <Checkbox checked={isRecurring} onChange={() => setIsRecurring(v => !v)} label={tBooking('repeatEvery2Weeks')} />
+          <span className="text-[13px] text-[#0D1F1E] dark:text-[#ECF3F2]">{tBooking('repeatEvery2Weeks')}</span>
+        </label>
+        {isRecurring && (
+          <p className="text-[11px] text-[#5B7472] dark:text-[#9BB0AE] -mt-2">{tBooking('repeatHint')}</p>
+        )}
+
         <div>
           <label htmlFor="booking-address" className="block text-[11px] text-[#5B7472] dark:text-[#9BB0AE] mb-1">{tBooking('address')}</label>
           <select

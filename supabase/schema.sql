@@ -17,6 +17,7 @@ create type cleaning_type as enum ('STANDARD', 'DEEP', 'MOVE_IN_OUT');
 -- cleaner_service_offerings below). Applying to an existing database (this
 -- file is bootstrap-only, not re-run): `alter type cleaning_type add value 'MOVE_IN_OUT';`
 create type locale_type as enum ('en', 'el');
+create type recurring_series_status as enum ('ACTIVE', 'CANCELLED');
 
 -- ─── USERS ───────────────────────────────────────────────────
 
@@ -250,6 +251,99 @@ create table favorites (
 create index idx_favorites_customer on favorites (customer_id);
 create index idx_favorites_cleaner  on favorites (cleaner_profile_id);
 
+-- ─── RECURRING SERIES ──────────────────────────────────────────
+-- A standing "clean every 2 weeks" arrangement between one customer and one
+-- cleaner. Deliberately NOT a template that "generates" bookings via some
+-- parallel lifecycle — every occurrence is a completely ordinary row in
+-- `bookings` below (stamped with recurring_series_id), reusing the existing
+-- REQUESTED/CONFIRMED/COMPLETED lifecycle, 24h dispute window, and payout
+-- job unchanged. This table only holds the recurring shape itself (cadence,
+-- snapshotted job details, the saved card to keep charging) — decided
+-- 2026-08-18/19, see FLOWS.md.
+--
+-- Billing is per-occurrence, not upfront: `src/app/api/cron/charge-recurring`
+-- charges `payment_method_id` and inserts the next `bookings` row once that
+-- occurrence is within 72h — see that route and recurring_series_skips below
+-- for how a skipped occurrence avoids ever being created/charged at all.
+
+create table recurring_series (
+  id                  uuid primary key default gen_random_uuid(),
+  customer_id         uuid not null references users(id) on delete cascade,
+  cleaner_profile_id  uuid not null references cleaner_profiles(id) on delete cascade,
+  introduction_id     uuid not null references introductions(id) on delete restrict,
+  cleaning_type       cleaning_type not null,
+  addon_codes         text[] not null default '{}',
+  bedrooms            int,
+  bathrooms           int,
+  duration_hours      numeric(4,2) not null,
+  address             text not null,
+  address_lat         numeric(9,6),
+  address_lng         numeric(9,6),
+  finding_us_notes    text,
+  day_of_week         int not null check (day_of_week >= 0 and day_of_week <= 6),  -- 0=Sun..6=Sat, matches JS Date.getDay() directly against anchor_date/occurrence dates -- no day-name translation needed anywhere this is read
+  start_time          time not null,
+  anchor_date         date not null,  -- the first occurrence's date; every later occurrence = anchor_date + 14*n days
+  payment_method_id   text not null,  -- saved card, reused for every occurrence's off-session charge
+  -- Price snapshotted once, at series creation, and reused unchanged for
+  -- EVERY occurrence -- same "a later rate change never rewrites history"
+  -- philosophy as payments.tier_rate_eur/platform_fee_eur/addon_total_eur,
+  -- just extended forward in time instead of only backward: if the cleaner
+  -- changes their rate, this series keeps charging the price agreed when it
+  -- was set up. A cleaner who wants to change the price for a standing
+  -- arrangement cancels the series and the customer sets up a new one --
+  -- acceptable v1 limitation, not silently re-priced mid-series.
+  tier_rate_eur       numeric(6,2) not null,
+  platform_fee_eur    numeric(6,2) not null,
+  addon_total_eur     numeric(6,2) not null default 0,
+  amount_eur          numeric(10,2) not null,  -- tier_rate_eur * duration_hours + addon_total_eur + platform_fee_eur, precomputed once so every occurrence's charge is a straight read, not a recomputation
+  status              recurring_series_status not null default 'ACTIVE',
+  created_at          timestamptz not null default now(),
+  cancelled_at        timestamptz
+);
+
+create index idx_recurring_series_customer on recurring_series (customer_id);
+create index idx_recurring_series_cleaner  on recurring_series (cleaner_profile_id, day_of_week) where status = 'ACTIVE';  -- backs the recurring-only slot-block check in POST /api/bookings/recurring
+create index idx_recurring_series_active   on recurring_series (id) where status = 'ACTIVE';  -- backs the daily charge-recurring cron's scan
+
+alter table recurring_series enable row level security;
+-- No policies — same deny-by-default shape as bookings/payments: only ever
+-- touched via the service-role admin client from API routes.
+-- Applying to an existing database:
+-- `create type recurring_series_status as enum ('ACTIVE', 'CANCELLED');
+--  create table recurring_series (id uuid primary key default gen_random_uuid(), customer_id uuid not null references users(id) on delete cascade, cleaner_profile_id uuid not null references cleaner_profiles(id) on delete cascade, introduction_id uuid not null references introductions(id) on delete restrict, cleaning_type cleaning_type not null, addon_codes text[] not null default '{}', bedrooms int, bathrooms int, duration_hours numeric(4,2) not null, address text not null, address_lat numeric(9,6), address_lng numeric(9,6), finding_us_notes text, day_of_week int not null check (day_of_week >= 0 and day_of_week <= 6), start_time time not null, anchor_date date not null, payment_method_id text not null, tier_rate_eur numeric(6,2) not null, platform_fee_eur numeric(6,2) not null, addon_total_eur numeric(6,2) not null default 0, amount_eur numeric(10,2) not null, status recurring_series_status not null default 'ACTIVE', created_at timestamptz not null default now(), cancelled_at timestamptz);
+--  create index idx_recurring_series_customer on recurring_series (customer_id);
+--  create index idx_recurring_series_cleaner on recurring_series (cleaner_profile_id, day_of_week) where status = 'ACTIVE';
+--  create index idx_recurring_series_active on recurring_series (id) where status = 'ACTIVE';
+--  alter table recurring_series enable row level security;`
+
+-- One row per occurrence explicitly skipped BEFORE it was ever charged/
+-- created as a `bookings` row (i.e. skipped inside the future, still-
+-- hypothetical part of the series) -- this is how the cron knows not to
+-- create that occurrence, and is exactly what makes the cleaner's slot
+-- "reopen" for that single week (see recurring_series' own comment above).
+-- Skipping/cancelling an occurrence that's ALREADY a `bookings` row (already
+-- charged) needs no row here at all -- that just uses the existing cancel
+-- action on that booking, unchanged.
+
+create table recurring_series_skips (
+  id                  uuid primary key default gen_random_uuid(),
+  recurring_series_id uuid not null references recurring_series(id) on delete cascade,
+  occurrence_date     date not null,
+  skipped_by          uuid not null references users(id) on delete cascade,
+  reason              text,
+  created_at          timestamptz not null default now(),
+  unique (recurring_series_id, occurrence_date)
+);
+
+create index idx_recurring_series_skips_series on recurring_series_skips (recurring_series_id);
+
+alter table recurring_series_skips enable row level security;
+-- No policies — same deny-by-default shape as above.
+-- Applying to an existing database:
+-- `create table recurring_series_skips (id uuid primary key default gen_random_uuid(), recurring_series_id uuid not null references recurring_series(id) on delete cascade, occurrence_date date not null, skipped_by uuid not null references users(id) on delete cascade, reason text, created_at timestamptz not null default now(), unique (recurring_series_id, occurrence_date));
+--  create index idx_recurring_series_skips_series on recurring_series_skips (recurring_series_id);
+--  alter table recurring_series_skips enable row level security;`
+
 -- ─── BOOKINGS ────────────────────────────────────────────────
 
 create table bookings (
@@ -277,6 +371,7 @@ create table bookings (
   cancellation_reason text,  -- Free-text reason, set on CANCEL/DECLINE
   cancelled_by        uuid references users(id),  -- Who initiated the cancellation
   review_skipped_at   timestamptz,  -- Customer dismissed the review prompt; suppresses it going forward instead of re-showing on every reload. Applying to an existing database: `alter table bookings add column review_skipped_at timestamptz;`
+  recurring_series_id uuid references recurring_series(id) on delete set null,  -- set only when this occurrence was spawned by a recurring_series (see that table's comment) -- null is the overwhelming majority case (an ordinary one-off booking) and every existing code path is completely unaffected by this column's presence. on delete set null rather than cascade: a booking that already happened shouldn't vanish just because the series was later deleted (series are only ever soft-cancelled via status, not hard-deleted, but this is the safe default regardless). Applying to an existing database: `alter table bookings add column recurring_series_id uuid references recurring_series(id) on delete set null;`
   created_at          timestamptz not null default now()
 );
 
@@ -284,6 +379,7 @@ create index idx_bookings_customer on bookings (customer_id);
 create index idx_bookings_cleaner  on bookings (cleaner_profile_id);
 create index idx_bookings_status   on bookings (status);
 create index idx_bookings_date     on bookings (date);
+create index idx_bookings_recurring_series on bookings (recurring_series_id) where recurring_series_id is not null;
 
 -- ─── PAYMENTS ────────────────────────────────────────────────
 -- One row per booking. The customer is charged in full when the cleaner

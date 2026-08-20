@@ -333,7 +333,8 @@ export async function GET(req: NextRequest) {
         booking_assignments ( id, cleaner_profile_id, cleaner_profiles ( id, slug, display_name, photo_url ), no_show_flags ( id, status ) ),
         reviews ( id ),
         disputes ( id, status ),
-        payments ( amount_eur, platform_fee_eur, status )
+        payments ( amount_eur, platform_fee_eur, status ),
+        recurring_series ( id, status )
       `)
       .eq('customer_id', userId)
 
@@ -363,7 +364,8 @@ export async function GET(req: NextRequest) {
       *,
       users!bookings_customer_id_fkey ( full_name ),
       payments ( amount_eur, platform_fee_eur, cleaner_payout_eur, status, payout_status, payout_release_at ),
-      booking_assignments ( id, cleaner_profile_id, tier_rate_eur, platform_fee_eur, payout_status, cleaner_payout_eur, no_show, cleaner_profiles ( id, display_name ), no_show_flags ( id, status, claim, cleaner_response, resolve_by, no_show_corroborations ( cleaner_profile_id, response ) ) )
+      booking_assignments ( id, cleaner_profile_id, tier_rate_eur, platform_fee_eur, payout_status, cleaner_payout_eur, no_show, cleaner_profiles ( id, display_name ), no_show_flags ( id, status, claim, cleaner_response, resolve_by, no_show_corroborations ( cleaner_profile_id, response ) ) ),
+      recurring_series ( id, status )
     `
 
     // Bookings assigned directly to this cleaner (the ordinary, single-cleaner
