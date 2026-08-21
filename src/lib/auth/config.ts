@@ -69,6 +69,18 @@ export const authOptions: NextAuthOptions = {
           )
           if (!passwordMatch) return null
 
+          // Best-effort, non-blocking — backs the admin analytics "active
+          // cleaner" definition (last_login_at within 30 days). A failure
+          // here should never block sign-in, so this isn't awaited into the
+          // outer try/catch's failure path.
+          supabase
+            .from('users')
+            .update({ last_login_at: new Date().toISOString() })
+            .eq('id', user.id)
+            .then((result: { error: unknown }) => {
+              if (result.error) console.error('[NextAuth] failed to stamp last_login_at:', result.error)
+            })
+
           return {
             id:         user.id,
             email:      user.email,

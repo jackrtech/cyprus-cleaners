@@ -34,11 +34,13 @@ create table users (
   locale            locale_type not null default 'en',
   stripe_customer_id text,
   deleted_at        timestamptz,  -- self-service account deletion (GDPR erasure): set instead of a hard delete so bookings/payments/reviews/disputes keep a valid FK — full_name/email/phone/avatar_url/stripe_customer_id are overwritten with anonymized placeholders at the same time, password_hash is scrambled so the account can never be signed into again. NULL means active. Applying to an existing database: `alter table users add column deleted_at timestamptz;`
+  last_login_at     timestamptz,  -- stamped best-effort (non-blocking, errors swallowed) on every successful NextAuth authorize() — added 2026-08-21 specifically to back the admin analytics "active cleaner" definition (logged in within the last 30 days), which had no recency signal at all before this. NULL means never logged in since this column was added. Applying to an existing database: `alter table users add column last_login_at timestamptz;`
   created_at        timestamptz not null default now()
 );
 
-create index idx_users_email on users (email);
-create index idx_users_role  on users (role);
+create index idx_users_email          on users (email);
+create index idx_users_role           on users (role);
+create index idx_users_last_login_at  on users (last_login_at);
 
 -- ─── VERIFICATION TOKENS ─────────────────────────────────────
 -- Backs email-verification and password-reset links. Only ever read/written

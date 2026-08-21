@@ -13,20 +13,24 @@ interface WeekBucket {
 }
 
 interface Analytics {
+  funnel: {
+    requested:              number
+    accepted:                number
+    completed:               number
+    acceptedOfRequestedPct: number
+    completedOfAcceptedPct: number
+  }
   totals: {
-    totalBookings:     number
-    completedBookings: number
     cancelledBookings: number
     totalCustomers:    number
     activeCleaners:    number
     revenueEur:        number
   }
-  repeatCustomerRatePct: number
   disputeRatePct:        number
   autoResolveRatePct:    number | null
   weekly:                WeekBucket[]
   customerSegments: {
-    byFrequency:      { oneTime: number; occasional: number; regular: number }
+    byFrequency:      { noneCompleted: number; oneTime: number; occasional: number; regular: number }
     byDisputeHistory: { none: number; filedNoneWon: number; wonAtLeastOne: number }
   }
   cleanerSegments: {
@@ -139,20 +143,30 @@ export default function AdminAnalyticsPage() {
 
         {!loading && !error && analytics && (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+            <h2 className="text-body font-medium text-teal-900 dark:text-[#ECF3F2] mb-3">{t('funnelTitle')}</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               <div className="card p-4">
                 <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
-                  {t('totalBookingsLabel')}
-                  <InfoTooltip label={t('totalBookingsInfo')}>{t('totalBookingsDef')}</InfoTooltip>
+                  {t('requestedLabel')}
+                  <InfoTooltip label={t('requestedInfo')}>{t('requestedDef')}</InfoTooltip>
                 </p>
-                <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.totals.totalBookings}</p>
+                <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.funnel.requested}</p>
+              </div>
+              <div className="card p-4">
+                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
+                  {t('acceptedLabel')}
+                  <InfoTooltip label={t('acceptedInfo')}>{t('acceptedDef')}</InfoTooltip>
+                </p>
+                <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.funnel.accepted}</p>
+                <p className="text-label text-muted dark:text-[#9BB0AE] mt-1">{t('pctOfRequested', { pct: analytics.funnel.acceptedOfRequestedPct })}</p>
               </div>
               <div className="card p-4">
                 <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
                   {t('completedBookingsLabel')}
                   <InfoTooltip label={t('completedBookingsInfo')}>{t('completedBookingsDef')}</InfoTooltip>
                 </p>
-                <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.totals.completedBookings}</p>
+                <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.funnel.completed}</p>
+                <p className="text-label text-muted dark:text-[#9BB0AE] mt-1">{t('pctOfAccepted', { pct: analytics.funnel.completedOfAcceptedPct })}</p>
               </div>
               <div className="card p-4">
                 <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
@@ -161,6 +175,9 @@ export default function AdminAnalyticsPage() {
                 </p>
                 <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.totals.cancelledBookings}</p>
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
               <div className="card p-4">
                 <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
                   {t('totalCustomersLabel')}
@@ -184,14 +201,7 @@ export default function AdminAnalyticsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-              <div className="card p-4">
-                <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
-                  {t('repeatCustomerRateLabel')}
-                  <InfoTooltip label={t('repeatCustomerRateInfo')}>{t('repeatCustomerRateDef')}</InfoTooltip>
-                </p>
-                <p className="text-h3 font-display text-teal-900 dark:text-[#ECF3F2]">{analytics.repeatCustomerRatePct}%</p>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
               <div className="card p-4">
                 <p className="text-label uppercase tracking-widest text-muted dark:text-[#9BB0AE] mb-1">
                   {t('disputeRateLabel')}
@@ -264,9 +274,10 @@ export default function AdminAnalyticsPage() {
                   <InfoTooltip label={t('byFrequencyInfo')}>{t('byFrequencyDef')}</InfoTooltip>
                 </p>
                 <SegmentBreakdown rows={[
-                  { label: t('freqOneTime'),    count: analytics.customerSegments.byFrequency.oneTime },
-                  { label: t('freqOccasional'), count: analytics.customerSegments.byFrequency.occasional },
-                  { label: t('freqRegular'),    count: analytics.customerSegments.byFrequency.regular },
+                  { label: t('freqNoneCompleted'), count: analytics.customerSegments.byFrequency.noneCompleted },
+                  { label: t('freqOneTime'),       count: analytics.customerSegments.byFrequency.oneTime },
+                  { label: t('freqOccasional'),    count: analytics.customerSegments.byFrequency.occasional },
+                  { label: t('freqRegular'),       count: analytics.customerSegments.byFrequency.regular },
                 ]} />
               </div>
               <div className="card p-4">

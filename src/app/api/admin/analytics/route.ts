@@ -4,6 +4,13 @@ import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
 
 const WEEKS = 12
+// "Active cleaner" REDESIGN, 2026-08-21 (Todoist): was a snapshot of
+// cleaner_profiles.status = 'ACTIVE' alone — no recency signal at all, just
+// "not paused/suspended". Now also requires a login within this window,
+// backed by users.last_login_at (added this same pass, stamped in
+// NextAuth's authorize()). Both conditions apply — a recently-logged-in but
+// PAUSED/SUSPENDED cleaner still doesn't count.
+const ACTIVE_CLEANER_WINDOW_DAYS = 30
 
 interface BookingRow {
   id:          string
@@ -32,6 +39,7 @@ interface CleanerRow {
   avg_rating:    number
   review_count:  number
   total_jobs_count: number
+  users:         { last_login_at: string | null } | null
 }
 
 // Monday-anchored week-start key, UTC, so bucketing is stable regardless of
@@ -60,7 +68,7 @@ export async function GET() {
     supabase.from('bookings').select('id, customer_id, status, created_at'),
     supabase.from('payments').select('booking_id, amount_eur, platform_fee_eur, refunded_amount_eur, status, created_at'),
     supabase.from('disputes').select('status, auto_resolved, customer_id, cleaner_profile_id, refund_percentage'),
-    supabase.from('cleaner_profiles').select('id, status, avg_rating, review_count, total_jobs_count'),
+    supabase.from('cleaner_profiles').select('id, status, avg_rating, review_count, total_jobs_count, users(last_login_at)'),
     supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'CUSTOMER'),
   ])
 
@@ -76,6 +84,20 @@ export async function GET() {
 
   const completedBookings = bookings.filter(b => b.status === 'COMPLETED')
   const cancelledBookings = bookings.filter(b => b.status === 'CANCELLED')
+
+  // ─── Bookings funnel — REDESIGN 2026-08-21 (Todoist) ──────────────────
+  // Replaces the single "Total bookings" number, which conflated every
+  // status into one figure. "Accepted" is an approximation: there's no
+  // confirmed_at timestamp or status-history table, only current status —
+  // so a booking that was confirmed and LATER cancelled is indistinguishable
+  // from one cancelled while still REQUESTED, and both fall out of this
+  // count. A confirmed_at column (mirroring completed_at) would close this
+  // gap if the distinction matters; flagged, not built, this pass.
+  const requestedCount = bookings.length
+  const acceptedCount = bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'COMPLETED').length
+  const completedCount = completedBookings.length
+  const acceptedOfRequestedPct = requestedCount > 0 ? Math.round((acceptedCount / requestedCount) * 1000) / 10 : 0
+  const completedOfAcceptedPct = acceptedCount > 0 ? Math.round((completedCount / acceptedCount) * 1000) / 10 : 0
 
   // Revenue = the platform's own cut, recognized when the charge succeeds,
   // net of whatever fraction of the charge has actually been refunded —
@@ -96,17 +118,20 @@ export async function GET() {
   }
   const revenueEur = payments.reduce((sum, p) => sum + netPlatformFeeEur(p), 0)
 
-  const activeCleaners = cleaners.filter(c => c.status === 'ACTIVE').length
+  const activeCleanerCutoff = Date.now() - ACTIVE_CLEANER_WINDOW_DAYS * 24 * 60 * 60 * 1000
+  const activeCleaners = cleaners.filter(c => {
+    if (c.status !== 'ACTIVE') return false
+    const lastLogin = c.users?.last_login_at
+    return !!lastLogin && new Date(lastLogin).getTime() >= activeCleanerCutoff
+  }).length
 
-  // Repeat-customer rate: of customers with at least one COMPLETED booking,
-  // what fraction have two or more.
+  // Per-customer completed-booking count — backs both the booking-frequency
+  // cohorts below and (via its .size) the "no completed bookings" band.
   const completedByCustomer = new Map<string, number>()
   for (const b of completedBookings) {
     completedByCustomer.set(b.customer_id, (completedByCustomer.get(b.customer_id) ?? 0) + 1)
   }
   const customersWithCompleted = completedByCustomer.size
-  const repeatCustomers = [...completedByCustomer.values()].filter(n => n >= 2).length
-  const repeatCustomerRatePct = customersWithCompleted > 0 ? Math.round((repeatCustomers / customersWithCompleted) * 1000) / 10 : 0
 
   // Dispute rate is only meaningful against completed jobs — a dispute can
   // only be filed on a COMPLETED booking in the first place.
@@ -143,8 +168,14 @@ export async function GET() {
   }
 
   // ─── Customer segmentation ──────────────────────────────────────────────
-  // Booking frequency: reuses completedByCustomer (already built for the
-  // repeat-customer rate above) so this can't drift from that number.
+  // Booking frequency — REDESIGN 2026-08-21 (Todoist): replaces the single
+  // blended "repeat-customer rate %" with the full cohort distribution,
+  // including customers with zero completed bookings (previously excluded
+  // from every bucket, and from the rate's own denominator). Basis is
+  // COMPLETED bookings only, same as before, so this can't disagree with
+  // itself if the rate is ever reintroduced elsewhere.
+  const totalCustomers = customerCountRes.count ?? 0
+  const noCompletedBookingsCustomers = Math.max(0, totalCustomers - customersWithCompleted)
   let oneTimeCustomers = 0, occasionalCustomers = 0, regularCustomers = 0
   for (const count of completedByCustomer.values()) {
     if (count === 1) oneTimeCustomers++
@@ -224,20 +255,24 @@ export async function GET() {
   }
 
   return NextResponse.json({
+    funnel: {
+      requested:              requestedCount,
+      accepted:                acceptedCount,
+      completed:               completedCount,
+      acceptedOfRequestedPct,
+      completedOfAcceptedPct,
+    },
     totals: {
-      totalBookings:     bookings.length,
-      completedBookings: completedBookings.length,
       cancelledBookings: cancelledBookings.length,
-      totalCustomers:    customerCountRes.count ?? 0,
+      totalCustomers,
       activeCleaners,
       revenueEur:        Math.round(revenueEur * 100) / 100,
     },
-    repeatCustomerRatePct,
     disputeRatePct,
     autoResolveRatePct,
     weekly: [...weekly.values()],
     customerSegments: {
-      byFrequency: { oneTime: oneTimeCustomers, occasional: occasionalCustomers, regular: regularCustomers },
+      byFrequency: { noneCompleted: noCompletedBookingsCustomers, oneTime: oneTimeCustomers, occasional: occasionalCustomers, regular: regularCustomers },
       byDisputeHistory: { none: customersWithNoDisputes, filedNoneWon: customersFiledNoneWon, wonAtLeastOne: customersWonAtLeastOne },
     },
     cleanerSegments: {
