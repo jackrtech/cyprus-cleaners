@@ -108,6 +108,26 @@ function hoursLeftToRespond(createdAt: string): number {
   return Math.max(0, Math.ceil((deadline - Date.now()) / (60 * 60 * 1000)))
 }
 
+// Relative countdown to a confirmed job's start ("in 2 days", "in 6 hours"),
+// added 2026-08-21 (Todoist "cleaner home view" spec) — replaces the old
+// "you can mark this complete on {date}" text, which repeated the raw date
+// already shown in the card's own summary line below. Computed on render,
+// same lightweight no-interval approach as hoursLeftToRespond above and the
+// admin disputes SLA countdown — this page already re-renders often enough
+// (booking actions, tab switches) that a dedicated ticking timer isn't
+// worth the complexity for a granularity of minutes/hours/days.
+function jobCountdownLabel(date: string, startTime: string, tBooking: (key: string, values?: Record<string, number>) => string): string {
+  const target = new Date(`${date}T${startTime}`).getTime()
+  const diffMs = target - Date.now()
+  if (diffMs <= 0) return tBooking('countdownNow')
+  const diffMin = Math.round(diffMs / 60000)
+  if (diffMin < 60) return tBooking('countdownMinutes', { count: diffMin })
+  const diffHours = Math.round(diffMs / 3600000)
+  if (diffHours < 24) return tBooking('countdownHours', { count: diffHours })
+  const diffDays = Math.round(diffMs / 86400000)
+  return tBooking('countdownDays', { count: diffDays })
+}
+
 interface IntroCardProps {
   intro:                Introduction
   tReceivedOn:          string
@@ -607,10 +627,8 @@ export default function CleanerDashboardPage() {
                 {tBooking('markComplete')}
               </button>
             ) : !dateReached ? (
-              <span className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] shrink-0">
-                {tBooking('notYetDue', {
-                  date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${booking.date}T00:00:00`)),
-                })}
+              <span className="text-[12px] font-medium text-[#19706A] shrink-0">
+                {jobCountdownLabel(booking.date, booking.start_time, tBooking)}
               </span>
             ) : (
               <span className="text-[12px] text-[#5B7472] dark:text-[#9BB0AE] shrink-0">
