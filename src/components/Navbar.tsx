@@ -42,14 +42,17 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
   // Nav centre links — vary by role. Admin has no link here: its only "nav
   // link" would point to the exact same place as the Dashboard button right
   // next to it, which is just a redundant duplicate entry.
-  // CLEANER gets Bookings/Messages as real top-level links as of 2026-08-21
-  // (Todoist "cleaner dashboard IA refactor", Phase 1 — minimal functional
-  // update so desktop has a way to reach the new /dashboard/cleaner/bookings
-  // and /dashboard/cleaner/messages routes; full nav polish, replacing the
-  // "Dashboard" ghost-button language everywhere, is Phase 2).
+  // CLEANER's Home/Bookings/Messages are a real set of equal-weight nav
+  // links as of 2026-08-21 Phase 2 (Todoist "cleaner dashboard IA refactor")
+  // — Phase 1 added Bookings/Messages here but left Home as the separately-
+  // styled ghost button (see ghostBtn below), which read as "Home" being a
+  // special CTA rather than one of four equal destinations alongside
+  // Bookings/Messages/Profile. Now all three render with the same plain
+  // nav-link treatment as Profile.
   const navLinks: { label: string; href: string }[] = (() => {
     if (role === 'CUSTOMER') return [{ label: t('findCleaner'), href: '/dashboard/search' }]
     if (role === 'CLEANER')  return [
+      { label: t('homeTab'),     href: '/dashboard/cleaner' },
       { label: t('bookingsTab'), href: '/dashboard/cleaner/bookings' },
       { label: t('messagesTab'), href: '/dashboard/cleaner/messages' },
     ]
@@ -61,11 +64,14 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
     ]
   })()
 
-  // Ghost button — always a link
+  // Ghost button — the one deliberately-emphasized CTA action, where one
+  // makes sense. CLEANER has none as of Phase 2 — Home moved into navLinks
+  // above, so there's no longer a single "go here" destination to emphasize
+  // over Bookings/Messages/Profile, all four are equal-weight now.
   const ghostBtn = (() => {
     if (role === 'CUSTOMER') return { label: t('dashboard'), href: '/dashboard' }
-    if (role === 'CLEANER')  return { label: t('homeTab'), href: '/dashboard/cleaner' }
     if (role === 'ADMIN')    return { label: t('dashboard'), href: '/admin' }
+    if (role === 'CLEANER')  return null
     return { label: t('signIn'), href: '/login' }
   })()
 
@@ -121,7 +127,7 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
           )}
           <LanguageToggle />
           <ThemeToggle />
-          <Link href={ghostBtn.href} className="btn-ghost">{ghostBtn.label}</Link>
+          {ghostBtn && <Link href={ghostBtn.href} className="btn-ghost">{ghostBtn.label}</Link>}
           {isLoggedIn ? (
             <>
               <Link href="/dashboard/profile" className={linkClass('/dashboard/profile')}>{t('profileTab')}</Link>
@@ -144,10 +150,13 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
       </header>
 
       {/* Mobile drawer — each group gets a divider instead of relying on gap
-          spacing alone, so an empty group (e.g. no nav links for a cleaner)
+          spacing alone, so an empty group (e.g. no navLinks while loading)
           can't leave a phantom blank row; text sizing is consistent (14px)
-          across every plain row, leaving the Dashboard button as the one
-          deliberately-emphasized action, same as it is on desktop. */}
+          across every plain row. The ghost button (Dashboard for CUSTOMER/
+          ADMIN, Sign In logged-out) is the one deliberately-emphasized
+          action where a role has one — CLEANER doesn't as of Phase 2, its
+          Home/Bookings/Messages/Profile are four equal-weight destinations
+          instead, matching the mobile bottom tab bar. */}
       {drawerOpen && (
         // z-[70]: this had no explicit z-index before (just inherited the
         // header's z-50), so on any page with a sticky element above z-50 —
@@ -177,9 +186,11 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
           </div>
 
           <div className="flex flex-col gap-3 pt-4 border-t border-[#E0EDEC] dark:border-[#253634]">
-            <Link href={ghostBtn.href} className="btn-ghost justify-center" onClick={() => setDrawerOpen(false)}>
-              {ghostBtn.label}
-            </Link>
+            {ghostBtn && (
+              <Link href={ghostBtn.href} className="btn-ghost justify-center" onClick={() => setDrawerOpen(false)}>
+                {ghostBtn.label}
+              </Link>
+            )}
             {isLoggedIn ? (
               <button onClick={handleSignOut} className="text-[14px] text-[#5B7472] dark:text-[#9BB0AE] hover:text-[#0D1F1E] dark:hover:text-[#ECF3F2] transition-colors text-center">{t('signOut')}</button>
             ) : (

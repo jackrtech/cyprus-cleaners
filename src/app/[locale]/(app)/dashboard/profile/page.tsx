@@ -104,6 +104,16 @@ export default function ProfilePage() {
               <span className="text-[14px] text-[#0D1F1E] dark:text-[#ECF3F2]">{t('editProfile')}</span>
               <span className="text-[#5B7472] dark:text-[#9BB0AE]" aria-hidden="true">›</span>
             </Link>
+            {/* Added 2026-08-21 (Todoist "cleaner dashboard IA refactor",
+                Phase 2) — Earnings previously had no link anywhere in the
+                new Home/Bookings/Messages/Profile nav, only reachable via
+                the Home payout banner (when one happens to be showing) or a
+                direct URL. Settings-adjacent, so it lives here rather than
+                as a 5th top-level tab, per Sasha's decision. */}
+            <Link href="/dashboard/cleaner/earnings" className="flex items-center justify-between px-5 py-4 hover:bg-[#F7FAF9] dark:hover:bg-[#0F1817] transition-colors">
+              <span className="text-[14px] text-[#0D1F1E] dark:text-[#ECF3F2]">{t('earningsTab')}</span>
+              <span className="text-[#5B7472] dark:text-[#9BB0AE]" aria-hidden="true">›</span>
+            </Link>
             {cleanerSlug && (
               <Link href={`/cleaners/${cleanerSlug}`} className="flex items-center justify-between px-5 py-4 hover:bg-[#F7FAF9] dark:hover:bg-[#0F1817] transition-colors">
                 <span className="text-[14px] text-[#0D1F1E] dark:text-[#ECF3F2]">{t('viewPublicProfile')}</span>
