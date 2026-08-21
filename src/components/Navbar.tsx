@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import LanguageToggle from '@/components/layout/LanguageToggle'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import { useHomeHref } from '@/hooks/useHomeHref'
 
 interface NavbarProps {
   // Only meaningful when true: hides the whole header on mobile for a
@@ -26,6 +27,7 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
   const { data: session } = useSession()
   const role = session?.user?.role
   const isLoggedIn = !!session?.user
+  const homeHref = useHomeHref()
 
   const roleLabel = role === 'CUSTOMER' ? t('roleCustomer')
     : role === 'CLEANER' ? t('roleCleaner')
@@ -81,7 +83,7 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
       <header className={`sticky top-0 z-50 w-full bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] ${isLoggedIn && hideOnMobileWhenLoggedIn ? 'hidden md:block' : ''}`}>
       <div className="px-6 lg:px-12 flex items-center justify-between h-16">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 shrink-0">
+        <Link href={homeHref} className="flex items-center gap-2.5 shrink-0">
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
             <rect width="32" height="32" rx="8" fill="#E8F4F3" />
             <path d="M22 10.5C22 10.5 19.5 8 16 8C11.582 8 8 11.582 8 16" stroke="#19706A" strokeWidth="2.5" strokeLinecap="round" />

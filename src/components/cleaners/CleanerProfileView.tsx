@@ -15,6 +15,7 @@ import type { CleanerDetailRow, CleanerReviewRow } from '@/lib/cleaners'
 import { displayBadges, type EarnedBadge } from '@/lib/badgeConstants'
 import BadgeRow from '@/components/cleaners/BadgeRow'
 import { responseBucketFor, MIN_RESPONSE_SAMPLE } from '@/lib/responseTimeConstants'
+import { useHomeHref } from '@/hooks/useHomeHref'
 
 interface DbCleanerRow extends CleanerDetailRow {
   booking_fee_eur: number
@@ -133,6 +134,7 @@ export default function CleanerProfileView({
 
   const [cleaner] = useState<MockCleaner>(() => mapCleaner(initialCleaner))
   const isOwnProfile = initialCleaner.is_own_profile
+  const homeHref = useHomeHref()
 
   const [reviews] = useState<ProfileReview[]>(() => initialReviews.map(mapReview))
   const [badges]  = useState<EarnedBadge[]>(() => displayBadges(initialBadges as EarnedBadge[]))
@@ -301,7 +303,7 @@ export default function CleanerProfileView({
           </div>
         ) : (
           <nav className="flex items-center gap-1.5 text-[12px] text-[#5B7472] dark:text-[#9BB0AE] mb-5">
-            <Link href="/" className="text-[#19706A] hover:underline">{t('breadcrumbHome')}</Link>
+            <Link href={homeHref} className="text-[#19706A] hover:underline">{t('breadcrumbHome')}</Link>
             <span>›</span>
             <Link href="/cleaners" className="text-[#19706A] hover:underline">{t('breadcrumbFind')}</Link>
             <span>›</span>

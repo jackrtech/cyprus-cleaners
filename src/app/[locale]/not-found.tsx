@@ -3,9 +3,11 @@
 import { useTranslations } from 'next-intl'
 import { Link } from '@/navigation'
 import Footer from '@/components/Footer'
+import { useHomeHref } from '@/hooks/useHomeHref'
 
 export default function NotFound() {
   const t = useTranslations('notFound')
+  const homeHref = useHomeHref()
 
   return (
     <>
@@ -15,7 +17,7 @@ export default function NotFound() {
           <h1 className="text-[22px] font-medium text-[#0D1F1E] dark:text-[#ECF3F2] mb-2">{t('title')}</h1>
           <p className="text-[14px] text-[#5B7472] dark:text-[#9BB0AE] mb-8">{t('body')}</p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
-            <Link href="/" className="btn-primary !px-5 !py-2.5 rounded-full text-[14px]">
+            <Link href={homeHref} className="btn-primary !px-5 !py-2.5 rounded-full text-[14px]">
               {t('goHome')}
             </Link>
             <Link href="/cleaners" className="btn-ghost !px-5 !py-2.5 rounded-full text-[14px]">

@@ -9,6 +9,7 @@ import CleanerCard from '@/components/cleaners/CleanerCard'
 import FilterBar, { FilterState, DEFAULT_FILTERS } from '@/components/cleaners/FilterBar'
 import { deriveAvailabilityTags } from '@/lib/availability'
 import type { CleanerListRow as DbCleanerRow } from '@/lib/cleaners'
+import { useHomeHref } from '@/hooks/useHomeHref'
 
 type SortKey = 'top-rated' | 'price-asc' | 'price-desc' | 'most-reviews' | 'most-jobs'
 
@@ -70,6 +71,7 @@ export default function CleanersPage({ initialCleaners }: { initialCleaners: DbC
   const router = useRouter()
   const { data: session } = useSession()
   const isCustomer = (session?.user as { role?: string } | undefined)?.role === 'CUSTOMER'
+  const homeHref = useHomeHref()
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
   const [sort, setSort] = useState<SortKey>('top-rated')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
@@ -119,7 +121,7 @@ export default function CleanersPage({ initialCleaners }: { initialCleaners: DbC
       {/* Page header */}
       <div className="bg-white dark:bg-[#16211F] border-b border-[#E0EDEC] dark:border-[#253634] px-4 sm:px-10 pt-7 pb-0">
         <nav className="flex items-center gap-1.5 text-[12px] text-[#5B7472] dark:text-[#9BB0AE] mb-2">
-          <Link href="/" className="text-[#19706A] hover:underline">{t('breadcrumbHome')}</Link>
+          <Link href={homeHref} className="text-[#19706A] hover:underline">{t('breadcrumbHome')}</Link>
           <span>›</span>
           <span>{t('title')}</span>
         </nav>

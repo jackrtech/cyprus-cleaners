@@ -1,7 +1,9 @@
 import { withAuth } from 'next-auth/middleware'
+import { getToken } from 'next-auth/jwt'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import createIntlMiddleware from 'next-intl/middleware'
+import type { UserRole } from '@/types'
 
 const LOCALES = ['en', 'el'] as const
 
@@ -24,6 +26,23 @@ function stripLocalePrefix(pathname: string): string {
     }
   }
   return pathname
+}
+
+// The inverse of the above, for rebuilding a redirect target — 'en' is the
+// default locale and unprefixed under localePrefix 'as-needed', so only a
+// non-default locale prefix needs preserving.
+function getLocalePrefix(pathname: string): string {
+  for (const locale of LOCALES) {
+    if (locale === 'en') continue
+    if (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)) return `/${locale}`
+  }
+  return ''
+}
+
+function homeForRole(role: UserRole | undefined): string {
+  if (role === 'ADMIN') return '/admin'
+  if (role === 'CLEANER') return '/dashboard/cleaner'
+  return '/dashboard'
 }
 
 const authMiddleware = withAuth(
@@ -101,7 +120,7 @@ function isRateLimited(req: NextRequest): boolean {
   return entry.count > RATE_LIMIT_MAX
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   // API routes bypass i18n/auth-page middleware entirely (unchanged from
@@ -113,8 +132,21 @@ export function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  // Protected paths go through auth middleware
   const strippedPathname = stripLocalePrefix(pathname)
+
+  // Marketing homepage is logged-out-only — a signed-in visitor lands on
+  // their own role's app home instead. Checked separately from isProtected
+  // below since '/' isn't itself a protected route (no role requirement,
+  // just not the marketing page once authenticated).
+  if (strippedPathname === '/') {
+    const token = await getToken({ req })
+    if (token) {
+      const target = getLocalePrefix(pathname) + homeForRole(token.role)
+      return NextResponse.redirect(new URL(target, req.url))
+    }
+  }
+
+  // Protected paths go through auth middleware
   const isProtected =
     strippedPathname.startsWith('/dashboard') ||
     strippedPathname.startsWith('/admin')
