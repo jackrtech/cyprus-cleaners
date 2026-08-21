@@ -48,6 +48,14 @@ export default function CleanerHomePage() {
 
   const [idVerifyOpen,       setIdVerifyOpen]       = useState(false)
   const [referralCopied,     setReferralCopied]     = useState(false)
+  // Feature-detected client-side only (added 2026-08-21, Todoist "native
+  // share sheet") -- `navigator` doesn't exist during SSR, so this starts
+  // false on every render (server and first client paint alike, avoiding a
+  // hydration mismatch) and flips true post-mount wherever the Web Share API
+  // is actually available: mobile Safari/Chrome, and some newer desktop
+  // Chromium builds too -- feature-detection, not a manual mobile/desktop
+  // split, so it just works better wherever the platform supports it.
+  const [canNativeShare,     setCanNativeShare]     = useState(false)
   const [idVerifyFile,       setIdVerifyFile]       = useState<File | null>(null)
   const [selfieVerifyFile,   setSelfieVerifyFile]   = useState<File | null>(null)
   const [idVerifySubmitting, setIdVerifySubmitting] = useState(false)
@@ -61,6 +69,11 @@ export default function CleanerHomePage() {
   } | null>(null)
   const [resending,     setResending]     = useState(false)
   const [resendResult,  setResendResult]  = useState<'sent' | 'rate_limited' | null>(null)
+
+  // Web Share API feature-detection (see canNativeShare's own comment above)
+  useEffect(() => {
+    setCanNativeShare(typeof navigator !== 'undefined' && !!navigator.share)
+  }, [])
 
   // Fetch email verification status
   useEffect(() => {
@@ -111,6 +124,34 @@ export default function CleanerHomePage() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [session, sessionStatus])
+
+  // Added 2026-08-21 (Todoist "native share sheet"). Web Share API first
+  // (native OS share sheet -- WhatsApp, Messages, Telegram, email, etc. --
+  // no installed app required); falls back to the pre-existing
+  // copy-to-clipboard behavior wherever navigator.share isn't available, or
+  // if the share call itself fails for a reason other than the user simply
+  // cancelling (AbortError -- that's a deliberate no-op, not a failure to
+  // recover from).
+  async function handleReferralShare() {
+    const link = `${window.location.origin}/get-started?ref=${profile!.referral_code}`
+    if (canNativeShare) {
+      try {
+        await navigator.share({ title: t('referralShareSubject'), text: t('referralShareText'), url: link })
+        return
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return
+        // Fall through to the clipboard fallback below on any other failure.
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(link)
+      setReferralCopied(true)
+      setTimeout(() => setReferralCopied(false), 2000)
+    } catch {
+      // Clipboard API unavailable (e.g. insecure context) -- no fallback
+      // needed, the link is still visible below to select and copy by hand.
+    }
+  }
 
   async function handleResendVerification() {
     setResending(true)
@@ -352,21 +393,10 @@ export default function CleanerHomePage() {
             </div>
             <button
               type="button"
-              onClick={async () => {
-                const link = `${window.location.origin}/get-started?ref=${profile!.referral_code}`
-                try {
-                  await navigator.clipboard.writeText(link)
-                  setReferralCopied(true)
-                  setTimeout(() => setReferralCopied(false), 2000)
-                } catch {
-                  // Clipboard API unavailable (e.g. insecure context) -- no
-                  // fallback needed, the link is still visible below to
-                  // select and copy by hand.
-                }
-              }}
+              onClick={handleReferralShare}
               className="btn-secondary shrink-0 text-[13px] px-4 py-2 rounded-full"
             >
-              {referralCopied ? t('referralCopied') : t('referralCopyLink')}
+              {referralCopied ? t('referralCopied') : canNativeShare ? t('referralShareLink') : t('referralCopyLink')}
             </button>
           </div>
         )}
