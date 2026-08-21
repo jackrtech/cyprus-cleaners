@@ -27,7 +27,7 @@ interface Analytics {
   weekly:                WeekBucket[]
   customerSegments: {
     byFrequency:      { oneTime: number; occasional: number; regular: number }
-    byDisputeHistory: { none: number; one: number; twoPlus: number }
+    byDisputeHistory: { none: number; filedNoneWon: number; wonAtLeastOne: number }
   }
   cleanerSegments: {
     byRating:        { noReviewsYet: number; under3: number; threeToUnder4: number; fourToUnder4_5: number; fourPoint5Plus: number }
@@ -275,9 +275,9 @@ export default function AdminAnalyticsPage() {
                   <InfoTooltip label={t('byDisputeHistoryInfo')}>{t('byDisputeHistoryDef')}</InfoTooltip>
                 </p>
                 <SegmentBreakdown rows={[
-                  { label: t('disputeHistNone'),    count: analytics.customerSegments.byDisputeHistory.none },
-                  { label: t('disputeHistOne'),     count: analytics.customerSegments.byDisputeHistory.one },
-                  { label: t('disputeHistTwoPlus'), count: analytics.customerSegments.byDisputeHistory.twoPlus },
+                  { label: t('disputeHistNone'),         count: analytics.customerSegments.byDisputeHistory.none },
+                  { label: t('disputeHistFiledNoneWon'), count: analytics.customerSegments.byDisputeHistory.filedNoneWon },
+                  { label: t('disputeHistWon'),          count: analytics.customerSegments.byDisputeHistory.wonAtLeastOne },
                 ]} />
               </div>
             </div>

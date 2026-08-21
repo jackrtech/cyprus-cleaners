@@ -305,7 +305,7 @@ export default function CleanerProfileView({
           <nav className="flex items-center gap-1.5 text-[12px] text-[#5B7472] dark:text-[#9BB0AE] mb-5">
             <Link href={homeHref} className="text-[#19706A] hover:underline">{t('breadcrumbHome')}</Link>
             <span>›</span>
-            <Link href="/cleaners" className="text-[#19706A] hover:underline">{t('breadcrumbFind')}</Link>
+            <Link href={session ? '/dashboard/search' : '/cleaners'} className="text-[#19706A] hover:underline">{t('breadcrumbFind')}</Link>
             <span>›</span>
             <span>{cleaner.display_name}</span>
           </nav>

@@ -98,6 +98,14 @@ export default function CleanerCard({ cleaner, selectMode, selected, onToggleSel
   const t = useTranslations('cleaners')
   const tCommon = useTranslations('common')
   const getCityName = useCity()
+  const { data: session } = useSession()
+
+  // This card renders on both the logged-out marketing directory (/cleaners)
+  // and the app-native one (/dashboard/search) — route to whichever profile
+  // page matches the shell the visitor is actually in, same session-aware
+  // pattern as useHomeHref, so a logged-in visitor never gets dropped back
+  // into marketing chrome one click after the directory itself was fixed.
+  const profileHref = session?.user ? `/dashboard/cleaners/${cleaner.slug}` : `/cleaners/${cleaner.slug}`
 
   const cardClassName = `group block bg-white dark:bg-[#16211F] border rounded-[16px] p-3.5 transition-all duration-200 ${
     selectMode
@@ -205,7 +213,7 @@ export default function CleanerCard({ cleaner, selectMode, selected, onToggleSel
   }
 
   return (
-    <Link href={`/cleaners/${cleaner.slug}`} className={cardClassName}>
+    <Link href={profileHref} className={cardClassName}>
       {cardContent}
     </Link>
   )

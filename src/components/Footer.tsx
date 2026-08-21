@@ -1,25 +1,36 @@
 'use client'
 
 import { useLocale } from 'next-intl'
+import { useSession } from 'next-auth/react'
 import { usePathname, useRouter } from '@/navigation'
 import { Link } from '@/navigation'
 import type { Locale } from '@/navigation'
+
+interface FooterProps {
+  // Mirrors Navbar's prop of the same name — hides the footer on mobile for
+  // a logged-in visitor, since BottomTabBar covers mobile nav there instead
+  // and a marketing footer under app-native content reads as leftover
+  // marketing chrome (e.g. /cleaners/[slug] viewed by a signed-in customer).
+  hideOnMobileWhenLoggedIn?: boolean
+}
 
 // This footer is a deliberately always-dark section, independent of the
 // site-wide light/dark toggle — same as it was before dark mode existed.
 // Don't add dark: variants here; every color below is already tuned to
 // sit on the fixed #0D1F1E background.
-export default function Footer() {
+export default function Footer({ hideOnMobileWhenLoggedIn = false }: FooterProps) {
   const locale = useLocale()
   const pathname = usePathname()
   const router = useRouter()
+  const { data: session } = useSession()
+  const isLoggedIn = !!session?.user
 
   const handleLocaleSwitch = (targetLocale: Locale) => {
     router.push(pathname, { locale: targetLocale })
   }
 
   return (
-    <footer className="bg-[#0D1F1E] text-white">
+    <footer className={`bg-[#0D1F1E] text-white ${isLoggedIn && hideOnMobileWhenLoggedIn ? 'hidden md:block' : ''}`}>
       <div className="px-4 md:px-12 py-8 md:py-16">
         {/* Two-column grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-12">

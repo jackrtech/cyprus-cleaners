@@ -54,13 +54,22 @@ const authMiddleware = withAuth(
       authorized({ token, req }) {
         const pathname = stripLocalePrefix(req.nextUrl.pathname)
 
-        // Admin routes — ADMIN only
-        if (pathname.startsWith('/admin')) {
+        // Admin routes — ADMIN only. Segment-aware (not a bare startsWith):
+        // a naive prefix check on '/dashboard/cleaner' below wrongly caught
+        // '/dashboard/cleaners/[slug]' (missing segment boundary, same bug
+        // class as the 2026-08-21 Greek-locale auth bypass) — applying the
+        // same exact-or-slash-prefix pattern here defensively.
+        if (pathname === '/admin' || pathname.startsWith('/admin/')) {
           return token?.role === 'ADMIN'
         }
 
-        // Cleaner dashboard — CLEANER only (must be checked before /dashboard/**)
-        if (pathname.startsWith('/dashboard/cleaner')) {
+        // Cleaner dashboard — CLEANER only (must be checked before
+        // /dashboard/**). Exact-or-slash-prefix, not a bare startsWith:
+        // '/dashboard/cleaners/[slug]' (the app-native cleaner-profile page,
+        // browsable by any role) is a different route that happens to share
+        // the same prefix string — a plain startsWith('/dashboard/cleaner')
+        // wrongly locked customers out of it, discovered live 2026-08-21.
+        if (pathname === '/dashboard/cleaner' || pathname.startsWith('/dashboard/cleaner/')) {
           return token?.role === 'CLEANER'
         }
 

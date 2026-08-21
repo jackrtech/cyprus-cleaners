@@ -24,6 +24,7 @@ interface DisputeRow {
   auto_resolved:      boolean
   customer_id:        string
   cleaner_profile_id: string | null
+  refund_percentage:  number
 }
 interface CleanerRow {
   id:            string
@@ -58,7 +59,7 @@ export async function GET() {
   const [bookingsRes, paymentsRes, disputesRes, cleanersRes, customerCountRes] = await Promise.all([
     supabase.from('bookings').select('id, customer_id, status, created_at'),
     supabase.from('payments').select('booking_id, amount_eur, platform_fee_eur, refunded_amount_eur, status, created_at'),
-    supabase.from('disputes').select('status, auto_resolved, customer_id, cleaner_profile_id'),
+    supabase.from('disputes').select('status, auto_resolved, customer_id, cleaner_profile_id, refund_percentage'),
     supabase.from('cleaner_profiles').select('id, status, avg_rating, review_count, total_jobs_count'),
     supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'CUSTOMER'),
   ])
@@ -151,25 +152,31 @@ export async function GET() {
     else regularCustomers++
   }
 
-  // Dispute/refund history: every customer with a booking who's never had a
-  // dispute falls into "none" -- this reuses the same per-customer dispute
-  // counting GET /api/admin/users already does inline per row, just rolled
-  // up into cohort counts here instead of shown per customer.
-  const disputeCountByCustomer = new Map<string, number>()
+  // Dispute OUTCOME, not just filed count (fixed 2026-08-21 — see AUDIT
+  // finding #13: the old "filed count" version made a customer who filed
+  // and lost 2 disputes look identical to one who filed and won 2). "Won" =
+  // resolved with refund_percentage > 0 — a full CUSTOMER ruling (100%) or
+  // a partial UNRESOLVABLE split both count, since both actually moved
+  // money in the customer's favor; a CLEANER ruling (0%) or a still-OPEN
+  // dispute does not.
+  const disputesByCustomer = new Map<string, DisputeRow[]>()
   for (const d of disputes) {
-    disputeCountByCustomer.set(d.customer_id, (disputeCountByCustomer.get(d.customer_id) ?? 0) + 1)
+    const arr = disputesByCustomer.get(d.customer_id)
+    if (arr) arr.push(d)
+    else disputesByCustomer.set(d.customer_id, [d])
   }
-  let customersWithNoDisputes = 0, customersWithOneDispute = 0, customersWithTwoPlusDisputes = 0
-  for (const count of disputeCountByCustomer.values()) {
-    if (count === 1) customersWithOneDispute++
-    else customersWithTwoPlusDisputes++
-  }
-  // Everyone else who's ever booked (completed or not) and was never
-  // disputed -- distinct customer_ids across all bookings, not just
-  // completed ones, since a dispute-free history includes customers whose
-  // booking is still pending/confirmed.
+  // Distinct customer_ids across ALL bookings, not just completed ones,
+  // since a dispute-free history includes customers whose booking is still
+  // pending/confirmed.
   const allBookingCustomerIds = new Set(bookings.map(b => b.customer_id))
-  customersWithNoDisputes = [...allBookingCustomerIds].filter(id => !disputeCountByCustomer.has(id)).length
+  let customersWithNoDisputes = 0, customersFiledNoneWon = 0, customersWonAtLeastOne = 0
+  for (const custId of allBookingCustomerIds) {
+    const custDisputes = disputesByCustomer.get(custId)
+    if (!custDisputes || custDisputes.length === 0) { customersWithNoDisputes++; continue }
+    const wonAny = custDisputes.some(d => d.status === 'RESOLVED' && d.refund_percentage > 0)
+    if (wonAny) customersWonAtLeastOne++
+    else customersFiledNoneWon++
+  }
 
   // ─── Cleaner segmentation ───────────────────────────────────────────────
   const activeCleanerRows = cleaners.filter(c => c.status === 'ACTIVE')
@@ -231,7 +238,7 @@ export async function GET() {
     weekly: [...weekly.values()],
     customerSegments: {
       byFrequency: { oneTime: oneTimeCustomers, occasional: occasionalCustomers, regular: regularCustomers },
-      byDisputeHistory: { none: customersWithNoDisputes, one: customersWithOneDispute, twoPlus: customersWithTwoPlusDisputes },
+      byDisputeHistory: { none: customersWithNoDisputes, filedNoneWon: customersFiledNoneWon, wonAtLeastOne: customersWonAtLeastOne },
     },
     cleanerSegments: {
       byRating,

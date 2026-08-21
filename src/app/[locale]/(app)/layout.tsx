@@ -14,9 +14,13 @@ import type { UserRole } from '@/types'
 // client-side, and cross-dashboard redirects (e.g. a CLEANER hitting the
 // customer /dashboard root) that aren't a security boundary, just routing
 // a signed-in user to the page meant for their role.
+// Exact-or-slash-prefix, not a bare startsWith — mirrors the same fix in
+// middleware.ts's authorized() callback. A naive startsWith('/dashboard/cleaner')
+// also matches '/dashboard/cleaners/[slug]' (the app-native cleaner-profile
+// page, browsable by any role), wrongly bouncing a CUSTOMER back to /dashboard.
 function requiredRoleFor(pathname: string): UserRole | null {
-  if (pathname.startsWith('/admin')) return 'ADMIN'
-  if (pathname.startsWith('/dashboard/cleaner')) return 'CLEANER'
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) return 'ADMIN'
+  if (pathname === '/dashboard/cleaner' || pathname.startsWith('/dashboard/cleaner/')) return 'CLEANER'
   return null
 }
 

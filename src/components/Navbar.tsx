@@ -43,7 +43,7 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
   // only "nav link" would point to the exact same place as the Dashboard
   // button right next to it, which is just a redundant duplicate entry.
   const navLinks: { label: string; href: string }[] = (() => {
-    if (role === 'CUSTOMER') return [{ label: t('findCleaner'), href: '/cleaners' }]
+    if (role === 'CUSTOMER') return [{ label: t('findCleaner'), href: '/dashboard/search' }]
     if (role === 'CLEANER')  return []
     if (role === 'ADMIN')    return []
     // Logged out / loading

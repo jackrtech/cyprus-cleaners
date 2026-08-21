@@ -6,7 +6,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
     <>
       <Navbar hideOnMobileWhenLoggedIn />
       <main id="main-content">{children}</main>
-      <Footer />
+      <Footer hideOnMobileWhenLoggedIn />
     </>
   )
 }

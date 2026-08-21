@@ -79,6 +79,8 @@ function BottomTabBarInner() {
   // told apart by URL only: Home always navigates to the bare root (no
   // ?tab), Bookings always sets ?tab=bookings explicitly, and each tab only
   // lights up for the query shape its own link produces.
+  // Search ("Find a cleaner") is customer-only — cleaners don't browse other
+  // cleaners, matching the desktop Navbar's navLinks (empty for CLEANER).
   const tabs = [
     {
       key: 'home',
@@ -87,13 +89,13 @@ function BottomTabBarInner() {
       active: onDashboardRoot && tabParam === null,
       Icon: HomeIcon,
     },
-    {
+    ...(role === 'CUSTOMER' ? [{
       key: 'search',
       label: t('searchTab'),
       href: '/dashboard/search',
       active: pathname.startsWith('/dashboard/search'),
       Icon: SearchIcon,
-    },
+    }] : []),
     {
       key: 'bookings',
       label: t('bookingsTab'),
