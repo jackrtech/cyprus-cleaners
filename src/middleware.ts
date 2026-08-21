@@ -3,11 +3,28 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import createIntlMiddleware from 'next-intl/middleware'
 
+const LOCALES = ['en', 'el'] as const
+
 const intlMiddleware = createIntlMiddleware({
-  locales: ['en', 'el'],
+  locales: LOCALES,
   defaultLocale: 'en',
   localePrefix: 'as-needed', // /el/ prefix for Greek; English at root
 })
+
+// The route-protection checks below match against unprefixed paths
+// ('/dashboard', '/admin') — with localePrefix 'as-needed', a Greek URL is
+// '/el/dashboard', which a raw pathname.startsWith('/dashboard') would miss
+// entirely, skipping the auth check for that locale. Strip the locale
+// prefix before doing any protection check so English and Greek URLs are
+// gated identically.
+function stripLocalePrefix(pathname: string): string {
+  for (const locale of LOCALES) {
+    if (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)) {
+      return pathname.slice(locale.length + 1) || '/'
+    }
+  }
+  return pathname
+}
 
 const authMiddleware = withAuth(
   function onSuccess(req) {
@@ -16,7 +33,7 @@ const authMiddleware = withAuth(
   {
     callbacks: {
       authorized({ token, req }) {
-        const { pathname } = req.nextUrl
+        const pathname = stripLocalePrefix(req.nextUrl.pathname)
 
         // Admin routes — ADMIN only
         if (pathname.startsWith('/admin')) {
@@ -97,9 +114,10 @@ export function middleware(req: NextRequest) {
   }
 
   // Protected paths go through auth middleware
+  const strippedPathname = stripLocalePrefix(pathname)
   const isProtected =
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/admin')
+    strippedPathname.startsWith('/dashboard') ||
+    strippedPathname.startsWith('/admin')
 
   if (isProtected) {
     return (authMiddleware as (req: NextRequest) => Response)(req)
