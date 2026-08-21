@@ -2,7 +2,6 @@
 
 import { Suspense } from 'react'
 import { useSession } from 'next-auth/react'
-import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Link, usePathname } from '@/navigation'
 
@@ -63,81 +62,48 @@ export default function BottomTabBar() {
 function BottomTabBarInner() {
   const t = useTranslations('nav')
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const { data: session } = useSession()
 
   const role = session?.user?.role
   if (role !== 'CUSTOMER' && role !== 'CLEANER') return null
 
-  const dashboardRoot = role === 'CLEANER' ? '/dashboard/cleaner' : '/dashboard'
-  const tabParam = searchParams.get('tab')
-  const onDashboardRoot = pathname === dashboardRoot
+  // Home/Bookings/Messages are real distinct routes for both roles as of
+  // 2026-08-21 (Todoist "cleaner dashboard IA refactor" — built for CLEANER
+  // first, then the identical treatment applied to CUSTOMER the same day).
+  // Neither dashboard root aliases to Bookings any more; each of the three
+  // is its own page. Search ("Find a cleaner") stays customer-only —
+  // cleaners don't browse other cleaners, matching the desktop Navbar.
+  const homeHref     = role === 'CLEANER' ? '/dashboard/cleaner' : '/dashboard'
+  const bookingsHref = role === 'CLEANER' ? '/dashboard/cleaner/bookings' : '/dashboard/bookings'
+  const messagesHref = role === 'CLEANER' ? '/dashboard/cleaner/messages' : '/dashboard/messages'
 
-  // Search ("Find a cleaner") is customer-only — cleaners don't browse other
-  // cleaners, matching the desktop Navbar's navLinks (empty for CLEANER).
-  //
-  // CLEANER's Home/Bookings/Messages are real distinct routes (added
-  // 2026-08-21, Todoist "cleaner dashboard IA refactor") — /dashboard/cleaner
-  // is now genuinely Home-only content, not an alias for Bookings. CUSTOMER
-  // still uses the old ?tab= pattern on a single page — cleaner-only for
-  // this pass, per Sasha's explicit scoping decision; the identical fix for
-  // the customer dashboard is its own future task.
-  const tabs = role === 'CLEANER' ? [
+  const tabs = [
     {
       key: 'home',
       label: t('homeTab'),
-      href: '/dashboard/cleaner',
-      active: pathname === '/dashboard/cleaner',
+      href: homeHref,
+      active: pathname === homeHref,
       Icon: HomeIcon,
     },
-    {
-      key: 'bookings',
-      label: t('bookingsTab'),
-      href: '/dashboard/cleaner/bookings',
-      active: pathname === '/dashboard/cleaner/bookings',
-      Icon: BookingsIcon,
-    },
-    {
-      key: 'messages',
-      label: t('messagesTab'),
-      href: '/dashboard/cleaner/messages',
-      active: pathname === '/dashboard/cleaner/messages',
-      Icon: MessagesIcon,
-    },
-    {
-      key: 'profile',
-      label: t('profileTab'),
-      href: '/dashboard/profile',
-      active: pathname === '/dashboard/profile',
-      Icon: ProfileIcon,
-    },
-  ] as const : [
-    {
-      key: 'home',
-      label: t('homeTab'),
-      href: dashboardRoot,
-      active: onDashboardRoot && tabParam === null,
-      Icon: HomeIcon,
-    },
-    {
+    ...(role === 'CUSTOMER' ? [{
       key: 'search',
       label: t('searchTab'),
       href: '/dashboard/search',
       active: pathname.startsWith('/dashboard/search'),
       Icon: SearchIcon,
-    },
+    }] : []),
     {
       key: 'bookings',
       label: t('bookingsTab'),
-      href: `${dashboardRoot}?tab=bookings`,
-      active: onDashboardRoot && tabParam === 'bookings',
+      href: bookingsHref,
+      active: pathname === bookingsHref,
       Icon: BookingsIcon,
     },
     {
       key: 'messages',
       label: t('messagesTab'),
-      href: `${dashboardRoot}?tab=messages`,
-      active: onDashboardRoot && tabParam === 'messages',
+      href: messagesHref,
+      active: pathname === messagesHref,
       Icon: MessagesIcon,
     },
     {

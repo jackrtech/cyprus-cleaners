@@ -42,15 +42,20 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
   // Nav centre links — vary by role. Admin has no link here: its only "nav
   // link" would point to the exact same place as the Dashboard button right
   // next to it, which is just a redundant duplicate entry.
-  // CLEANER's Home/Bookings/Messages are a real set of equal-weight nav
-  // links as of 2026-08-21 Phase 2 (Todoist "cleaner dashboard IA refactor")
-  // — Phase 1 added Bookings/Messages here but left Home as the separately-
-  // styled ghost button (see ghostBtn below), which read as "Home" being a
-  // special CTA rather than one of four equal destinations alongside
-  // Bookings/Messages/Profile. Now all three render with the same plain
-  // nav-link treatment as Profile.
+  // CUSTOMER and CLEANER both get Home/Bookings/Messages as a real set of
+  // equal-weight nav links as of 2026-08-21 (Todoist "cleaner dashboard IA
+  // refactor" — built for CLEANER first, then the identical treatment
+  // applied to CUSTOMER the same day). No more separately-styled ghost
+  // button for "Home"/"Dashboard" on either role — see ghostBtn below.
+  // CUSTOMER additionally keeps "Find a cleaner", positioned like the
+  // bottom tab bar's Search tab (between Home and Bookings).
   const navLinks: { label: string; href: string }[] = (() => {
-    if (role === 'CUSTOMER') return [{ label: t('findCleaner'), href: '/dashboard/search' }]
+    if (role === 'CUSTOMER') return [
+      { label: t('homeTab'),     href: '/dashboard' },
+      { label: t('findCleaner'), href: '/dashboard/search' },
+      { label: t('bookingsTab'), href: '/dashboard/bookings' },
+      { label: t('messagesTab'), href: '/dashboard/messages' },
+    ]
     if (role === 'CLEANER')  return [
       { label: t('homeTab'),     href: '/dashboard/cleaner' },
       { label: t('bookingsTab'), href: '/dashboard/cleaner/bookings' },
@@ -65,13 +70,14 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
   })()
 
   // Ghost button — the one deliberately-emphasized CTA action, where one
-  // makes sense. CLEANER has none as of Phase 2 — Home moved into navLinks
-  // above, so there's no longer a single "go here" destination to emphasize
-  // over Bookings/Messages/Profile, all four are equal-weight now.
+  // makes sense. Neither CUSTOMER nor CLEANER has one as of this pass —
+  // Home moved into navLinks above for both, so there's no longer a single
+  // "go here" destination to emphasize over Bookings/Messages/Profile (and,
+  // for CUSTOMER, Find a cleaner) — all equal-weight now. ADMIN is
+  // untouched (that panel hasn't been restructured this way).
   const ghostBtn = (() => {
-    if (role === 'CUSTOMER') return { label: t('dashboard'), href: '/dashboard' }
     if (role === 'ADMIN')    return { label: t('dashboard'), href: '/admin' }
-    if (role === 'CLEANER')  return null
+    if (role === 'CUSTOMER' || role === 'CLEANER') return null
     return { label: t('signIn'), href: '/login' }
   })()
 
