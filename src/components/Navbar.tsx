@@ -39,12 +39,20 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
     setDrawerOpen(false)
   }
 
-  // Nav centre links — vary by role. Cleaner/Admin have no link here: their
-  // only "nav link" would point to the exact same place as the Dashboard
-  // button right next to it, which is just a redundant duplicate entry.
+  // Nav centre links — vary by role. Admin has no link here: its only "nav
+  // link" would point to the exact same place as the Dashboard button right
+  // next to it, which is just a redundant duplicate entry.
+  // CLEANER gets Bookings/Messages as real top-level links as of 2026-08-21
+  // (Todoist "cleaner dashboard IA refactor", Phase 1 — minimal functional
+  // update so desktop has a way to reach the new /dashboard/cleaner/bookings
+  // and /dashboard/cleaner/messages routes; full nav polish, replacing the
+  // "Dashboard" ghost-button language everywhere, is Phase 2).
   const navLinks: { label: string; href: string }[] = (() => {
     if (role === 'CUSTOMER') return [{ label: t('findCleaner'), href: '/dashboard/search' }]
-    if (role === 'CLEANER')  return []
+    if (role === 'CLEANER')  return [
+      { label: t('bookingsTab'), href: '/dashboard/cleaner/bookings' },
+      { label: t('messagesTab'), href: '/dashboard/cleaner/messages' },
+    ]
     if (role === 'ADMIN')    return []
     // Logged out / loading
     return [
@@ -56,7 +64,7 @@ export default function Navbar({ hideOnMobileWhenLoggedIn = false }: NavbarProps
   // Ghost button — always a link
   const ghostBtn = (() => {
     if (role === 'CUSTOMER') return { label: t('dashboard'), href: '/dashboard' }
-    if (role === 'CLEANER')  return { label: t('dashboard'), href: '/dashboard/cleaner' }
+    if (role === 'CLEANER')  return { label: t('homeTab'), href: '/dashboard/cleaner' }
     if (role === 'ADMIN')    return { label: t('dashboard'), href: '/admin' }
     return { label: t('signIn'), href: '/login' }
   })()

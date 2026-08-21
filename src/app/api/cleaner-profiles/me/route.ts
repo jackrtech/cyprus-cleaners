@@ -13,7 +13,7 @@ export async function GET() {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('cleaner_profiles')
-    .select('*, cleaner_service_offerings ( code, price_eur )')
+    .select('*, cleaner_service_offerings ( code, price_eur ), cleaner_badges ( badge_key )')
     .eq('user_id', session.user.id)
     .single()
 
@@ -28,7 +28,15 @@ export async function GET() {
   await checkAndAwardTenureMilestones(supabase, data.id, data.created_at)
   await checkAndAwardProfileCompletionBadge(supabase, data.id, data)
 
-  return NextResponse.json(data)
+  // earned_badge_keys -- added 2026-08-21 for the Home view's invite-a-cleaner
+  // card (Todoist "cleaner dashboard IA refactor"), which needs to hide once
+  // referred_friend is earned rather than showing forever once a referral
+  // code exists. Deduped key list, not the full tiered rows -- nothing reads
+  // tier here, only "has this badge_key ever been earned at all".
+  const cleanerBadgeRows = (data.cleaner_badges ?? []) as { badge_key: string }[]
+  const earned_badge_keys = [...new Set(cleanerBadgeRows.map(b => b.badge_key))]
+
+  return NextResponse.json({ ...data, earned_badge_keys })
 }
 
 const ALLOWED_FIELDS = new Set([
