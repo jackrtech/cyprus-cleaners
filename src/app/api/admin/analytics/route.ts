@@ -3,7 +3,16 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/config'
 import { createAdminClient } from '@/lib/supabase/server'
 
-const WEEKS = 12
+// Weekly-chart range control, added 2026-08-21 (Todoist) — the charts were
+// hardcoded to a fixed 12-week window with no way to change it. Presets
+// only (no raw date picker), per the task's own steer that presets are
+// better UX for an admin glancing at trends than a custom range.
+type RangeKey = '4w' | '12w' | '6m' | 'all'
+const RANGE_WEEKS: Record<Exclude<RangeKey, 'all'>, number> = { '4w': 4, '12w': 12, '6m': 26 }
+function parseRange(v: string | null): RangeKey {
+  return v === '4w' || v === '6m' || v === 'all' ? v : '12w'
+}
+
 // "Active cleaner" REDESIGN, 2026-08-21 (Todoist): was a snapshot of
 // cleaner_profiles.status = 'ACTIVE' alone — no recency signal at all, just
 // "not paused/suspended". Now also requires a login within this window,
@@ -53,7 +62,7 @@ function weekStartKey(iso: string): string {
   return date.toISOString().slice(0, 10)
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -61,6 +70,8 @@ export async function GET() {
   if (session.user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  const range = parseRange(new URL(request.url).searchParams.get('range'))
 
   const supabase = createAdminClient()
 
@@ -142,11 +153,28 @@ export async function GET() {
     ? Math.round((resolvedDisputes.filter(d => d.auto_resolved).length / resolvedDisputes.length) * 1000) / 10
     : null
 
-  // Last WEEKS Monday-anchored weeks, oldest first, zero-filled so the chart
-  // never has gaps.
-  const weekKeys: string[] = []
+  // Last N Monday-anchored weeks, oldest first, zero-filled so the chart
+  // never has gaps. N is fixed for the 4w/12w/6m presets; for 'all' it's
+  // derived from the earliest booking/payment actually on record, computed
+  // from the rows already fetched above rather than a separate query.
   const now = new Date()
-  for (let i = WEEKS - 1; i >= 0; i--) {
+  let weeksCount: number
+  if (range === 'all') {
+    const allTimestamps = [...bookings.map(b => b.created_at), ...payments.map(p => p.created_at)]
+    if (allTimestamps.length === 0) {
+      weeksCount = 1
+    } else {
+      const earliestMs = Math.min(...allTimestamps.map(t => new Date(t).getTime()))
+      const earliestKey = weekStartKey(new Date(earliestMs).toISOString())
+      const nowKey = weekStartKey(now.toISOString())
+      const diffWeeks = Math.round((new Date(nowKey).getTime() - new Date(earliestKey).getTime()) / (7 * 24 * 60 * 60 * 1000))
+      weeksCount = diffWeeks + 1
+    }
+  } else {
+    weeksCount = RANGE_WEEKS[range]
+  }
+  const weekKeys: string[] = []
+  for (let i = weeksCount - 1; i >= 0; i--) {
     const d = new Date(now)
     d.setUTCDate(d.getUTCDate() - i * 7)
     weekKeys.push(weekStartKey(d.toISOString()))
@@ -270,6 +298,7 @@ export async function GET() {
     },
     disputeRatePct,
     autoResolveRatePct,
+    range,
     weekly: [...weekly.values()],
     customerSegments: {
       byFrequency: { noneCompleted: noCompletedBookingsCustomers, oneTime: oneTimeCustomers, occasional: occasionalCustomers, regular: regularCustomers },

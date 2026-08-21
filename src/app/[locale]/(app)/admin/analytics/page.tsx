@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import AdminNav from '@/components/admin/AdminNav'
@@ -96,6 +96,9 @@ function SegmentBreakdown({ rows }: { rows: { label: string; count: number }[] }
   )
 }
 
+type RangeKey = '4w' | '12w' | '6m' | 'all'
+const RANGE_KEYS: RangeKey[] = ['4w', '12w', '6m', 'all']
+
 export default function AdminAnalyticsPage() {
   const { data: session, status: sessionStatus } = useSession()
   const t      = useTranslations('admin')
@@ -104,15 +107,27 @@ export default function AdminAnalyticsPage() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState<string | null>(null)
+  // Shared by both weekly charts (Bookings per week / Platform revenue per
+  // week), added 2026-08-21 (Todoist) — was hardcoded to 12 weeks with no
+  // control. Refetches the whole payload on change rather than adding a
+  // second endpoint shape; everything else in the response is range-
+  // independent, so this is simplicity over a few wasted lifetime-stat
+  // re-queries on a still-small pre-launch dataset.
+  const [range, setRange] = useState<RangeKey>('12w')
+  const hasLoadedOnce = useRef(false)
 
   useEffect(() => {
     if (sessionStatus !== 'authenticated' || session?.user.role !== 'ADMIN') return
-    fetch('/api/admin/analytics')
+    // Only the very first load shows the full-page loading state — a range
+    // change re-fetches in the background so the range control (and the
+    // rest of the page) never disappears out from under the admin mid-click.
+    if (!hasLoadedOnce.current) setLoading(true)
+    fetch(`/api/admin/analytics?range=${range}`)
       .then(r => { if (!r.ok) throw new Error(); return r.json() })
       .then((data: Analytics) => setAnalytics(data))
       .catch(() => setError(t('analyticsLoadError')))
-      .finally(() => setLoading(false))
-  }, [session, sessionStatus, t])
+      .finally(() => { setLoading(false); hasLoadedOnce.current = true })
+  }, [session, sessionStatus, t, range])
 
   // (app)/layout.tsx already gates loading/auth/role — this is pure TS
   // narrowing for the session-shaped code below, never actually renders.
@@ -224,14 +239,34 @@ export default function AdminAnalyticsPage() {
             </div>
 
             {firstWeek && lastWeek && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <>
+                <div className="flex items-center justify-end mb-3">
+                  <div role="group" aria-label={t('weeklyChartsRangeLabel')} className="inline-flex gap-0.5 bg-[#F0F5F4] dark:bg-[#142220] rounded-full p-0.5">
+                    {RANGE_KEYS.map(key => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setRange(key)}
+                        aria-pressed={range === key}
+                        className={`text-[12px] font-medium px-3 py-1 rounded-full transition-colors ${
+                          range === key
+                            ? 'bg-white dark:bg-[#16211F] text-teal-900 dark:text-[#ECF3F2] shadow-sm'
+                            : 'text-muted dark:text-[#9BB0AE] hover:text-teal-900 dark:hover:text-[#ECF3F2]'
+                        }`}
+                      >
+                        {t(`range_${key}`)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="card p-4">
                   <div className="flex items-baseline justify-between mb-3">
                     <p className="font-medium text-teal-900 dark:text-[#ECF3F2] text-body">
                       {t('weeklyBookingsTitle')}
                       <InfoTooltip label={t('weeklyChartsInfo')}>{t('weeklyChartsDef')}</InfoTooltip>
                     </p>
-                    <p className="text-label text-muted dark:text-[#9BB0AE]">{t('last12Weeks')}</p>
+                    <p className="text-label text-muted dark:text-[#9BB0AE]">{t(`range_${range}`)}</p>
                   </div>
                   <BarChart
                     data={analytics.weekly}
@@ -250,7 +285,7 @@ export default function AdminAnalyticsPage() {
                       {t('weeklyRevenueTitle')}
                       <InfoTooltip label={t('weeklyChartsInfo')}>{t('weeklyChartsDef')}</InfoTooltip>
                     </p>
-                    <p className="text-label text-muted dark:text-[#9BB0AE]">{t('last12Weeks')}</p>
+                    <p className="text-label text-muted dark:text-[#9BB0AE]">{t(`range_${range}`)}</p>
                   </div>
                   <BarChart
                     data={analytics.weekly}
@@ -264,6 +299,7 @@ export default function AdminAnalyticsPage() {
                   </div>
                 </div>
               </div>
+              </>
             )}
 
             <h2 className="text-body font-medium text-teal-900 dark:text-[#ECF3F2] mt-8 mb-3">{t('customerSegmentsTitle')}</h2>
